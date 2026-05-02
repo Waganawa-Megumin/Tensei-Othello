@@ -137,6 +137,17 @@ export interface Messages {
   gameOverAiQuoteWin: string;
   gameOverAiQuoteLose: string;
   gameOverAiQuoteDraw: string;
+
+  // Post-game Claude review
+  reviewMatchButton: string;
+  reviewTitle: string;
+  reviewSubtitle: string;
+  reviewLoading: string;
+  reviewByClaude: string;
+  reviewCancel: string;
+  reviewRegenerate: string;
+  reviewError: (message: string) => string;
+  reviewEmpty: string;
 }
 
 export const ja: Messages = {
@@ -291,6 +302,16 @@ export const ja: Messages = {
   gameOverAiQuoteWin: 'お見事…次は本気を出す',
   gameOverAiQuoteLose: 'まだまだじゃな',
   gameOverAiQuoteDraw: '互角の戦い、見事だ',
+
+  reviewMatchButton: 'この対局をレビュー',
+  reviewTitle: '対局レビュー',
+  reviewSubtitle: 'Claude による講評',
+  reviewLoading: 'Claude が考えています…',
+  reviewByClaude: 'Powered by Claude (Sonnet 4.6)',
+  reviewCancel: '中止',
+  reviewRegenerate: '再生成',
+  reviewError: (message) => `レビューを取得できませんでした：${message}`,
+  reviewEmpty: '棋譜が空のためレビューできません。',
 };
 
 export const en: Messages = {
@@ -445,6 +466,16 @@ your journey on the board reaches its close.`,
   gameOverAiQuoteWin: 'Well played… next time I get serious.',
   gameOverAiQuoteLose: 'Not yet, not yet.',
   gameOverAiQuoteDraw: 'An even fight — well done.',
+
+  reviewMatchButton: 'Review this match',
+  reviewTitle: 'Match Review',
+  reviewSubtitle: 'Commentary by Claude',
+  reviewLoading: 'Claude is thinking…',
+  reviewByClaude: 'Powered by Claude (Sonnet 4.6)',
+  reviewCancel: 'Cancel',
+  reviewRegenerate: 'Regenerate',
+  reviewError: (message) => `Could not fetch the review: ${message}`,
+  reviewEmpty: 'No moves recorded — nothing to review.',
 };
 
 export const messages: Record<Locale, Messages> = { ja, en };

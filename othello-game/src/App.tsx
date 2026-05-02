@@ -51,6 +51,7 @@ import {
 import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
 import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
+import { streamReview, type StreamMessageHandle } from './services/claude';
 
 type Screen = 'title' | 'game';
 
@@ -437,6 +438,13 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>('title');
 
+  // Post-game review state
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const reviewHandleRef = useRef<StreamMessageHandle | null>(null);
+
   const ai = useAiWorker();
   const { locale, setLocale, t } = useLocale();
 
@@ -581,10 +589,14 @@ export default function App() {
 
   // Android / browser back button: close the topmost layer instead of
   // exiting the PWA. Each "layer" pushes a history entry so popstate
-  // brings us back one step. Order of priority: modal -> game -> title.
+  // brings us back one step. Order of priority: review -> modal ->
+  // game -> title.
   useEffect(() => {
     const onPopState = () => {
-      if (settingsOpen) {
+      if (reviewOpen) {
+        reviewHandleRef.current?.abort();
+        setReviewOpen(false);
+      } else if (settingsOpen) {
         setSettingsOpen(false);
       } else if (kifuOpen) {
         setKifuOpen(false);
@@ -597,7 +609,7 @@ export default function App() {
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [settingsOpen, kifuOpen, infoOpen, screen]);
+  }, [settingsOpen, kifuOpen, infoOpen, screen, reviewOpen]);
 
   // Push a history entry whenever a new layer opens, so the back button
   // has something to pop. We compare against the previous depth to avoid
@@ -608,12 +620,13 @@ export default function App() {
       (screen === 'game' ? 1 : 0) +
       (settingsOpen ? 1 : 0) +
       (kifuOpen ? 1 : 0) +
-      (infoOpen ? 1 : 0);
+      (infoOpen ? 1 : 0) +
+      (reviewOpen ? 1 : 0);
     if (depth > layerDepthRef.current) {
       window.history.pushState({ depth }, '');
     }
     layerDepthRef.current = depth;
-  }, [screen, settingsOpen, kifuOpen, infoOpen]);
+  }, [screen, settingsOpen, kifuOpen, infoOpen, reviewOpen]);
 
   /* ----- Actions ----- */
 
@@ -787,6 +800,64 @@ export default function App() {
     setComputerChar(idx);
     setLevel(COMPUTERS[idx].level);
   }
+
+  /* ----- Post-game review ----- */
+
+  function startReview() {
+    if (kifu.length === 0) return;
+    // Cancel any in-flight stream first.
+    reviewHandleRef.current?.abort();
+    setReviewError(null);
+    setReviewText('');
+    setReviewLoading(true);
+    setReviewOpen(true);
+
+    const oppLevel = gameMode === 'ai' ? COMPUTERS[computerChar].level : undefined;
+    const args = {
+      kifu,
+      blackCount: counts.black,
+      whiteCount: counts.white,
+      blackName: AVATARS[p1Avatar].name,
+      whiteName:
+        gameMode === 'ai' ? COMPUTERS[computerChar].name : AVATARS[p2Avatar].name,
+      level: oppLevel,
+      levelLabel: oppLevel !== undefined ? getLevelLabel(oppLevel, t) : undefined,
+      chapter:
+        aiMode === 'story' && gameMode === 'ai'
+          ? Math.min(storyProgress + 1, 20)
+          : undefined,
+    };
+
+    reviewHandleRef.current = streamReview(args, locale, {
+      onText: (delta) => setReviewText((prev) => prev + delta),
+      onError: (err) => {
+        setReviewError(err.message);
+        setReviewLoading(false);
+      },
+      onDone: () => setReviewLoading(false),
+    });
+  }
+
+  function closeReview() {
+    reviewHandleRef.current?.abort();
+    reviewHandleRef.current = null;
+    setReviewOpen(false);
+    setReviewLoading(false);
+  }
+
+  function cancelReview() {
+    reviewHandleRef.current?.abort();
+    reviewHandleRef.current = null;
+    setReviewLoading(false);
+  }
+
+  // Abort any pending review stream when the component unmounts.
+  useEffect(
+    () => () => {
+      reviewHandleRef.current?.abort();
+    },
+    [],
+  );
 
   /* ----- Derived display info ----- */
 
@@ -1323,6 +1394,14 @@ export default function App() {
                     </p>
                   )}
 
+                  {gameMode === 'ai' && kifu.length > 0 && (
+                    <div className="flex justify-center mt-3 mb-1">
+                      <button onClick={startReview} className="btn">
+                        {t.reviewMatchButton}
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex justify-center gap-2 mt-4">
                     {justCompletedStory ? (
                       <button onClick={resetStoryProgress} className="btn">
@@ -1600,6 +1679,90 @@ export default function App() {
                     </div>
                   )}
                 </section>
+              </div>
+            </div>
+          )}
+
+          {/* Post-game review modal */}
+          {reviewOpen && (
+            <div className="modal-bg fixed inset-0 z-[60] flex items-stretch md:items-center justify-center p-2 md:p-6">
+              <div className="modal-card scroll-y w-full max-w-2xl max-h-[95vh] rounded-sm p-5 md:p-7 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">
+                      — {t.reviewSubtitle} —
+                    </div>
+                    <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">
+                      {t.reviewTitle}
+                    </h2>
+                  </div>
+                  <button onClick={closeReview} className="btn">
+                    {t.close}
+                  </button>
+                </div>
+
+                <div className="flex-1 scroll-y overflow-y-auto pr-1 mb-3">
+                  {reviewError ? (
+                    <p className="jp-display text-red-300/90 text-sm leading-relaxed mb-3">
+                      {t.reviewError(reviewError)}
+                    </p>
+                  ) : reviewText.length === 0 && reviewLoading ? (
+                    <p className="jp-display italic text-amber-200/65 text-sm">
+                      {t.reviewLoading}
+                    </p>
+                  ) : (
+                    <div className="jp-display text-amber-100/90 text-sm leading-relaxed">
+                      {reviewText.split('\n').map((line, i) => {
+                        if (line.startsWith('## ')) {
+                          return (
+                            <h3
+                              key={i}
+                              className="jp-display text-amber-100 text-base md:text-lg font-bold tracking-wider mt-4 mb-2 pb-1 border-b border-amber-200/15"
+                            >
+                              {line.slice(3)}
+                            </h3>
+                          );
+                        }
+                        if (line.startsWith('- ') || line.startsWith('* ')) {
+                          return (
+                            <li key={i} className="ml-5 list-disc text-amber-100/90 text-sm mb-1">
+                              {line.slice(2)}
+                            </li>
+                          );
+                        }
+                        if (line.trim() === '') {
+                          return <div key={i} className="h-2" />;
+                        }
+                        return (
+                          <p key={i} className="text-amber-100/90 text-sm mb-2 leading-relaxed">
+                            {line}
+                          </p>
+                        );
+                      })}
+                      {reviewLoading && reviewText.length > 0 && (
+                        <span className="inline-block w-2 h-4 bg-amber-200/60 ml-1 animate-pulse align-middle" />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-200/15">
+                  <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
+                    {t.reviewByClaude}
+                  </span>
+                  <div className="flex gap-2">
+                    {reviewLoading && (
+                      <button onClick={cancelReview} className="btn text-xs px-3 py-1.5">
+                        {t.reviewCancel}
+                      </button>
+                    )}
+                    {!reviewLoading && (reviewError || reviewText.length > 0) && (
+                      <button onClick={startReview} className="btn text-xs px-3 py-1.5">
+                        {t.reviewRegenerate}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
