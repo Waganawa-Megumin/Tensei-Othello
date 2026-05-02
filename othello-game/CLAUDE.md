@@ -4,6 +4,35 @@
 
 ---
 
+## 0. セッション開始時の必須手順（全 Claude Code セッション共通）
+
+このプロジェクトは複数の Claude Code セッション（`claude/<task>-<hash>` ブランチ）が交代で開発する形を取っています。各セッションが互いの最新成果を見るため、**作業を始める前に必ず以下を実行してください**:
+
+```bash
+git fetch origin main
+git merge origin/main           # 自ブランチに main の最新を取り込む
+# コンフリクトが出たら解決してから次へ
+```
+
+`main` は全セッションの統合点で、live site (`https://waganawa-megumin.github.io/Tensei-Othello/`) もここから deploy されます。
+
+**作業完了時の所作**:
+
+```bash
+git push -u origin <自ブランチ>     # 自ブランチに push
+git checkout main
+git merge <自ブランチ>              # main に取り込む
+git push origin main                # main を更新（live deploy が走る）
+git checkout <自ブランチ>          # 自ブランチに戻る（このセッションの作業ベース）
+```
+
+**注意**:
+- 自ブランチを削除しない（次に自分のセッションが再開した時に再利用するため）
+- 別セッション（別ブランチ）の状態は基本触らない。同期は main 経由でのみ行う
+- 同時に main を更新する 2 セッションは現状想定していない（時間帯がズレる前提）
+
+---
+
 ## 1. プロジェクト概要
 
 **何を作っているか**: 20体のキャラクターと20段階の難易度、20章のストーリーモードを持つ和風オセロゲーム。React + Vite + Tailwind 3 のシングルページ・アプリケーション。スマホ・デスクトップ両対応。
