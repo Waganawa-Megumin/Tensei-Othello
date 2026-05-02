@@ -1,7 +1,32 @@
 export type Locale = 'ja' | 'en';
 
 export interface Messages {
+  // App identity
+  appTitle: string;
+  appSubtitle: string;
+  worldName: string;
+
+  // Title screen
+  titleSubhead: string;
+  titleStoryLabel: string;
+  titleFreeLabel: string;
+  titleTwoPlayersLabel: string;
+  titleStoryHeading: string;
+  titleFreeHeading: string;
+  titleTwoPlayersHeading: string;
+  titleStoryDesc: string;
+  titleFreeDesc: string;
+  titleTwoPlayersDesc: string;
+  titleFooterHint: string;
+  titleFreeMeta: string;
+  titleTwoPlayersMeta: string;
+  titleStoryFreshStart: (name: string) => string;
+  titleStoryContinue: (n: number) => string;
+  titleStoryCompleted: string;
+  titleStoryCompletedLabel: string;
+
   // Toolbar
+  toolbarTitle: string;
   toolbarMenu: string;
   toolbarHint: string;
   toolbarUndo: string;
@@ -105,11 +130,34 @@ export interface Messages {
 }
 
 export const ja: Messages = {
-  toolbarMenu: 'メニュー',
+  appTitle: '転生したらオセロ世界でした！',
+  appSubtitle: 'Reincarnated as an Othello Player',
+  worldName: '盤上世界',
+
+  titleSubhead: '異界『盤上世界』で、20人の達人を打ち破れ',
+  titleStoryLabel: 'Story',
+  titleFreeLabel: 'Free',
+  titleTwoPlayersLabel: 'Two Players',
+  titleStoryHeading: 'ストーリー',
+  titleFreeHeading: 'フリー対戦',
+  titleTwoPlayersHeading: '二人対戦',
+  titleStoryDesc: '異世界『盤上世界』に転生し、20人の達人を順に打ち破る物語。',
+  titleFreeDesc: '20体の対戦相手と1〜20の難易度を自由に組み合わせて。',
+  titleTwoPlayersDesc: '一台の端末を共有して、二人で交互に打つ。',
+  titleFooterHint: '— Tap a mode to begin —',
+  titleFreeMeta: 'キャラクター ・ レベル ・ アバター 自由設定',
+  titleTwoPlayersMeta: '黒 ・ 白 それぞれにキャラクター',
+  titleStoryFreshStart: (name) => `第1章 ・ ${name} から始まる`,
+  titleStoryContinue: (n) => `第${n}章から続きを`,
+  titleStoryCompleted: 'エンディング到達済 ・ もう一度挑む',
+  titleStoryCompletedLabel: 'Completed',
+
+  toolbarTitle: 'タイトル',
+  toolbarMenu: '設定',
   toolbarHint: 'ヒント',
   toolbarUndo: '待った',
-  toolbarInfo: '対局情報',
-  toolbarReset: '新規対局',
+  toolbarInfo: '情報',
+  toolbarReset: '新規',
   toolbarKifu: '棋譜',
 
   black: '黒',
@@ -199,11 +247,34 @@ export const ja: Messages = {
 };
 
 export const en: Messages = {
-  toolbarMenu: 'Menu',
+  appTitle: 'Reincarnated as an Othello Player',
+  appSubtitle: '転生したらオセロ世界でした！',
+  worldName: 'Bansho Sekai',
+
+  titleSubhead: 'Defeat the 20 masters of the board world.',
+  titleStoryLabel: 'Story',
+  titleFreeLabel: 'Free',
+  titleTwoPlayersLabel: 'Two Players',
+  titleStoryHeading: 'Story',
+  titleFreeHeading: 'Free Match',
+  titleTwoPlayersHeading: 'Two Players',
+  titleStoryDesc: 'Reincarnate into Bansho Sekai and defeat 20 masters one chapter at a time.',
+  titleFreeDesc: 'Mix any of the 20 opponents with difficulty levels 1 through 20.',
+  titleTwoPlayersDesc: 'Share one device and take turns playing each other.',
+  titleFooterHint: '— Tap a mode to begin —',
+  titleFreeMeta: 'Character · Level · Avatar all configurable',
+  titleTwoPlayersMeta: 'Pick a character for Black and White',
+  titleStoryFreshStart: (name) => `Chapter 1 · starts with ${name}`,
+  titleStoryContinue: (n) => `Resume from Chapter ${n}`,
+  titleStoryCompleted: 'Ending reached · take it on again',
+  titleStoryCompletedLabel: 'Completed',
+
+  toolbarTitle: 'Title',
+  toolbarMenu: 'Settings',
   toolbarHint: 'Hint',
   toolbarUndo: 'Undo',
   toolbarInfo: 'Info',
-  toolbarReset: 'New game',
+  toolbarReset: 'New',
   toolbarKifu: 'Kifu',
 
   black: 'Black',

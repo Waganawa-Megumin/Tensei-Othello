@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {
   FolderOpen,
+  Home,
   Info,
   Lightbulb,
   Menu,
@@ -49,6 +50,9 @@ import {
 } from './storage/saveGame';
 import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
+import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
+
+type Screen = 'title' | 'game';
 
 /* ============================================================
    Static data
@@ -430,6 +434,7 @@ export default function App() {
   // UI state
   const [hintMove, setHintMove] = useState<Move | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [screen, setScreen] = useState<Screen>('title');
 
   const ai = useAiWorker();
   const { locale, setLocale, t } = useLocale();
@@ -599,6 +604,17 @@ export default function App() {
     setStoryJustAdvanced(false);
     setKifu([]);
     ai.cancel();
+  }
+
+  function startGame(selection: TitleStartMode) {
+    if (selection.mode === 'human') {
+      setGameMode('human');
+    } else {
+      setGameMode('ai');
+      setAiMode(selection.sub);
+    }
+    reset();
+    setScreen('game');
   }
 
   function resetStoryProgress() {
@@ -953,10 +969,21 @@ export default function App() {
         .scroll-y::-webkit-scrollbar-thumb { background: rgba(201, 169, 97, 0.3); border-radius: 3px; }
       `}</style>
 
+      {screen === 'title' && (
+        <TitleScreen
+          storyProgress={storyProgress}
+          firstChapterName={COMPUTERS[0].name}
+          onStart={startGame}
+          t={t}
+        />
+      )}
+
+      {screen === 'game' && (
       <div className="stage-bg min-h-screen w-full relative">
         <div className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
           {/* Top icon toolbar */}
-          <div className="grid grid-cols-6 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
+          <div className="grid grid-cols-7 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
+            <ToolbarBtn icon={Home} label={t.toolbarTitle} onClick={() => setScreen('title')} />
             <ToolbarBtn icon={Menu} label={t.toolbarMenu} onClick={() => setSettingsOpen(true)} />
             <ToolbarBtn
               icon={Lightbulb}
@@ -1852,6 +1879,7 @@ export default function App() {
           )}
         </div>
       </div>
+      )}
     </>
   );
 }

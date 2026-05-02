@@ -1,0 +1,200 @@
+import { Sparkles, Swords, Users } from 'lucide-react';
+import type { Messages } from '../i18n/messages';
+
+export type TitleStartMode =
+  | { mode: 'ai'; sub: 'story' }
+  | { mode: 'ai'; sub: 'free' }
+  | { mode: 'human' };
+
+interface TitleScreenProps {
+  storyProgress: number;
+  firstChapterName: string;
+  onStart: (selection: TitleStartMode) => void;
+  t: Messages;
+}
+
+export function TitleScreen({
+  storyProgress,
+  firstChapterName,
+  onStart,
+  t,
+}: TitleScreenProps) {
+  const hasProgress = storyProgress > 0 && storyProgress < 20;
+  const completed = storyProgress >= 20;
+
+  return (
+    <div className="stage-bg min-h-screen w-full relative flex flex-col items-center justify-center px-4 py-8 overflow-hidden">
+      {/* Decorative title-screen background — radial light + scattered stones */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 120% 60% at 50% 30%, rgba(201, 169, 97, 0.15), transparent 60%), radial-gradient(ellipse 80% 50% at 50% 100%, rgba(140, 100, 200, 0.08), transparent 70%)',
+          }}
+        />
+        {Array.from({ length: 12 }).map((_, i) => {
+          const seed = (i * 7) % 100;
+          return (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${(seed * 1.7) % 100}%`,
+                top: `${(seed * 2.3 + 5) % 90}%`,
+                width: `${4 + (seed % 8)}px`,
+                height: `${4 + (seed % 8)}px`,
+                background:
+                  i % 2 === 0
+                    ? 'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)'
+                    : 'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
+                opacity: 0.18 + (seed % 30) / 100,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                filter: 'blur(0.5px)',
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Title block */}
+      <div className="relative text-center mb-10 md:mb-12">
+        <div className="latin-display italic ornament text-amber-200/50 text-xs md:text-sm uppercase tracking-[0.4em] mb-4">
+          — Reincarnated as an Othello Player —
+        </div>
+        <h1
+          className="jp-display text-amber-100 text-3xl md:text-5xl font-bold tracking-[0.15em] mb-3 leading-tight"
+          style={{ textShadow: '0 0 24px rgba(201, 169, 97, 0.25)' }}
+        >
+          転生したら<br className="md:hidden" />オセロ世界でした！
+        </h1>
+        <p className="jp-display italic text-amber-200/60 text-sm md:text-base tracking-wider">
+          {t.titleSubhead}
+        </p>
+      </div>
+
+      {/* Mode selection cards */}
+      <div className="relative w-full max-w-4xl grid md:grid-cols-3 gap-3 md:gap-4 mb-6">
+        {/* Story mode card */}
+        <button
+          onClick={() => onStart({ mode: 'ai', sub: 'story' })}
+          className="group relative text-left p-5 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles
+              size={18}
+              strokeWidth={1.4}
+              className="text-amber-200/70 group-hover:text-amber-100 transition-colors"
+            />
+            <div className="latin-display italic text-amber-200/50 text-[10px] tracking-[0.3em] uppercase">
+              {t.titleStoryLabel}
+            </div>
+          </div>
+          <h3 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-wider mb-2">
+            {t.titleStoryHeading}
+          </h3>
+          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4">
+            {t.titleStoryDesc}
+          </p>
+          {hasProgress && (
+            <div className="mt-auto pt-3 border-t border-amber-200/15">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="latin-display italic text-amber-200/50 text-[10px] tracking-[0.25em] uppercase">
+                  Progress
+                </span>
+                <span className="latin-display text-amber-100 text-sm tabular-nums">
+                  {storyProgress} / 20
+                </span>
+              </div>
+              <div className="flex gap-0.5">
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`flex-1 h-1 rounded-full ${
+                      i < storyProgress ? 'bg-amber-400/80' : 'bg-zinc-800/60'
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="jp-display italic text-amber-200/55 text-[11px] mt-2">
+                {t.titleStoryContinue(storyProgress + 1)}
+              </div>
+            </div>
+          )}
+          {completed && (
+            <div className="mt-auto pt-3 border-t border-amber-400/30">
+              <div className="latin-display italic text-amber-300/80 text-[10px] tracking-[0.25em] uppercase mb-1">
+                {t.titleStoryCompletedLabel}
+              </div>
+              <div className="jp-display italic text-amber-100/80 text-[11px]">
+                {t.titleStoryCompleted}
+              </div>
+            </div>
+          )}
+          {!hasProgress && !completed && (
+            <div className="jp-display italic text-amber-200/45 text-[11px] mt-auto">
+              {t.titleStoryFreshStart(firstChapterName)}
+            </div>
+          )}
+        </button>
+
+        {/* Free mode card */}
+        <button
+          onClick={() => onStart({ mode: 'ai', sub: 'free' })}
+          className="group text-left p-5 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Swords
+              size={18}
+              strokeWidth={1.4}
+              className="text-amber-200/70 group-hover:text-amber-100 transition-colors"
+            />
+            <div className="latin-display italic text-amber-200/50 text-[10px] tracking-[0.3em] uppercase">
+              {t.titleFreeLabel}
+            </div>
+          </div>
+          <h3 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-wider mb-2">
+            {t.titleFreeHeading}
+          </h3>
+          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4">
+            {t.titleFreeDesc}
+          </p>
+          <div className="jp-display italic text-amber-200/45 text-[11px]">
+            {t.titleFreeMeta}
+          </div>
+        </button>
+
+        {/* Two-player mode card */}
+        <button
+          onClick={() => onStart({ mode: 'human' })}
+          className="group text-left p-5 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Users
+              size={18}
+              strokeWidth={1.4}
+              className="text-amber-200/70 group-hover:text-amber-100 transition-colors"
+            />
+            <div className="latin-display italic text-amber-200/50 text-[10px] tracking-[0.3em] uppercase">
+              {t.titleTwoPlayersLabel}
+            </div>
+          </div>
+          <h3 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-wider mb-2">
+            {t.titleTwoPlayersHeading}
+          </h3>
+          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4">
+            {t.titleTwoPlayersDesc}
+          </p>
+          <div className="jp-display italic text-amber-200/45 text-[11px]">
+            {t.titleTwoPlayersMeta}
+          </div>
+        </button>
+      </div>
+
+      {/* Footer hint */}
+      <div className="relative latin-display italic text-amber-200/30 text-[10px] tracking-[0.3em] uppercase">
+        {t.titleFooterHint}
+      </div>
+    </div>
+  );
+}
