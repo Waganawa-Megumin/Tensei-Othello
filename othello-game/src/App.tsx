@@ -1450,6 +1450,72 @@ export default function App() {
               ? COMPUTERS.find((c) => c.level === storyProgress + 1)
               : null;
             const playedChapter = justAdvanced ? storyProgress : storyProgress + 1;
+            const isGameOverScreen =
+              isStoryMode &&
+              activeSlot !== null &&
+              lives === 0 &&
+              (lastResult === 'loss' || lastResult === 'resign');
+
+            if (isGameOverScreen) {
+              return (
+                <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">
+                  <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full text-center rounded-sm">
+                    <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-red-300/80">
+                      — {t.gameOverScreenLabel} —
+                    </div>
+                    <h2
+                      className="jp-display text-4xl md:text-5xl font-bold mb-6 tracking-[0.18em] text-red-200/95"
+                      style={{ textShadow: '0 0 18px rgba(220, 80, 80, 0.35)' }}
+                    >
+                      {t.gameOverScreenTitle}
+                    </h2>
+
+                    <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line">
+                      {t.gameOverScreenProse}
+                    </p>
+
+                    <div className="flex items-center justify-center gap-2 mb-5 latin-display italic text-red-300/85 text-xs tracking-wider">
+                      <span>{t.livesLabel}:</span>
+                      <span className="text-red-200/95 tabular-nums text-lg">♥ 0</span>
+                    </div>
+
+                    {gameMode === 'ai' && kifu.length > 0 && (
+                      <div className="flex justify-center mt-3 mb-3">
+                        <button onClick={startReview} className="btn">
+                          {t.reviewMatchButton}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-2 mt-4">
+                      <button
+                        onClick={() => void resetStoryProgress()}
+                        className="btn btn-active"
+                      >
+                        {t.gameOverResetSave}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSlotPickerOpen(true);
+                        }}
+                        className="btn"
+                      >
+                        {t.slotSwitch}
+                      </button>
+                      <button onClick={reset} className="btn">
+                        {t.gameOverTryAgainNoLives}
+                      </button>
+                      <button
+                        onClick={() => setScreen('title')}
+                        className="btn"
+                      >
+                        {t.gameOverBackToTitle}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">

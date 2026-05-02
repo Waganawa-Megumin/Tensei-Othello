@@ -171,6 +171,14 @@ export interface Messages {
   slotChooseFirst: string;
   livesLabel: string;
   livesGameOverWarning: string;
+
+  // Game over (lives = 0) screen
+  gameOverScreenLabel: string;
+  gameOverScreenTitle: string;
+  gameOverScreenProse: string;
+  gameOverResetSave: string;
+  gameOverBackToTitle: string;
+  gameOverTryAgainNoLives: string;
 }
 
 export const ja: Messages = {
@@ -356,6 +364,15 @@ export const ja: Messages = {
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
   livesGameOverWarning: '残機がありません。次に勝つと 1 機回復します。',
+
+  gameOverScreenLabel: 'Game Over',
+  gameOverScreenTitle: 'ゲームオーバー',
+  gameOverScreenProse: `残機が尽きた。
+ここまでの道のりは記録されている——
+やり直すか、別の道を歩むか、君の選択だ。`,
+  gameOverResetSave: 'セーブをリセット',
+  gameOverBackToTitle: 'タイトルへ戻る',
+  gameOverTryAgainNoLives: '残機なしで再挑戦',
 };
 
 export const en: Messages = {
@@ -542,6 +559,15 @@ your journey on the board reaches its close.`,
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
   livesGameOverWarning: 'No lives left. Win the next match to recover one.',
+
+  gameOverScreenLabel: 'Game Over',
+  gameOverScreenTitle: 'GAME OVER',
+  gameOverScreenProse: `Your lives are spent.
+Your road so far is recorded —
+will you try again, or walk a different path?`,
+  gameOverResetSave: 'Reset save',
+  gameOverBackToTitle: 'Back to title',
+  gameOverTryAgainNoLives: 'Retry without lives',
 };
 
 export const messages: Record<Locale, Messages> = { ja, en };
