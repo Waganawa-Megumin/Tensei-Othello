@@ -1956,6 +1956,49 @@ export default function App() {
                   </div>
                 </section>
 
+                {/* Save slot — story mode only */}
+                {gameMode === 'ai' && aiMode === 'story' && (
+                  <section className="mb-6">
+                    <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                      {t.slotPickerTitle}
+                      <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                        — {t.slotPickerSubtitle}
+                      </span>
+                    </h3>
+                    {activeSlot ? (
+                      <div className="px-3 py-2.5 bg-amber-200/[0.04] border border-amber-200/20 rounded-sm flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="jp-display text-amber-100/95 text-sm truncate">
+                            {activeSlot.name}
+                          </div>
+                          <div className="jp-display text-amber-200/65 text-[11px] mt-0.5">
+                            {t.slotProgress(activeSlot.storyProgress)} ・ ♥ {activeSlot.lives}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSettingsOpen(false);
+                            setSlotPickerOpen(true);
+                          }}
+                          className="btn text-xs px-3 py-1.5"
+                        >
+                          {t.slotSwitch}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setSettingsOpen(false);
+                          setSlotPickerOpen(true);
+                        }}
+                        className="btn w-full"
+                      >
+                        {t.slotChooseFirst}
+                      </button>
+                    )}
+                  </section>
+                )}
+
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
                     {t.protagonist}
