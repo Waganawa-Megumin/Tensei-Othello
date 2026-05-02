@@ -152,6 +152,25 @@ export interface Messages {
   reviewRegenerate: string;
   reviewError: (message: string) => string;
   reviewEmpty: string;
+
+  // Save slots (story mode)
+  slotPickerTitle: string;
+  slotPickerSubtitle: string;
+  slotPickerHint: string;
+  slotEmpty: string;
+  slotProgress: (cleared: number) => string;
+  slotLives: (n: number) => string;
+  slotLastPlayed: string;
+  slotDefaultName: (n: number) => string;
+  slotRename: string;
+  slotReset: string;
+  slotResetConfirm: string;
+  slotSwitch: string;
+  slotInUseFooter: (name: string, lives: number) => string;
+  slotSelect: string;
+  slotChooseFirst: string;
+  livesLabel: string;
+  livesGameOverWarning: string;
 }
 
 export const ja: Messages = {
@@ -319,6 +338,24 @@ export const ja: Messages = {
   reviewRegenerate: '再生成',
   reviewError: (message) => `レビューを取得できませんでした：${message}`,
   reviewEmpty: '棋譜が空のためレビューできません。',
+
+  slotPickerTitle: 'セーブを選ぶ',
+  slotPickerSubtitle: 'Choose a save',
+  slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
+  slotEmpty: '未使用',
+  slotProgress: (cleared) => `第${Math.min(cleared + 1, 20)}章 まで進行（${cleared}/20 クリア）`,
+  slotLives: (n) => `残機 ${n}`,
+  slotLastPlayed: '最終プレイ',
+  slotDefaultName: (n) => `セーブ ${n}`,
+  slotRename: '名前を変更',
+  slotReset: 'このセーブをリセット',
+  slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
+  slotSwitch: 'セーブを変更',
+  slotInUseFooter: (name, lives) => `セーブ：${name}（残機 ${lives}）`,
+  slotSelect: '選ぶ',
+  slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
+  livesLabel: '残機',
+  livesGameOverWarning: '残機がありません。次に勝つと 1 機回復します。',
 };
 
 export const en: Messages = {
@@ -486,6 +523,25 @@ your journey on the board reaches its close.`,
   reviewRegenerate: 'Regenerate',
   reviewError: (message) => `Could not fetch the review: ${message}`,
   reviewEmpty: 'No moves recorded — nothing to review.',
+
+  slotPickerTitle: 'Choose a Save',
+  slotPickerSubtitle: 'Save Slots',
+  slotPickerHint: 'Story progress lives in one of 10 saves. Each save has independent progress, lives and stats.',
+  slotEmpty: 'Unused',
+  slotProgress: (cleared) => `Up to Chapter ${Math.min(cleared + 1, 20)} (${cleared}/20 cleared)`,
+  slotLives: (n) => `${n} lives`,
+  slotLastPlayed: 'Last played',
+  slotDefaultName: (n) => `Save ${n}`,
+  slotRename: 'Rename',
+  slotReset: 'Reset this save',
+  slotResetConfirm:
+    'This wipes the save’s progress, stats and lives. Continue?',
+  slotSwitch: 'Switch save',
+  slotInUseFooter: (name, lives) => `Save: ${name} (${lives} lives)`,
+  slotSelect: 'Select',
+  slotChooseFirst: 'Pick a save before starting the story.',
+  livesLabel: 'Lives',
+  livesGameOverWarning: 'No lives left. Win the next match to recover one.',
 };
 
 export const messages: Record<Locale, Messages> = { ja, en };

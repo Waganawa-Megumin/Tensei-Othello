@@ -40,10 +40,8 @@ import {
 import { useAiWorker } from './hooks/useAiWorker';
 import {
   deleteSlot as storageDeleteSlot,
-  getStoryProgress,
   listSlots,
   saveSlot as storageSaveSlot,
-  setStoryProgress as storageSetStoryProgress,
   type AiMode,
   type GameMode,
   type MoveRecord,
@@ -52,7 +50,18 @@ import {
 import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
 import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
+import { SlotPicker } from './components/SlotPicker';
 import { streamReview, type StreamMessageHandle } from './services/claude';
+import {
+  defaultSlot,
+  getSlots,
+  getActiveSlotId,
+  setActiveSlotId,
+  resetSlot as resetStoredSlot,
+  recordSlotResult,
+  recordFreeResult,
+  type SaveSlot,
+} from './storage/saveSlots';
 
 type Screen = 'title' | 'game';
 
@@ -426,8 +435,22 @@ export default function App() {
   const [computerChar, setComputerChar] = useState(0);
   const [level, setLevel] = useState(1);
   const [aiMode, setAiMode] = useState<AiMode>('story');
-  const [storyProgress, setStoryProgress] = useState(0);
-  const [storyJustAdvanced, setStoryJustAdvanced] = useState(false);
+  // Save-slot state (story mode). Slots[] is the canonical store; the
+  // legacy `storyProgress` and `lives` values are derived from the
+  // active slot below.
+  const [slots, setSlots] = useState<SaveSlot[]>(() =>
+    Array.from({ length: 10 }, (_, i) => defaultSlot(i + 1)),
+  );
+  const [activeSlotId, setActiveSlotIdState] = useState<number | null>(null);
+  const [slotPickerOpen, setSlotPickerOpen] = useState(false);
+  /** Set once per gameOver to prevent double-recording stats. */
+  const [resultRecorded, setResultRecorded] = useState(false);
+  /** Last recorded result, used by the gameOver modal to know whether
+   *  to show "Next chapter" vs "Try again". Set synchronously when
+   *  gameOver fires; persists until the next reset. */
+  const [lastResult, setLastResult] = useState<
+    'win' | 'loss' | 'draw' | 'resign' | null
+  >(null);
 
   // Kifu and modals
   const [kifu, setKifu] = useState<MoveRecord[]>([]);
@@ -474,6 +497,13 @@ export default function App() {
     [locale],
   );
 
+  const activeSlot = useMemo(
+    () => (activeSlotId ? slots.find((s) => s.id === activeSlotId) ?? null : null),
+    [slots, activeSlotId],
+  );
+  const storyProgress = activeSlot?.storyProgress ?? 0;
+  const lives = activeSlot?.lives ?? 0;
+
   const validMoves = useMemo(() => getValidMoves(board, currentColor), [board, currentColor]);
   const validMoveMap = useMemo(() => {
     const m = new Map<string, ValidMove>();
@@ -492,11 +522,13 @@ export default function App() {
 
   /* ----- Effects ----- */
 
-  // Load persisted story progress on mount
+  // Load persisted save slots + active slot id on mount.
   useEffect(() => {
     let cancelled = false;
-    getStoryProgress().then((p) => {
-      if (!cancelled) setStoryProgress(p);
+    Promise.all([getSlots(), getActiveSlotId()]).then(([loaded, id]) => {
+      if (cancelled) return;
+      setSlots(loaded);
+      setActiveSlotIdState(id);
     });
     return () => {
       cancelled = true;
@@ -568,22 +600,61 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo]);
 
-  // Advance story progress on player win in story mode
+  // Record the result once gameOver fires. Story matches update the
+  // active slot (advancing progress on a win, deducting a life on a
+  // loss). Free matches feed the global free-stats bucket. Two-player
+  // matches are not recorded.
   useEffect(() => {
-    if (
-      gameOver &&
-      !storyJustAdvanced &&
-      aiMode === 'story' &&
-      gameMode === 'ai' &&
-      storyProgress < 20 &&
-      counts.black > counts.white
-    ) {
-      const newP = storyProgress + 1;
-      setStoryProgress(newP);
-      void storageSetStoryProgress(newP);
-      setStoryJustAdvanced(true);
+    if (!gameOver || resultRecorded) return;
+    if (gameMode !== 'ai') {
+      // Two-player: nothing to record, but mark as handled to keep the
+      // gate logic simple.
+      setResultRecorded(true);
+      return;
     }
-  }, [gameOver, aiMode, gameMode, storyProgress, storyJustAdvanced, counts.black, counts.white]);
+    // Determine the result from the human's (Black's) perspective.
+    let result: 'win' | 'loss' | 'draw' | 'resign';
+    if (resigned !== null) {
+      // Always counted as resign (the resigner is always Black in AI mode).
+      result = 'resign';
+    } else if (counts.black > counts.white) {
+      result = 'win';
+    } else if (counts.black < counts.white) {
+      result = 'loss';
+    } else {
+      result = 'draw';
+    }
+    setLastResult(result);
+    const opponentLevel = COMPUTERS[computerChar].level;
+    const isStory = aiMode === 'story';
+    if (isStory && activeSlotId !== null) {
+      void recordSlotResult({
+        slotId: activeSlotId,
+        result,
+        opponentLevel,
+        isStory: true,
+      }).then(setSlots);
+    } else if (!isStory) {
+      void recordFreeResult({ result, opponentLevel });
+    }
+    setResultRecorded(true);
+  }, [
+    gameOver,
+    resultRecorded,
+    aiMode,
+    gameMode,
+    counts.black,
+    counts.white,
+    resigned,
+    activeSlotId,
+    computerChar,
+  ]);
+
+  // Whenever a fresh game starts (kifu cleared, board reset) clear the
+  // recorded-result gate so the next gameOver records again.
+  useEffect(() => {
+    if (kifu.length === 0 && !gameOver) setResultRecorded(false);
+  }, [kifu.length, gameOver]);
 
   // Cancel hint when turn changes
   useEffect(() => {
@@ -599,6 +670,8 @@ export default function App() {
       if (reviewOpen) {
         reviewHandleRef.current?.abort();
         setReviewOpen(false);
+      } else if (slotPickerOpen) {
+        setSlotPickerOpen(false);
       } else if (settingsOpen) {
         setSettingsOpen(false);
       } else if (kifuOpen) {
@@ -612,7 +685,7 @@ export default function App() {
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [settingsOpen, kifuOpen, infoOpen, screen, reviewOpen]);
+  }, [settingsOpen, kifuOpen, infoOpen, screen, reviewOpen, slotPickerOpen]);
 
   // Push a history entry whenever a new layer opens, so the back button
   // has something to pop. We compare against the previous depth to avoid
@@ -624,12 +697,13 @@ export default function App() {
       (settingsOpen ? 1 : 0) +
       (kifuOpen ? 1 : 0) +
       (infoOpen ? 1 : 0) +
-      (reviewOpen ? 1 : 0);
+      (reviewOpen ? 1 : 0) +
+      (slotPickerOpen ? 1 : 0);
     if (depth > layerDepthRef.current) {
       window.history.pushState({ depth }, '');
     }
     layerDepthRef.current = depth;
-  }, [screen, settingsOpen, kifuOpen, infoOpen, reviewOpen]);
+  }, [screen, settingsOpen, kifuOpen, infoOpen, reviewOpen, slotPickerOpen]);
 
   /* ----- Actions ----- */
 
@@ -677,7 +751,7 @@ export default function App() {
     setAiThinking(false);
     setHistory([]);
     setHintMove(null);
-    setStoryJustAdvanced(false);
+    setLastResult(null);
     setKifu([]);
     setResigned(null);
     ai.cancel();
@@ -706,6 +780,12 @@ export default function App() {
     if (selection.mode === 'human') {
       setGameMode('human');
     } else {
+      // Story mode requires an active slot; otherwise open the picker
+      // and let the user pick before entering the game.
+      if (selection.sub === 'story' && activeSlotId === null) {
+        setSlotPickerOpen(true);
+        return;
+      }
       setGameMode('ai');
       setAiMode(selection.sub);
     }
@@ -713,10 +793,23 @@ export default function App() {
     setScreen('game');
   }
 
-  function resetStoryProgress() {
-    setStoryProgress(0);
-    setStoryJustAdvanced(false);
-    void storageSetStoryProgress(0);
+  /** Pick (or switch) the active save slot, then jump straight into
+   *  story mode with that slot. */
+  function selectSlot(id: number) {
+    setActiveSlotIdState(id);
+    void setActiveSlotId(id);
+    setSlotPickerOpen(false);
+    setGameMode('ai');
+    setAiMode('story');
+    reset();
+    setScreen('game');
+  }
+
+  /** Wipes the active slot back to defaults (keeps name + avatar). */
+  async function resetStoryProgress() {
+    if (activeSlotId === null) return;
+    const next = await resetStoredSlot(activeSlotId);
+    setSlots(next);
     reset();
   }
 
@@ -801,7 +894,7 @@ export default function App() {
     setHintMove(null);
     setPassInfo(null);
     setFlipping({});
-    setStoryJustAdvanced(false);
+    setLastResult(null);
     setResigned(null);
     setKifuOpen(false);
     ai.cancel();
@@ -1131,6 +1224,16 @@ export default function App() {
           t={t}
           locale={locale}
           onLocaleChange={setLocale}
+          activeSlot={
+            activeSlot
+              ? {
+                  name: activeSlot.name,
+                  lives: activeSlot.lives,
+                  storyProgress: activeSlot.storyProgress,
+                }
+              : null
+          }
+          onSwitchSlot={() => setSlotPickerOpen(true)}
         />
       )}
 
@@ -1321,7 +1424,7 @@ export default function App() {
           {/* Game over modal */}
           {gameOver && !settingsOpen && (() => {
             const isStoryMode = aiMode === 'story' && gameMode === 'ai';
-            const justAdvanced = isStoryMode && storyJustAdvanced;
+            const justAdvanced = isStoryMode && lastResult === 'win';
             const justCompletedStory = justAdvanced && storyProgress >= 20;
             const showNextChapter = justAdvanced && storyProgress < 20;
             const nextOpp = showNextChapter
@@ -1369,6 +1472,20 @@ export default function App() {
                     <p className="jp-display text-amber-200/60 text-sm italic mb-5">
                       {t.storyEncouragement}
                     </p>
+                  )}
+
+                  {isStoryMode && activeSlot && (
+                    <div className="flex items-center justify-center gap-2 mb-3 latin-display italic text-amber-200/65 text-xs tracking-wider">
+                      <span>{t.livesLabel}:</span>
+                      <span className="text-amber-100/95 tabular-nums text-base">
+                        ♥ {lives}
+                      </span>
+                      {lives === 0 && (
+                        <span className="jp-display text-amber-200/55 text-[10px] ml-2">
+                          {t.livesGameOverWarning}
+                        </span>
+                      )}
+                    </div>
                   )}
 
                   <div className="flex justify-center items-center gap-6 md:gap-8 my-6">
@@ -2135,6 +2252,16 @@ export default function App() {
         </div>
       </div>
       )}
+
+      <SlotPicker
+        open={slotPickerOpen}
+        slots={slots}
+        activeSlotId={activeSlotId}
+        onSelect={selectSlot}
+        onClose={() => setSlotPickerOpen(false)}
+        onSlotsChanged={setSlots}
+        t={t}
+      />
     </>
   );
 }
