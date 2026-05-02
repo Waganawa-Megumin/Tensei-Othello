@@ -142,6 +142,28 @@ export async function deleteSlot(key: string): Promise<void> {
   }
 }
 
+/**
+ * Patch an existing slot in place. Used by the auto-save flow to attach
+ * a freshly generated review to the slot that was created on gameOver
+ * without bumping the timestamp or duplicating the kifu. Silently no-op
+ * if the slot is missing or unparseable.
+ */
+export async function updateSlot(
+  key: string,
+  patch: Partial<Omit<PersistedSlot, 'schemaVersion' | 'timestamp'>>,
+): Promise<void> {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return;
+    const existing = JSON.parse(raw) as unknown;
+    if (typeof existing !== 'object' || existing === null) return;
+    const updated = { ...(existing as Record<string, unknown>), ...patch };
+    window.localStorage.setItem(key, JSON.stringify(updated));
+  } catch {
+    /* ignore */
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Migration                                                           */
 /* ------------------------------------------------------------------ */

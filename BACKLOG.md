@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-02 by `claude/othello-game-sHVBZ` (v0.18.1)
+Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.19.0)
 
 ---
 
@@ -44,6 +44,17 @@ Last updated: 2026-05-02 by `claude/othello-game-sHVBZ` (v0.18.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **棋譜・レビュー自動保存 + 注釈ハイライト強化 + GameOver から棋譜
+      ライブラリへ** — completed: 2026-05-02 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) — 対局終了
+      時に棋譜を自動保存し、レビュー生成完了時にも同じスロットへ自動で
+      `reviewAnnotations` を patch（`updateSlot` 追加）。kifu モーダルから
+      手動保存フォームを撤去、レビューモーダルから「保存」ボタンも撤去。
+      QUALITY_STYLES のグローを inset+outer 二層化、`.quality-ring` を
+      パルス付きで重ねて視認性を大幅向上。loadedKifuView 中の
+      `last-move-ring` も明色＋強パルスにモード切替。GameOver モーダル
+      （通常版・lives0 版）に「対戦棋譜を読み込む」ボタンと「タイトル
+      へ戻る」ボタンを追加。`v0.19.0`
 - [x] **棋譜読込時のコンパクト化 + 悪手/好手ジャンプボタン** — completed:
       2026-05-02 — by: `claude/othello-game-sHVBZ` — commit: (next push) —
       PlayerPanel に compact prop（quote 非表示、py 縮小、avatar sm）、

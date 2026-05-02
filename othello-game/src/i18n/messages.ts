@@ -210,6 +210,10 @@ export interface Messages {
   gameOverResetSave: string;
   gameOverBackToTitle: string;
   gameOverTryAgainNoLives: string;
+  gameOverViewKifu: string;
+
+  // Auto-save / auto-attach indicators
+  kifuLibraryHint: string;
 }
 
 export const ja: Messages = {
@@ -435,6 +439,9 @@ export const ja: Messages = {
   gameOverResetSave: 'セーブをリセット',
   gameOverBackToTitle: 'タイトルへ戻る',
   gameOverTryAgainNoLives: '残機なしで再挑戦',
+  gameOverViewKifu: '対戦棋譜を読み込む',
+
+  kifuLibraryHint: '対局終了時に自動保存されます。レビューを生成すると同じ棋譜に紐付きます。',
 };
 
 export const en: Messages = {
@@ -661,6 +668,9 @@ will you try again, or walk a different path?`,
   gameOverResetSave: 'Reset save',
   gameOverBackToTitle: 'Back to title',
   gameOverTryAgainNoLives: 'Retry without lives',
+  gameOverViewKifu: 'View saved kifu',
+
+  kifuLibraryHint: 'Matches are auto-saved when they end. Generating a review attaches it to the same kifu.',
 };
 
 export const messages: Record<Locale, Messages> = { ja, en };

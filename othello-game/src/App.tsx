@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ChangeEvent,
 } from 'react';
 import {
   AlertTriangle,
@@ -52,6 +51,7 @@ import {
   deleteSlot as storageDeleteSlot,
   listSlots,
   saveSlot as storageSaveSlot,
+  updateSlot as storageUpdateSlot,
   type AiMode,
   type GameMode,
   type MoveRecord,
@@ -206,41 +206,57 @@ interface QualityStyle {
   badge: string;
   /** Tailwind classes for the cell ring shown on the annotated square. */
   ring: string;
-  /** Hex glow used in the cell ring's box-shadow (more visible than the
-   *  ring on busy boards). */
+  /** Multi-layer box-shadow applied to the annotated cell. Combines an
+   *  inner colored rim with a wide outer halo so the highlight is
+   *  obvious against the green felt and dark pieces alike. */
   glow: string;
+  /** Solid color used as the `currentColor` for the `.quality-ring`
+   *  overlay (also drives the badge dot). */
+  ringColor: string;
 }
 
 const QUALITY_STYLES: Record<MoveQuality, QualityStyle> = {
   brilliant: {
     badge: 'bg-amber-300/25 text-amber-100 border-amber-300/70',
     ring: 'ring-2 ring-amber-300/85',
-    glow: '0 0 12px rgba(252, 211, 77, 0.85)',
+    glow:
+      'inset 0 0 0 3px rgba(252, 211, 77, 0.7), 0 0 26px 7px rgba(252, 211, 77, 0.75)',
+    ringColor: '#fcd34d',
   },
   good: {
     badge: 'bg-emerald-400/20 text-emerald-100 border-emerald-400/60',
     ring: 'ring-2 ring-emerald-400/85',
-    glow: '0 0 12px rgba(74, 222, 128, 0.75)',
+    glow:
+      'inset 0 0 0 3px rgba(74, 222, 128, 0.65), 0 0 24px 6px rgba(74, 222, 128, 0.65)',
+    ringColor: '#4ade80',
   },
   neutral: {
     badge: 'bg-zinc-500/20 text-zinc-200 border-zinc-500/45',
     ring: 'ring-2 ring-zinc-300/60',
-    glow: '0 0 8px rgba(180, 180, 180, 0.55)',
+    glow:
+      'inset 0 0 0 2px rgba(212, 212, 216, 0.55), 0 0 18px 4px rgba(212, 212, 216, 0.5)',
+    ringColor: '#d4d4d8',
   },
   inaccuracy: {
     badge: 'bg-yellow-500/20 text-yellow-100 border-yellow-500/55',
     ring: 'ring-2 ring-yellow-400/85',
-    glow: '0 0 12px rgba(234, 179, 8, 0.75)',
+    glow:
+      'inset 0 0 0 3px rgba(234, 179, 8, 0.65), 0 0 24px 6px rgba(234, 179, 8, 0.65)',
+    ringColor: '#facc15',
   },
   mistake: {
     badge: 'bg-orange-500/25 text-orange-100 border-orange-500/65',
     ring: 'ring-2 ring-orange-500/90',
-    glow: '0 0 12px rgba(249, 115, 22, 0.8)',
+    glow:
+      'inset 0 0 0 3px rgba(249, 115, 22, 0.7), 0 0 26px 7px rgba(249, 115, 22, 0.7)',
+    ringColor: '#f97316',
   },
   blunder: {
     badge: 'bg-red-500/30 text-red-100 border-red-500/75',
     ring: 'ring-2 ring-red-500/90',
-    glow: '0 0 14px rgba(239, 68, 68, 0.85)',
+    glow:
+      'inset 0 0 0 3px rgba(239, 68, 68, 0.75), 0 0 30px 8px rgba(239, 68, 68, 0.8)',
+    ringColor: '#ef4444',
   },
 };
 
@@ -601,7 +617,17 @@ export default function App() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [kifuOpen, setKifuOpen] = useState(false);
   const [savedSlots, setSavedSlots] = useState<SavedSlot[]>([]);
-  const [kifuName, setKifuName] = useState('');
+  /**
+   * Slot key associated with the current game (or the loaded kifu being
+   * reviewed). Set when:
+   *  - the gameOver auto-save effect creates a fresh slot,
+   *  - or `loadKifuMoves` parks the user on a previously-saved slot.
+   * Cleared by `reset()` and when the user starts playing on top of a
+   * loaded position (so the original slot isn't overwritten). When a
+   * Claude review completes, it is patched into this slot rather than
+   * creating a duplicate.
+   */
+  const currentSlotKeyRef = useRef<string | null>(null);
 
   // UI state
   const [hintMove, setHintMove] = useState<Move | null>(null);
@@ -907,6 +933,52 @@ export default function App() {
     if (kifu.length === 0 && !gameOver) setResultRecorded(false);
   }, [kifu.length, gameOver]);
 
+  // Auto-save the kifu when the game ends. Skipped while reviewing a
+  // loaded kifu (already on disk) and while no slot is parked. Once the
+  // saved key is recorded into `currentSlotKeyRef`, the post-game review
+  // flow patches the same slot in place instead of creating a duplicate.
+  useEffect(() => {
+    if (!gameOver || loadedKifuView || kifu.length === 0) return;
+    if (currentSlotKeyRef.current) return;
+    const ts = new Date();
+    const stamp = `${ts.getMonth() + 1}/${ts.getDate()} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
+    const oppName = opponentSnapshot?.name ?? COMPUTERS[computerChar].name;
+    const oppLevel = opponentSnapshot?.level ?? COMPUTERS[computerChar].level;
+    const oppIdx = COMPUTERS.findIndex((c) => c.level === oppLevel);
+    const isStory = aiMode === 'story' && gameMode === 'ai';
+    const baseName = isStory
+      ? `第${oppLevel}章 vs ${oppName}`
+      : gameMode === 'ai'
+        ? `vs ${oppName} Lv.${oppLevel}`
+        : `${AVATARS[p1Avatar].name} vs ${AVATARS[p2Avatar].name}`;
+    const name = `${baseName} (${stamp})`;
+    const result: Color | typeof EMPTY | null =
+      resigned !== null
+        ? opponent(resigned)
+        : counts.black > counts.white
+          ? BLACK
+          : counts.black < counts.white
+            ? WHITE
+            : EMPTY;
+    void storageSaveSlot({
+      name,
+      gameMode,
+      aiMode,
+      computerChar: oppIdx >= 0 ? oppIdx : computerChar,
+      level: oppLevel,
+      kifu,
+      storyProgress,
+      counts: { black: counts.black, white: counts.white },
+      result,
+    }).then((key) => {
+      if (key) {
+        currentSlotKeyRef.current = key;
+        loadSavedSlots();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameOver, loadedKifuView, kifu.length]);
+
   // Cancel hint when turn changes
   useEffect(() => {
     setHintMove(null);
@@ -993,7 +1065,13 @@ export default function App() {
     // First user click after loading a kifu means they want to resume
     // play, not just review — exit the loaded-view gate so subsequent
     // gameOver flow records normally.
-    if (loadedKifuView) setLoadedKifuView(false);
+    if (loadedKifuView) {
+      setLoadedKifuView(false);
+      // Playing on top of a loaded kifu starts a fresh game; detach
+      // from the original slot so its auto-save record isn't overwritten
+      // when the new game ends.
+      currentSlotKeyRef.current = null;
+    }
     doMove(row, col);
   }
 
@@ -1016,6 +1094,7 @@ export default function App() {
     // inherit the previous match's review markers.
     setReviewAnnotations(null);
     setReviewText('');
+    currentSlotKeyRef.current = null;
     ai.cancel();
   }
 
@@ -1129,33 +1208,6 @@ export default function App() {
     void listSlots().then(setSavedSlots);
   }
 
-  function saveCurrentKifu(name: string) {
-    if (!name) return;
-    const trimmed = name.trim().slice(0, 40);
-    if (!trimmed) return;
-    const result: Color | typeof EMPTY | null = gameOver
-      ? counts.black > counts.white
-        ? BLACK
-        : counts.black < counts.white
-          ? WHITE
-          : EMPTY
-      : null;
-    void storageSaveSlot({
-      name: trimmed,
-      gameMode,
-      aiMode,
-      computerChar,
-      level,
-      kifu,
-      storyProgress,
-      counts: { black: counts.black, white: counts.white },
-      result,
-    }).then(() => {
-      loadSavedSlots();
-      setKifuName('');
-    });
-  }
-
   function deleteSlot(key: string) {
     void storageDeleteSlot(key).then(loadSavedSlots);
   }
@@ -1196,6 +1248,9 @@ export default function App() {
     }
     setLoadedKifuView(true);
     setResultRecorded(true);
+    // Track the slot we're parked on so a freshly-generated review
+    // patches into the same record instead of duplicating it.
+    currentSlotKeyRef.current = slot.key;
     // Park the replay cursor at the final move so the loaded board
     // shows the position the user actually saved. Stepping backward
     // happens via the banner controls.
@@ -1277,6 +1332,21 @@ export default function App() {
         if (reviewHandleRef.current?.abort === handle.abort) {
           setReviewAnnotations(annotations);
           setReviewLoading(false);
+          // Auto-attach the review to the slot the kifu lives in (the
+          // gameOver auto-save record, or the slot the user loaded for
+          // review). The user no longer has to press "save" — same
+          // ergonomic principle as the kifu auto-save.
+          const slotKey = currentSlotKeyRef.current;
+          if (slotKey) {
+            void storageUpdateSlot(slotKey, {
+              reviewAnnotations: annotations,
+              review: undefined,
+            }).then(() => {
+              loadSavedSlots();
+              setReviewSavedFlash(true);
+              window.setTimeout(() => setReviewSavedFlash(false), 2000);
+            });
+          }
         }
       })
       .catch((err: unknown) => {
@@ -1304,55 +1374,6 @@ export default function App() {
     reviewHandleRef.current?.abort();
     reviewHandleRef.current = null;
     setReviewLoading(false);
-  }
-
-  /** Persist the structured (or legacy text) review together with the
-   *  current kifu so the user can revisit it from the Kifu Library
-   *  later. Auto-generates a short name (e.g. "第5章 vs 響") so the
-   *  user doesn't have to type. */
-  function saveReviewWithKifu() {
-    const haveAnnotations = reviewAnnotations !== null;
-    const haveLegacyText = reviewText.trim().length > 0;
-    if (!haveAnnotations && !haveLegacyText) return;
-    if (kifu.length === 0) return;
-    const ts = new Date();
-    const stamp = `${ts.getMonth() + 1}/${ts.getDate()} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
-    // Use the just-defeated opponent (snapshot), not the auto-bumped
-    // current opponent. Falls back to COMPUTERS[computerChar] for
-    // free / two-player matches where the snapshot was never set.
-    const oppName = opponentSnapshot?.name ?? COMPUTERS[computerChar].name;
-    const oppLevel = opponentSnapshot?.level ?? COMPUTERS[computerChar].level;
-    const oppIdx = COMPUTERS.findIndex((c) => c.level === oppLevel);
-    const isStory = aiMode === 'story' && gameMode === 'ai';
-    const baseName = isStory
-      ? `第${oppLevel}章 vs ${oppName}`
-      : gameMode === 'ai'
-        ? `vs ${oppName} Lv.${oppLevel}`
-        : `${AVATARS[p1Avatar].name} vs ${AVATARS[p2Avatar].name}`;
-    const name = `${baseName} (${stamp})`;
-    const result: Color | typeof EMPTY | null = gameOver
-      ? counts.black > counts.white
-        ? BLACK
-        : counts.black < counts.white
-          ? WHITE
-          : EMPTY
-      : null;
-    void storageSaveSlot({
-      name,
-      gameMode,
-      aiMode,
-      computerChar: oppIdx >= 0 ? oppIdx : computerChar,
-      level: oppLevel,
-      kifu,
-      storyProgress,
-      counts: { black: counts.black, white: counts.white },
-      result,
-      review: haveLegacyText ? reviewText : undefined,
-      reviewAnnotations: reviewAnnotations ?? undefined,
-    }).then(() => {
-      setReviewSavedFlash(true);
-      window.setTimeout(() => setReviewSavedFlash(false), 2000);
-    });
   }
 
   /** Open the review modal in read-only mode for a previously saved
@@ -1534,9 +1555,47 @@ export default function App() {
           animation: pulse 2s infinite ease-in-out;
           pointer-events: none;
         }
+        .last-move-ring-loaded {
+          inset: 5%;
+          border-width: 3px;
+          border-color: #f5e8c8;
+          opacity: 1;
+          box-shadow: 0 0 14px 4px rgba(245, 232, 200, 0.45);
+          animation: pulse-bold 1.5s infinite ease-in-out;
+        }
         @keyframes pulse {
           0%, 100% { opacity: 0.35; transform: scale(1); }
           50% { opacity: 0.85; transform: scale(1.04); }
+        }
+        @keyframes pulse-bold {
+          0%, 100% { opacity: 0.7; transform: scale(1); box-shadow: 0 0 12px 3px rgba(245, 232, 200, 0.35); }
+          50% { opacity: 1; transform: scale(1.08); box-shadow: 0 0 20px 6px rgba(245, 232, 200, 0.6); }
+        }
+
+        .quality-ring {
+          position: absolute; inset: 4%;
+          border-radius: 50%;
+          border: 3px solid currentColor;
+          opacity: 0.95;
+          animation: quality-pulse 1.4s infinite ease-in-out;
+          pointer-events: none;
+          z-index: 3;
+        }
+        .quality-ring::after {
+          content: ''; position: absolute; inset: -10%;
+          border-radius: 50%;
+          border: 1.5px solid currentColor;
+          opacity: 0.4;
+          animation: quality-pulse-out 1.4s infinite ease-in-out;
+          pointer-events: none;
+        }
+        @keyframes quality-pulse {
+          0%, 100% { opacity: 0.7; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.07); }
+        }
+        @keyframes quality-pulse-out {
+          0%, 100% { opacity: 0.2; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.18); }
         }
 
         .move-hint {
@@ -1783,7 +1842,19 @@ export default function App() {
                                 />
                               )}
                               {cell === EMPTY && isValid && <div className="move-hint" />}
-                              {isLast && !cellAnnotation && <div className="last-move-ring" />}
+                              {cellAnnotation && qStyle && (
+                                <div
+                                  className="quality-ring"
+                                  style={{ color: qStyle.ringColor }}
+                                />
+                              )}
+                              {isLast && !cellAnnotation && (
+                                <div
+                                  className={`last-move-ring${
+                                    loadedKifuView ? ' last-move-ring-loaded' : ''
+                                  }`}
+                                />
+                              )}
                               {isHint && <div className="hint-marker" />}
                             </div>
                           );
@@ -2046,9 +2117,18 @@ export default function App() {
                     </div>
 
                     {gameMode === 'ai' && kifu.length > 0 && (
-                      <div className="flex justify-center mt-3 mb-3">
+                      <div className="flex justify-center gap-2 mt-3 mb-3 flex-wrap">
                         <button onClick={startReview} className="btn">
                           {t.reviewMatchButton}
+                        </button>
+                        <button
+                          onClick={() => {
+                            loadSavedSlots();
+                            setKifuOpen(true);
+                          }}
+                          className="btn"
+                        >
+                          {t.gameOverViewKifu}
                         </button>
                       </div>
                     )}
@@ -2247,14 +2327,23 @@ export default function App() {
                   )}
 
                   {gameMode === 'ai' && kifu.length > 0 && (
-                    <div className="flex justify-center mt-3 mb-1">
+                    <div className="flex justify-center gap-2 mt-3 mb-1 flex-wrap">
                       <button onClick={startReview} className="btn">
                         {t.reviewMatchButton}
+                      </button>
+                      <button
+                        onClick={() => {
+                          loadSavedSlots();
+                          setKifuOpen(true);
+                        }}
+                        className="btn"
+                      >
+                        {t.gameOverViewKifu}
                       </button>
                     </div>
                   )}
 
-                  <div className="flex justify-center gap-2 mt-4">
+                  <div className="flex justify-center gap-2 mt-4 flex-wrap">
                     {justCompletedStory ? (
                       <button onClick={resetStoryProgress} className="btn">
                         {t.retryStory}
@@ -2268,6 +2357,12 @@ export default function App() {
                         {t.oneMore}
                       </button>
                     )}
+                    <button
+                      onClick={() => setScreen('title')}
+                      className="btn"
+                    >
+                      {t.gameOverBackToTitle}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2435,41 +2530,9 @@ export default function App() {
                   </button>
                 </div>
 
-                <section className="mb-6">
-                  <h3 className="jp-display text-amber-100/90 text-sm tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    {t.saveCurrent}
-                  </h3>
-                  <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm mb-3 text-xs jp-display text-amber-100/80 leading-relaxed">
-                    {kifu.length === 0
-                      ? t.saveHintEmpty
-                      : t.saveHintInfo(
-                          kifu.length,
-                          gameMode === 'human'
-                            ? t.modeHuman
-                            : aiMode === 'story'
-                              ? t.modeStoryProgress(Math.min(storyProgress + 1, 20)) +
-                                ` vs ${COMPUTERS[computerChar].name}`
-                              : `vs ${COMPUTERS[computerChar].name} Lv.${level}`,
-                        )}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={kifuName}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setKifuName(e.target.value)}
-                      placeholder={t.inputPlaceholder}
-                      maxLength={40}
-                      className="jp-display flex-1 px-3 py-2 bg-zinc-950/70 border border-amber-200/20 rounded-sm text-amber-100 text-sm placeholder:text-amber-200/55 focus:border-amber-200/60 focus:outline-none"
-                    />
-                    <button
-                      onClick={() => saveCurrentKifu(kifuName)}
-                      disabled={!kifuName.trim() || kifu.length === 0}
-                      className="btn"
-                    >
-                      {t.saveButton}
-                    </button>
-                  </div>
-                </section>
+                <div className="px-3 py-2.5 bg-amber-200/[0.04] border border-amber-200/15 rounded-sm mb-5 text-xs jp-display text-amber-100/80 leading-relaxed">
+                  {t.kifuLibraryHint}
+                </div>
 
                 <section>
                   <h3 className="jp-display text-amber-100/90 text-sm tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
@@ -2715,17 +2778,6 @@ export default function App() {
                         {t.reviewCancel}
                       </button>
                     )}
-                    {!reviewReadOnly &&
-                      !reviewLoading &&
-                      (reviewAnnotations !== null || reviewText.trim().length > 0) &&
-                      !reviewError && (
-                        <button
-                          onClick={saveReviewWithKifu}
-                          className="btn btn-active text-xs px-3 py-1.5"
-                        >
-                          {t.reviewSave}
-                        </button>
-                      )}
                     {!reviewReadOnly &&
                       !reviewLoading &&
                       (reviewError || reviewAnnotations !== null || reviewText.length > 0) && (
