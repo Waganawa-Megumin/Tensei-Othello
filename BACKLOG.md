@@ -19,7 +19,7 @@ Last updated: 2026-05-02 by `claude/othello-game-sHVBZ`
 
 ### P1 — バグ・ブロッカー
 
-なし。Track B（棋譜リプレイ UI）は完了して live に反映済み。
+なし。
 
 ### P2 — 重要な機能改善
 
@@ -44,6 +44,9 @@ Last updated: 2026-05-02 by `claude/othello-game-sHVBZ`
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **棋譜リプレイ UI を盤面下にインライン化 + アイコン化** — completed:
+      2026-05-02 — by: `claude/othello-game-sHVBZ` — commit: (next push) —
+      盤面に被らず、ボタンは全部アイコンのみ。`v0.17.1`
 - [x] **棋譜リプレイビューワー（Track B）** — completed: 2026-05-02 — by:
       `claude/othello-game-sHVBZ` — commit: `34eec4f` — ⏮◀▶⏭ + 手数カウンタ
       + 保存レビュー閲覧ボタン

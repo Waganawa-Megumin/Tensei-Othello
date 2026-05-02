@@ -21,8 +21,10 @@ import {
   Menu,
   RotateCcw,
   ScrollText,
+  Sparkles,
   Trash2,
   Undo2,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -1648,6 +1650,98 @@ export default function App() {
             </div>
           </div>
 
+          {/* Inline replay strip — appears in document flow below the
+              status bar so it never overlaps the board. Icon-only
+              buttons, single row on phones thanks to flex-wrap. */}
+          {loadedKifuView && (() => {
+            const cursor = replayCursor ?? kifu.length;
+            const atStart = cursor <= 0;
+            const atEnd = cursor >= kifu.length;
+            const currentNotation =
+              cursor > 0 && cursor <= kifu.length
+                ? moveToNotation(kifu[cursor - 1]).toUpperCase()
+                : null;
+            const iconBtn =
+              'btn p-2 disabled:opacity-30 disabled:cursor-not-allowed';
+            return (
+              <div className="mt-3 px-2 py-2 rounded-sm border border-amber-200/25 bg-zinc-950/60 flex items-center justify-between gap-2 flex-wrap">
+                <div className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider px-1">
+                  {t.kifuMoveCounter(cursor, kifu.length, currentNotation)}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setReplayCursor(0)}
+                    disabled={atStart}
+                    className={iconBtn}
+                    title={t.replayFirst}
+                    aria-label={t.replayFirst}
+                  >
+                    <ChevronsLeft size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor((c) => Math.max(0, (c ?? kifu.length) - 1))}
+                    disabled={atStart}
+                    className={iconBtn}
+                    title={t.replayPrev}
+                    aria-label={t.replayPrev}
+                  >
+                    <ChevronLeft size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor((c) => Math.min(kifu.length, (c ?? 0) + 1))}
+                    disabled={atEnd}
+                    className={iconBtn}
+                    title={t.replayNext}
+                    aria-label={t.replayNext}
+                  >
+                    <ChevronRight size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor(kifu.length)}
+                    disabled={atEnd}
+                    className={iconBtn}
+                    title={t.replayLast}
+                    aria-label={t.replayLast}
+                  >
+                    <ChevronsRight size={16} strokeWidth={1.5} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1 ml-auto">
+                  {loadedSlotReview && (
+                    <button
+                      onClick={() =>
+                        viewSavedReview(loadedSlotReview.text, loadedSlotReview.savedAt)
+                      }
+                      className={iconBtn}
+                      title={t.reviewViewSaved}
+                      aria-label={t.reviewViewSaved}
+                    >
+                      <ScrollText size={16} strokeWidth={1.5} />
+                    </button>
+                  )}
+                  {gameMode === 'ai' && kifu.length > 0 && (
+                    <button
+                      onClick={startReview}
+                      className={iconBtn}
+                      title={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
+                      aria-label={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
+                    >
+                      <Sparkles size={16} strokeWidth={1.5} />
+                    </button>
+                  )}
+                  <button
+                    onClick={reset}
+                    className={iconBtn}
+                    title={t.kifuViewingClose}
+                    aria-label={t.kifuViewingClose}
+                  >
+                    <X size={16} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="text-center mt-6 latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
             {gameMode === 'human'
               ? t.footerHuman
@@ -1937,96 +2031,9 @@ export default function App() {
             );
           })()}
 
-          {/* Loaded-kifu review banner. Replaces the gameOver modal
-              while a saved kifu is being inspected so the user can:
-              - step through the kifu (replay controls)
-              - see the move counter and current move notation
-              - view the saved Claude review (if any) or generate a new one
-              - close the view to start a fresh game */}
-          {loadedKifuView && !infoOpen && !kifuOpen && !reviewOpen && !settingsOpen && (() => {
-            const cursor = replayCursor ?? kifu.length;
-            const atStart = cursor <= 0;
-            const atEnd = cursor >= kifu.length;
-            const currentNotation =
-              cursor > 0 && cursor <= kifu.length
-                ? moveToNotation(kifu[cursor - 1]).toUpperCase()
-                : null;
-            return (
-              <div className="fixed left-1/2 -translate-x-1/2 bottom-3 z-30 flex flex-col gap-2 px-3 py-2.5 rounded-sm border border-amber-200/30 bg-zinc-950/90 backdrop-blur-sm shadow-lg max-w-[96vw]">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="latin-display italic text-amber-200/70 text-[11px] tracking-[0.25em] uppercase">
-                    {t.kifuViewingLabel}
-                  </span>
-                  <span className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider">
-                    {t.kifuMoveCounter(cursor, kifu.length, currentNotation)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    onClick={() => setReplayCursor(0)}
-                    disabled={atStart}
-                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
-                    title={t.replayFirst}
-                    aria-label={t.replayFirst}
-                  >
-                    <ChevronsLeft size={16} strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => setReplayCursor((c) => Math.max(0, (c ?? kifu.length) - 1))}
-                    disabled={atStart}
-                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
-                    title={t.replayPrev}
-                    aria-label={t.replayPrev}
-                  >
-                    <ChevronLeft size={16} strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => setReplayCursor((c) => Math.min(kifu.length, (c ?? 0) + 1))}
-                    disabled={atEnd}
-                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
-                    title={t.replayNext}
-                    aria-label={t.replayNext}
-                  >
-                    <ChevronRight size={16} strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => setReplayCursor(kifu.length)}
-                    disabled={atEnd}
-                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
-                    title={t.replayLast}
-                    aria-label={t.replayLast}
-                  >
-                    <ChevronsRight size={16} strokeWidth={1.5} />
-                  </button>
-                  <span className="flex-1" />
-                  {loadedSlotReview && (
-                    <button
-                      onClick={() =>
-                        viewSavedReview(loadedSlotReview.text, loadedSlotReview.savedAt)
-                      }
-                      className="btn text-xs px-2.5 py-1.5 inline-flex items-center gap-1"
-                      title={t.reviewViewSaved}
-                    >
-                      <ScrollText size={14} strokeWidth={1.5} />
-                      <span>{t.reviewViewSaved}</span>
-                    </button>
-                  )}
-                  {gameMode === 'ai' && kifu.length > 0 && (
-                    <button
-                      onClick={startReview}
-                      className="btn text-xs px-2.5 py-1.5"
-                      title={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
-                    >
-                      {loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
-                    </button>
-                  )}
-                  <button onClick={reset} className="btn text-xs px-2.5 py-1.5">
-                    {t.kifuViewingClose}
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
+          {/* (Replay strip is now embedded inline below the score bar so
+              it never overlaps the board. See the loadedKifuView block
+              earlier in this file.) */}
 
           {/* Match info modal */}
           {infoOpen && (
