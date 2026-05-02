@@ -10,11 +10,9 @@ function detectInitialLocale(): Locale {
   } catch {
     /* ignore */
   }
-  if (typeof navigator !== 'undefined') {
-    const lang = (navigator.language || '').toLowerCase();
-    if (lang.startsWith('ja')) return 'ja';
-  }
-  return 'en';
+  // Default is Japanese for everyone. EN users will switch via the
+  // title-screen toggle, and that choice persists in localStorage.
+  return 'ja';
 }
 
 export interface UseLocale {
