@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.0)
+Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.1)
 
 ---
 
@@ -23,6 +23,14 @@ Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.0)
 
 ### P2 — 重要な機能改善
 
+- [ ] **章ごとの本格的な物語・エピソード執筆** — 現状 `storyChapters[]`
+      は 1 行のキャラ＋戦法紹介のみ。プロローグ（progress=0）と
+      エンディング（クリア後）はそれぞれ短文プローズあり。各章に
+      対局前後のミニシナリオ（出会い・会話・敗北後/勝利後の余韻）を
+      足すと章ブラウザーが本物の "ストーリービューワー" になる。
+      i18n の `storyChapters` を構造化し（intro / pre-battle dialogue /
+      post-victory / post-defeat）、設定の章カード + GameOver モーダル
+      で表示。
 - [ ] **App.tsx の分割リファクタ** — 単一ファイル ~2300 行。`components/`
       `data/` `lib/` 構成へ。CLAUDE.md セクション 12 に旧設計案あり
 - [ ] **AI 思考中の UI 改善** — 現状「…」だけ。スピナー or アバター揺れ
@@ -44,6 +52,12 @@ Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **設定モーダル下部の二択ボタンを文脈依存で簡素化** — completed:
+      2026-05-02 — by: `claude/othello-ui-autosave-bPnmY` — commit:
+      (next push) — story モードでは bottom row 自体を非表示（章カード
+      の play ボタンに統一）。free / 二人対戦 では「この設定で対局を
+      始める」1 つだけに絞り、「この設定で続ける」を削除。前章 cursor
+      と bottom button の関係が分からなくなる UX 問題を解消。`v0.20.1`
 - [x] **設定画面に章ブラウザー（過去の章を進捗を変えずに閲覧・復習）**
       — completed: 2026-05-02 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — `chapterCursor` を導入。設定モーダル開封時に

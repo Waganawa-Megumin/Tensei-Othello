@@ -3321,20 +3321,28 @@ export default function App() {
                   )}
                 </section>
 
-                <div className="flex justify-end gap-2 pt-2 border-t border-amber-200/15">
-                  <button
-                    onClick={() => {
-                      reset();
-                      setSettingsOpen(false);
-                    }}
-                    className="btn"
-                  >
-                    {t.startNewGame}
-                  </button>
-                  <button onClick={() => setSettingsOpen(false)} className="btn btn-active">
-                    {t.keepSettings}
-                  </button>
-                </div>
+                {/* Bottom action row — only meaningful for free / two-
+                    player setups. In story mode the chapter card already
+                    has its own "この章で対局を始める" button (frontier or
+                    replay), and a top-right close button covers "just
+                    look around". A duplicate "新しい対局" button here was
+                    confusing because the chapter cursor isn't a real
+                    setting — it's a viewer — so users couldn't tell what
+                    cursor + bottom button would do. */}
+                {!(gameMode === 'ai' && aiMode === 'story') && (
+                  <div className="flex justify-end gap-2 pt-2 border-t border-amber-200/15">
+                    <button
+                      onClick={() => {
+                        reset();
+                        setSettingsOpen(false);
+                        setScreen('game');
+                      }}
+                      className="btn btn-active"
+                    >
+                      {t.startNewGame}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
