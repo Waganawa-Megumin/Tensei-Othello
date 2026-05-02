@@ -1,0 +1,17 @@
+{
+  "name": "tensei-othello-proxy",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Cloudflare Workers proxy for the Anthropic API. Hides the API key, allows the PWA / Capacitor build to call Claude without bundling secrets.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240924.0",
+    "typescript": "~5.5",
+    "wrangler": "^3.80.0"
+  }
+}
