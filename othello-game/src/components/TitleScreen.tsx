@@ -1,6 +1,11 @@
 import { Sparkles, Swords, Users } from 'lucide-react';
 import type { Locale, Messages } from '../i18n/messages';
 
+// Bump on every meaningful release. Surfaced in the title-screen
+// footer so the user can confirm at a glance which build is live
+// (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
+const BUILD_TAG = 'v0.15.0 · kifu-load-fix';
+
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
   | { mode: 'ai'; sub: 'free' }
@@ -255,6 +260,9 @@ export function TitleScreen({
           >
             English
           </button>
+        </div>
+        <div className="latin-display italic text-amber-200/30 text-[9px] tracking-[0.25em] mt-1 select-all">
+          {BUILD_TAG}
         </div>
       </div>
     </div>
