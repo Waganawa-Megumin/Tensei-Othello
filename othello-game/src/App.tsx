@@ -483,6 +483,12 @@ export default function App() {
   const [reviewText, setReviewText] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  /** True when the review modal is showing a previously saved review
+   *  (read-only). Hides Cancel/Regenerate/Save buttons. */
+  const [reviewReadOnly, setReviewReadOnly] = useState(false);
+  /** Saved-at timestamp shown in the read-only review view. */
+  const [reviewSavedAt, setReviewSavedAtState] = useState<number | null>(null);
+  const [reviewSavedFlash, setReviewSavedFlash] = useState(false);
   const reviewHandleRef = useRef<StreamMessageHandle | null>(null);
 
   const ai = useAiWorker();
@@ -942,6 +948,9 @@ export default function App() {
     setReviewText('');
     setReviewLoading(true);
     setReviewOpen(true);
+    setReviewReadOnly(false);
+    setReviewSavedAtState(null);
+    setReviewSavedFlash(false);
 
     const oppLevel = gameMode === 'ai' ? COMPUTERS[computerChar].level : undefined;
     const args = {
@@ -974,12 +983,69 @@ export default function App() {
     reviewHandleRef.current = null;
     setReviewOpen(false);
     setReviewLoading(false);
+    setReviewReadOnly(false);
+    setReviewSavedAtState(null);
+    setReviewSavedFlash(false);
   }
 
   function cancelReview() {
     reviewHandleRef.current?.abort();
     reviewHandleRef.current = null;
     setReviewLoading(false);
+  }
+
+  /** Persist the streamed review together with the current kifu so the
+   *  user can revisit it from the Kifu Library later. Auto-generates a
+   *  short name (e.g. "Ch.5 vs 響") so the user doesn't have to type. */
+  function saveReviewWithKifu() {
+    if (!reviewText.trim() || kifu.length === 0) return;
+    const ts = new Date();
+    const stamp = `${ts.getMonth() + 1}/${ts.getDate()} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
+    const opp = COMPUTERS[computerChar];
+    const isStory = aiMode === 'story' && gameMode === 'ai';
+    const baseName = isStory
+      ? `第${Math.min(storyProgress + (lastResult === 'win' ? 0 : 1), 20)}章 vs ${opp.name}`
+      : gameMode === 'ai'
+        ? `vs ${opp.name} Lv.${opp.level}`
+        : `${AVATARS[p1Avatar].name} vs ${AVATARS[p2Avatar].name}`;
+    const name = `${baseName} (${stamp})`;
+    const result: Color | typeof EMPTY | null = gameOver
+      ? counts.black > counts.white
+        ? BLACK
+        : counts.black < counts.white
+          ? WHITE
+          : EMPTY
+      : null;
+    void storageSaveSlot({
+      name,
+      gameMode,
+      aiMode,
+      computerChar,
+      level: opp.level,
+      kifu,
+      storyProgress,
+      counts: { black: counts.black, white: counts.white },
+      result,
+      review: reviewText,
+    }).then(() => {
+      setReviewSavedFlash(true);
+      window.setTimeout(() => setReviewSavedFlash(false), 2000);
+    });
+  }
+
+  /** Open the review modal in read-only mode showing a previously saved
+   *  review string. */
+  function viewSavedReview(text: string, savedAt: number) {
+    reviewHandleRef.current?.abort();
+    reviewHandleRef.current = null;
+    setReviewError(null);
+    setReviewLoading(false);
+    setReviewText(text);
+    setReviewReadOnly(true);
+    setReviewSavedAtState(savedAt);
+    setReviewSavedFlash(false);
+    setKifuOpen(false);
+    setReviewOpen(true);
   }
 
   // Abort any pending review stream when the component unmounts.
@@ -1892,8 +1958,25 @@ export default function App() {
                                 {slot.result === BLACK && <> · {t.blackWinShort}</>}
                                 {slot.result === WHITE && <> · {t.whiteWinShort}</>}
                                 {slot.result === EMPTY && <> · {t.drawShort}</>}
+                                {slot.review && (
+                                  <span className="ml-1 text-amber-200/85">
+                                    · 📝 {t.reviewSavedIndicator}
+                                  </span>
+                                )}
                               </div>
                             </div>
+                            {slot.review && (
+                              <button
+                                onClick={() =>
+                                  viewSavedReview(slot.review ?? '', slot.timestamp ?? 0)
+                                }
+                                className="btn text-xs px-2 py-1.5"
+                                title={t.reviewViewSaved}
+                                aria-label={t.reviewViewSaved}
+                              >
+                                📝
+                              </button>
+                            )}
                             <button
                               onClick={() => loadKifuMoves(slot.kifu ?? [])}
                               className="btn text-xs px-3 py-1.5"
@@ -1982,20 +2065,44 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-200/15">
-                  <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
-                    {t.reviewByClaude}
+                  <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider truncate">
+                    {reviewReadOnly && reviewSavedAt !== null
+                      ? t.reviewSavedAt(
+                          new Date(reviewSavedAt).toLocaleString(
+                            locale === 'ja' ? 'ja-JP' : 'en-US',
+                          ),
+                        )
+                      : t.reviewByClaude}
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    {reviewSavedFlash && (
+                      <span className="jp-display text-amber-200/85 text-[11px] tracking-wider">
+                        ✓ {t.reviewSaved}
+                      </span>
+                    )}
                     {reviewLoading && (
                       <button onClick={cancelReview} className="btn text-xs px-3 py-1.5">
                         {t.reviewCancel}
                       </button>
                     )}
-                    {!reviewLoading && (reviewError || reviewText.length > 0) && (
-                      <button onClick={startReview} className="btn text-xs px-3 py-1.5">
-                        {t.reviewRegenerate}
-                      </button>
-                    )}
+                    {!reviewReadOnly &&
+                      !reviewLoading &&
+                      reviewText.trim().length > 0 &&
+                      !reviewError && (
+                        <button
+                          onClick={saveReviewWithKifu}
+                          className="btn btn-active text-xs px-3 py-1.5"
+                        >
+                          {t.reviewSave}
+                        </button>
+                      )}
+                    {!reviewReadOnly &&
+                      !reviewLoading &&
+                      (reviewError || reviewText.length > 0) && (
+                        <button onClick={startReview} className="btn text-xs px-3 py-1.5">
+                          {t.reviewRegenerate}
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>

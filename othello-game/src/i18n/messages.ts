@@ -152,6 +152,11 @@ export interface Messages {
   reviewRegenerate: string;
   reviewError: (message: string) => string;
   reviewEmpty: string;
+  reviewSave: string;
+  reviewSaved: string;
+  reviewViewSaved: string;
+  reviewSavedAt: (timestamp: string) => string;
+  reviewSavedIndicator: string;
 
   // Save slots (story mode)
   slotPickerTitle: string;
@@ -346,6 +351,11 @@ export const ja: Messages = {
   reviewRegenerate: '再生成',
   reviewError: (message) => `レビューを取得できませんでした：${message}`,
   reviewEmpty: '棋譜が空のためレビューできません。',
+  reviewSave: 'レビューを保存',
+  reviewSaved: 'レビューと棋譜を保存しました',
+  reviewViewSaved: 'レビューを見る',
+  reviewSavedAt: (timestamp) => `保存日時：${timestamp}`,
+  reviewSavedIndicator: 'レビューあり',
 
   slotPickerTitle: 'セーブを選ぶ',
   slotPickerSubtitle: 'Choose a save',
@@ -540,6 +550,11 @@ your journey on the board reaches its close.`,
   reviewRegenerate: 'Regenerate',
   reviewError: (message) => `Could not fetch the review: ${message}`,
   reviewEmpty: 'No moves recorded — nothing to review.',
+  reviewSave: 'Save review',
+  reviewSaved: 'Review and kifu saved.',
+  reviewViewSaved: 'View review',
+  reviewSavedAt: (timestamp) => `Saved at: ${timestamp}`,
+  reviewSavedIndicator: 'review attached',
 
   slotPickerTitle: 'Choose a Save',
   slotPickerSubtitle: 'Save Slots',
