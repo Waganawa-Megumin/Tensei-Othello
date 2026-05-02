@@ -17,7 +17,6 @@
 - 作品: **Reincarnated as an Othello Player**
 - 異界: 訳さず **Bansho Sekai**
 
-❌ NG パターン: `盤上世界 — Tensei Othello` のように作品名と異界名を混ぜた表記。
 
 ## 現在のフェーズ
 
