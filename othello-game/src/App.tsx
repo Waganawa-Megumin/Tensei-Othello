@@ -824,9 +824,9 @@ export default function App() {
 
         .stage-bg {
           background:
-            radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 169, 97, 0.14), transparent 60%),
-            radial-gradient(ellipse 60% 40% at 50% 100%, rgba(31, 88, 71, 0.22), transparent 60%),
-            linear-gradient(180deg, #1f1a0e 0%, #14110a 100%);
+            radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 169, 97, 0.18), transparent 60%),
+            radial-gradient(ellipse 60% 40% at 50% 100%, rgba(31, 88, 71, 0.28), transparent 60%),
+            linear-gradient(180deg, #2a2412 0%, #1c1810 100%);
         }
         .stage-bg::before {
           content: ''; position: absolute; inset: 0;
@@ -836,12 +836,12 @@ export default function App() {
 
         .board-felt {
           background:
-            radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.06), transparent 55%),
-            radial-gradient(ellipse at 70% 85%, rgba(0,0,0,0.35), transparent 55%),
-            linear-gradient(135deg, #1f5847 0%, #143830 100%);
+            radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.10), transparent 55%),
+            radial-gradient(ellipse at 70% 85%, rgba(0,0,0,0.12), transparent 60%),
+            linear-gradient(135deg, #2f7a5e 0%, #1d5240 100%);
           box-shadow:
-            inset 0 0 60px rgba(0,0,0,0.45),
-            0 30px 60px -15px rgba(0,0,0,0.7),
+            inset 0 0 24px rgba(0,0,0,0.20),
+            0 14px 28px -10px rgba(0,0,0,0.55),
             0 0 0 6px #2a1f14,
             0 0 0 7px #c9a961,
             0 0 0 13px #1a130c;
