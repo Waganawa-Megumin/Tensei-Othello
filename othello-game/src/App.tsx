@@ -36,6 +36,17 @@ import {
   type ValidMove,
 } from './engine/types';
 import { useAiWorker } from './hooks/useAiWorker';
+import {
+  deleteSlot as storageDeleteSlot,
+  getStoryProgress,
+  listSlots,
+  saveSlot as storageSaveSlot,
+  setStoryProgress as storageSetStoryProgress,
+  type AiMode,
+  type GameMode,
+  type MoveRecord,
+  type SavedSlot,
+} from './storage/saveGame';
 
 /* ============================================================
    Static data
@@ -171,12 +182,6 @@ function moveKey(row: number, col: number): string {
   return `${row},${col}`;
 }
 
-interface MoveRecord {
-  color: Color;
-  row: number;
-  col: number;
-}
-
 interface HistorySnapshot {
   board: Board;
   currentColor: Color;
@@ -186,26 +191,6 @@ interface HistorySnapshot {
 interface LastMove extends Move {
   color: Color;
 }
-
-interface SavedSlot {
-  key: string;
-  name?: string;
-  timestamp?: number;
-  gameMode?: GameMode;
-  aiMode?: AiMode;
-  computerChar?: number;
-  level?: number;
-  kifu?: MoveRecord[];
-  storyProgress?: number;
-  counts?: { black: number; white: number };
-  result?: Color | typeof EMPTY | null;
-}
-
-type GameMode = 'ai' | 'human';
-type AiMode = 'story' | 'free';
-
-const STORAGE_KEY_PROGRESS = 'othello:story_progress';
-const STORAGE_KEY_SAVE_PREFIX = 'othello:save:';
 
 /* ============================================================
    Subcomponents
@@ -469,15 +454,13 @@ export default function App() {
 
   // Load persisted story progress on mount
   useEffect(() => {
-    try {
-      const v = localStorage.getItem(STORAGE_KEY_PROGRESS);
-      if (v) {
-        const p = parseInt(v, 10);
-        if (!isNaN(p) && p >= 0 && p <= 20) setStoryProgress(p);
-      }
-    } catch {
-      /* ignore */
-    }
+    let cancelled = false;
+    getStoryProgress().then((p) => {
+      if (!cancelled) setStoryProgress(p);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Sync opponent character/level to story progress when in story mode
@@ -557,11 +540,7 @@ export default function App() {
     ) {
       const newP = storyProgress + 1;
       setStoryProgress(newP);
-      try {
-        localStorage.setItem(STORAGE_KEY_PROGRESS, String(newP));
-      } catch {
-        /* ignore */
-      }
+      void storageSetStoryProgress(newP);
       setStoryJustAdvanced(true);
     }
   }, [gameOver, aiMode, gameMode, storyProgress, storyJustAdvanced, counts.black, counts.white]);
@@ -625,11 +604,7 @@ export default function App() {
   function resetStoryProgress() {
     setStoryProgress(0);
     setStoryJustAdvanced(false);
-    try {
-      localStorage.setItem(STORAGE_KEY_PROGRESS, '0');
-    } catch {
-      /* ignore */
-    }
+    void storageSetStoryProgress(0);
     reset();
   }
 
@@ -664,27 +639,7 @@ export default function App() {
   /* ----- Kifu helpers ----- */
 
   function loadSavedSlots() {
-    try {
-      const slots: SavedSlot[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith(STORAGE_KEY_SAVE_PREFIX)) {
-          try {
-            const v = localStorage.getItem(key);
-            if (v) {
-              const data = JSON.parse(v) as Omit<SavedSlot, 'key'>;
-              slots.push({ key, ...data });
-            }
-          } catch {
-            /* ignore individual slot errors */
-          }
-        }
-      }
-      slots.sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0));
-      setSavedSlots(slots);
-    } catch {
-      setSavedSlots([]);
-    }
+    void listSlots().then(setSavedSlots);
   }
 
   function saveCurrentKifu(name: string) {
@@ -698,9 +653,8 @@ export default function App() {
           ? WHITE
           : EMPTY
       : null;
-    const data: Omit<SavedSlot, 'key'> = {
+    void storageSaveSlot({
       name: trimmed,
-      timestamp: Date.now(),
       gameMode,
       aiMode,
       computerChar,
@@ -709,24 +663,14 @@ export default function App() {
       storyProgress,
       counts: { black: counts.black, white: counts.white },
       result,
-    };
-    try {
-      const slotKey = `${STORAGE_KEY_SAVE_PREFIX}${Date.now()}`;
-      localStorage.setItem(slotKey, JSON.stringify(data));
+    }).then(() => {
       loadSavedSlots();
       setKifuName('');
-    } catch {
-      /* ignore */
-    }
+    });
   }
 
   function deleteSlot(key: string) {
-    try {
-      localStorage.removeItem(key);
-      loadSavedSlots();
-    } catch {
-      /* ignore */
-    }
+    void storageDeleteSlot(key).then(loadSavedSlots);
   }
 
   function loadKifuMoves(savedKifu: MoveRecord[]) {
