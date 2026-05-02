@@ -24,9 +24,12 @@ export default defineConfig({
         start_url: '.',
         scope: '.',
         display: 'standalone',
-        orientation: 'portrait',
-        background_color: '#0a0805',
-        theme_color: '#0a0805',
+        // Allow rotation. Phones default to portrait via the device, but
+        // landscape works for users who prefer it. Capacitor Phase 3
+        // similarly uses screenOrientation="user" so the OS decides.
+        orientation: 'any',
+        background_color: '#1c1810',
+        theme_color: '#1c1810',
         icons: [
           {
             src: 'favicon.svg',
