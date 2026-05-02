@@ -1,32 +1,63 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
-import { Menu, Lightbulb, Undo2, Info, RotateCcw, FolderOpen, Trash2 } from 'lucide-react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
+import {
+  FolderOpen,
+  Info,
+  Lightbulb,
+  Menu,
+  RotateCcw,
+  Trash2,
+  Undo2,
+  type LucideIcon,
+} from 'lucide-react';
+import {
+  applyMove,
+  countPieces,
+  createInitialBoard,
+  getValidMoves,
+} from './engine/board';
+import { pickAIMove } from './engine/ai';
+import {
+  BLACK,
+  EMPTY,
+  WHITE,
+  opponent,
+  type Board,
+  type Color,
+  type Disc,
+  type Move,
+  type ValidMove,
+} from './engine/types';
+import { useAiWorker } from './hooks/useAiWorker';
 
 /* ============================================================
-   Constants & Data
+   Static data
    ============================================================ */
 
-const DIRECTIONS = [
-  [-1, -1], [-1, 0], [-1, 1],
-  [0, -1],           [0, 1],
-  [1, -1],  [1, 0],  [1, 1],
-];
+interface AvatarEntry {
+  kanji: string;
+  name: string;
+  setting: string;
+  quote: string;
+  image: string;
+}
 
-// Positional values; corners high, X-squares low
-const POSITION_WEIGHTS = [
-  [120, -20, 20,  5,  5, 20, -20, 120],
-  [-20, -40, -5, -5, -5, -5, -40, -20],
-  [ 20,  -5, 15,  3,  3, 15,  -5,  20],
-  [  5,  -5,  3,  3,  3,  3,  -5,   5],
-  [  5,  -5,  3,  3,  3,  3,  -5,   5],
-  [ 20,  -5, 15,  3,  3, 15,  -5,  20],
-  [-20, -40, -5, -5, -5, -5, -40, -20],
-  [120, -20, 20,  5,  5, 20, -20, 120],
-];
+interface ComputerEntry {
+  kanji: string;
+  name: string;
+  level: number;
+  quote: string;
+  image: string;
+}
 
-// 20 player avatars: protagonist archetypes from various RPG / light novel worlds.
-// Each has name, setting, quote, and a kanji fallback.
-// To use a custom portrait, set `image` to a data URI or external URL.
-const AVATARS = [
+const AVATARS: ReadonlyArray<AvatarEntry> = [
   { kanji: '春', name: 'ハルキ',   setting: '異世界転生の勇者',      quote: '冒険、はじまったな',   image: '/avatars/players/01_haruki.png' },
   { kanji: '琴', name: '美琴',     setting: '魔法学園の天才',        quote: '論理と魔法は同じ',     image: '/avatars/players/02_mikoto.png' },
   { kanji: '凛', name: 'リン',     setting: 'VRMMOの最強プレイヤー', quote: '現実より、得意なんだ', image: '/avatars/players/03_rin.png' },
@@ -49,31 +80,28 @@ const AVATARS = [
   { kanji: '悠', name: '悠',       setting: '神話の英雄',            quote: '神々よ、いざ尋常に',   image: '/avatars/players/20_yu.png' },
 ];
 
-// 20 computer characters. Set `image` to a data URI or URL to use a
-// generated portrait; otherwise the kanji avatar is used.
-const COMPUTERS = [
-  { kanji: '苺', name: 'いちか', level: 1, quote: 'ふぁいとぉ♪ 楽しんで！', image: '/avatars/18_idol_singer.png' },
-  { kanji: '葵', name: '葵', level: 2, quote: '狙いはバッチリだよっ！', image: '/avatars/03_energetic_archer.png' },
-  { kanji: '朝', name: '朝日', level: 3, quote: 'いざ尋常に！', image: '/avatars/01_cheerful_swordsman.png' },
-  { kanji: '撫', name: 'なでしこ', level: 4, quote: '無理せずいきましょう', image: '/avatars/05_kind_healer.png' },
-  { kanji: '響', name: '響', level: 5, quote: '楽しい一局を奏でよう♪', image: '/avatars/07_musician_bard.png' },
-  { kanji: '紬', name: 'つむぎ', level: 6, quote: '相棒もわくわくしてる', image: '/avatars/16_beast_tamer.png' },
-  { kanji: '茜', name: '茜', level: 7, quote: '歯車みたいにかっちりね！', image: '/avatars/08_gadget_engineer.png' },
-  { kanji: '薬', name: 'メル', level: 8, quote: 'ふふ、ちょっと混ぜてみよっか？', image: '/avatars/19_alchemist.png' },
-  { kanji: '悟', name: '悟', level: 9, quote: '無心に石を置く、ただそれだけ', image: '/avatars/13_stoic_monk.png' },
-  { kanji: '黒', name: 'シキ', level: 10, quote: '気付いた時には遅いよ', image: '/avatars/06_sly_rogue.png' },
-  { kanji: '詩', name: 'シオン', level: 11, quote: 'すべては予測の内だ', image: '/avatars/02_calm_mage.png' },
-  { kanji: '夢', name: 'ルナ', level: 12, quote: '夢の中でもう勝ってるよ♡', image: '/avatars/12_dreamy_witch.png' },
-  { kanji: '雪', name: '雪乃', level: 13, quote: 'この程度、解析するまでもない', image: '/avatars/09_school_strategist.png' },
-  { kanji: '暁', name: 'アキラ', level: 14, quote: '君の手筋、見えているよ', image: '/avatars/17_detective.png' },
-  { kanji: '銀', name: 'シエル', level: 15, quote: '全データ把握、戦況優位', image: '/avatars/10_cyberpunk_scout.png' },
-  { kanji: '姫', name: 'アリア', level: 16, quote: 'お手柔らかに、ですわ', image: '/avatars/15_noble_princess.png' },
-  { kanji: '獅', name: 'レオン', level: 17, quote: '正々堂々、参る！', image: '/avatars/04_noble_knight.png' },
-  { kanji: '宗', name: '宗次郎', level: 18, quote: '我が一刀、避けられはせぬ', image: '/avatars/11_elegant_samurai.png' },
-  { kanji: '嵐', name: '嵐', level: 19, quote: '我が竜の前に膝を折れ！', image: '/avatars/14_dragon_rider.png' },
-  { kanji: '零', name: 'ゼロ', level: 20, quote: '全ての変分は計算済み。詰みだ', image: '/avatars/20_hacker.png' },
+const COMPUTERS: ReadonlyArray<ComputerEntry> = [
+  { kanji: '苺', name: 'いちか', level: 1,  quote: 'ふぁいとぉ♪ 楽しんで！',       image: '/avatars/18_idol_singer.png' },
+  { kanji: '葵', name: '葵',     level: 2,  quote: '狙いはバッチリだよっ！',         image: '/avatars/03_energetic_archer.png' },
+  { kanji: '朝', name: '朝日',   level: 3,  quote: 'いざ尋常に！',                   image: '/avatars/01_cheerful_swordsman.png' },
+  { kanji: '撫', name: 'なでしこ', level: 4, quote: '無理せずいきましょう',           image: '/avatars/05_kind_healer.png' },
+  { kanji: '響', name: '響',     level: 5,  quote: '楽しい一局を奏でよう♪',         image: '/avatars/07_musician_bard.png' },
+  { kanji: '紬', name: 'つむぎ', level: 6,  quote: '相棒もわくわくしてる',           image: '/avatars/16_beast_tamer.png' },
+  { kanji: '茜', name: '茜',     level: 7,  quote: '歯車みたいにかっちりね！',       image: '/avatars/08_gadget_engineer.png' },
+  { kanji: '薬', name: 'メル',   level: 8,  quote: 'ふふ、ちょっと混ぜてみよっか？', image: '/avatars/19_alchemist.png' },
+  { kanji: '悟', name: '悟',     level: 9,  quote: '無心に石を置く、ただそれだけ',   image: '/avatars/13_stoic_monk.png' },
+  { kanji: '黒', name: 'シキ',   level: 10, quote: '気付いた時には遅いよ',           image: '/avatars/06_sly_rogue.png' },
+  { kanji: '詩', name: 'シオン', level: 11, quote: 'すべては予測の内だ',             image: '/avatars/02_calm_mage.png' },
+  { kanji: '夢', name: 'ルナ',   level: 12, quote: '夢の中でもう勝ってるよ♡',       image: '/avatars/12_dreamy_witch.png' },
+  { kanji: '雪', name: '雪乃',   level: 13, quote: 'この程度、解析するまでもない',   image: '/avatars/09_school_strategist.png' },
+  { kanji: '暁', name: 'アキラ', level: 14, quote: '君の手筋、見えているよ',         image: '/avatars/17_detective.png' },
+  { kanji: '銀', name: 'シエル', level: 15, quote: '全データ把握、戦況優位',         image: '/avatars/10_cyberpunk_scout.png' },
+  { kanji: '姫', name: 'アリア', level: 16, quote: 'お手柔らかに、ですわ',           image: '/avatars/15_noble_princess.png' },
+  { kanji: '獅', name: 'レオン', level: 17, quote: '正々堂々、参る！',               image: '/avatars/04_noble_knight.png' },
+  { kanji: '宗', name: '宗次郎', level: 18, quote: '我が一刀、避けられはせぬ',       image: '/avatars/11_elegant_samurai.png' },
+  { kanji: '嵐', name: '嵐',     level: 19, quote: '我が竜の前に膝を折れ！',         image: '/avatars/14_dragon_rider.png' },
+  { kanji: '零', name: 'ゼロ',   level: 20, quote: '全ての変分は計算済み。詰みだ',   image: '/avatars/20_hacker.png' },
 ];
-
 
 const STORY_INTRO = `君は気づくと不思議な世界にいた。
 そこは『盤上世界』—— 黒と白の石が舞い、20人の達人が住む異界。
@@ -83,7 +111,7 @@ const STORY_ENDING = `君は20人すべての達人を打ち破った。
 盤上世界の扉が開き、現実への光が差し込む——
 君の盤上の旅は、ここに完結する。`;
 
-const STORY_CHAPTERS = [
+const STORY_CHAPTERS: ReadonlyArray<string> = [
   '最初の住人はアイドル「苺花」。歌うように軽やかな手筋を打つ。',
   '弓使い「葵」。盤の隅を狙う鋭い射撃のような一手。',
   '若き剣士「朝日」。真っ向勝負、剣術のごとき正道の打ち回し。',
@@ -107,211 +135,10 @@ const STORY_CHAPTERS = [
 ];
 
 /* ============================================================
-   Game logic
-   ============================================================ */
-
-function createInitialBoard() {
-  const b = Array(8).fill(null).map(() => Array(8).fill(null));
-  b[3][3] = 'W'; b[3][4] = 'B'; b[4][3] = 'B'; b[4][4] = 'W';
-  return b;
-}
-
-function getFlipsForMove(board, row, col, player) {
-  if (board[row][col] !== null) return [];
-  const opp = player === 'B' ? 'W' : 'B';
-  const all = [];
-  for (const [dr, dc] of DIRECTIONS) {
-    const line = [];
-    let r = row + dr, c = col + dc;
-    while (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] === opp) {
-      line.push([r, c]);
-      r += dr; c += dc;
-    }
-    if (line.length && r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] === player) {
-      all.push(...line);
-    }
-  }
-  return all;
-}
-
-function getValidMoves(board, player) {
-  const moves = {};
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      const f = getFlipsForMove(board, r, c, player);
-      if (f.length) moves[`${r},${c}`] = f;
-    }
-  }
-  return moves;
-}
-
-function countPieces(board) {
-  let B = 0, W = 0;
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (board[r][c] === 'B') B++;
-      else if (board[r][c] === 'W') W++;
-    }
-  }
-  return { B, W };
-}
-
-function applyMove(board, row, col, player) {
-  const flips = getFlipsForMove(board, row, col, player);
-  if (flips.length === 0) return null;
-  const newBoard = board.map(r => [...r]);
-  newBoard[row][col] = player;
-  flips.forEach(([fr, fc]) => { newBoard[fr][fc] = player; });
-  return newBoard;
-}
-
-/* ============================================================
-   AI: 20-level difficulty
-   ============================================================ */
-
-function evaluate(board, maxPlayer) {
-  const opp = maxPlayer === 'B' ? 'W' : 'B';
-  const counts = countPieces(board);
-  const myMoves = getValidMoves(board, maxPlayer);
-  const oppMoves = getValidMoves(board, opp);
-
-  // Terminal
-  if (Object.keys(myMoves).length === 0 && Object.keys(oppMoves).length === 0) {
-    const my = maxPlayer === 'B' ? counts.B : counts.W;
-    const op = maxPlayer === 'B' ? counts.W : counts.B;
-    if (my > op) return 100000;
-    if (my < op) return -100000;
-    return 0;
-  }
-
-  let pos = 0;
-  for (let r = 0; r < 8; r++) {
-    for (let c = 0; c < 8; c++) {
-      if (board[r][c] === maxPlayer) pos += POSITION_WEIGHTS[r][c];
-      else if (board[r][c] === opp) pos -= POSITION_WEIGHTS[r][c];
-    }
-  }
-
-  const mob = (Object.keys(myMoves).length - Object.keys(oppMoves).length) * 8;
-  const total = counts.B + counts.W;
-  const my = maxPlayer === 'B' ? counts.B : counts.W;
-  const op = maxPlayer === 'B' ? counts.W : counts.B;
-  const disc = total > 50 ? (my - op) * 5 : 0;
-
-  return pos + mob + disc;
-}
-
-function minimax(board, depth, alpha, beta, player, maxPlayer) {
-  if (depth === 0) return { score: evaluate(board, maxPlayer), move: null };
-
-  const moves = getValidMoves(board, player);
-  const keys = Object.keys(moves);
-
-  if (keys.length === 0) {
-    const oppMoves = getValidMoves(board, player === 'B' ? 'W' : 'B');
-    if (Object.keys(oppMoves).length === 0) {
-      return { score: evaluate(board, maxPlayer), move: null };
-    }
-    const r = minimax(board, depth - 1, alpha, beta, player === 'B' ? 'W' : 'B', maxPlayer);
-    return { score: r.score, move: null };
-  }
-
-  let bestMove = null;
-
-  // Pre-sort moves by quick heuristic for better alpha-beta
-  const sorted = keys.map(k => {
-    const [r, c] = k.split(',').map(Number);
-    return { k, r, c, h: POSITION_WEIGHTS[r][c] };
-  }).sort((a, b) => (player === maxPlayer ? b.h - a.h : a.h - b.h));
-
-  if (player === maxPlayer) {
-    let max = -Infinity;
-    for (const m of sorted) {
-      const nb = applyMove(board, m.r, m.c, player);
-      const res = minimax(nb, depth - 1, alpha, beta, player === 'B' ? 'W' : 'B', maxPlayer);
-      if (res.score > max) {
-        max = res.score;
-        bestMove = { row: m.r, col: m.c };
-      }
-      alpha = Math.max(alpha, res.score);
-      if (beta <= alpha) break;
-    }
-    return { score: max, move: bestMove };
-  } else {
-    let min = Infinity;
-    for (const m of sorted) {
-      const nb = applyMove(board, m.r, m.c, player);
-      const res = minimax(nb, depth - 1, alpha, beta, player === 'B' ? 'W' : 'B', maxPlayer);
-      if (res.score < min) {
-        min = res.score;
-        bestMove = { row: m.r, col: m.c };
-      }
-      beta = Math.min(beta, res.score);
-      if (beta <= alpha) break;
-    }
-    return { score: min, move: bestMove };
-  }
-}
-
-function pickAIMove(board, validMoves, level, player) {
-  const entries = Object.entries(validMoves).map(([key, flips]) => {
-    const [row, col] = key.split(',').map(Number);
-    return { row, col, flips };
-  });
-  if (entries.length === 0) return null;
-  if (entries.length === 1) return entries[0];
-
-  // Level 1-2: random or near-random
-  if (level <= 2) {
-    if (level === 1 || Math.random() < 0.7) {
-      return entries[Math.floor(Math.random() * entries.length)];
-    }
-  }
-
-  // Level 3-5: greedy by flips, decreasing noise
-  if (level <= 5) {
-    const noise = (6 - level) * 2;
-    const scored = entries.map(m => ({
-      ...m,
-      score: m.flips.length + (Math.random() - 0.5) * noise,
-    }));
-    scored.sort((a, b) => b.score - a.score);
-    return scored[0];
-  }
-
-  // Level 6-9: position-weighted greedy with noise
-  if (level <= 9) {
-    const noise = (10 - level) * 3;
-    const scored = entries.map(m => ({
-      ...m,
-      score: POSITION_WEIGHTS[m.row][m.col] + m.flips.length * 0.3 + (Math.random() - 0.5) * noise,
-    }));
-    scored.sort((a, b) => b.score - a.score);
-    return scored[0];
-  }
-
-  // Level 10-20: minimax with alpha-beta
-  let depth;
-  if (level <= 12) depth = 1;
-  else if (level <= 14) depth = 2;
-  else if (level <= 17) depth = 3;
-  else depth = 4;
-
-  const result = minimax(board, depth, -Infinity, Infinity, player, player);
-
-  // Slight imperfection for mid-tier
-  if (level <= 15 && Math.random() < (16 - level) * 0.04) {
-    return entries[Math.floor(Math.random() * Math.min(2, entries.length))];
-  }
-
-  return result.move || entries[0];
-}
-
-/* ============================================================
    Helpers
    ============================================================ */
 
-function getLevelLabel(level) {
+function getLevelLabel(level: number): string {
   if (level <= 4) return '入門';
   if (level <= 8) return '初級';
   if (level <= 12) return '中級';
@@ -320,7 +147,7 @@ function getLevelLabel(level) {
   return '達人';
 }
 
-function levelColor(level) {
+function levelColor(level: number): string {
   if (level <= 4) return 'bg-emerald-400/85';
   if (level <= 8) return 'bg-lime-400/85';
   if (level <= 12) return 'bg-amber-400/85';
@@ -328,11 +155,81 @@ function levelColor(level) {
   return 'bg-red-400/85';
 }
 
+function colorChar(c: Color): 'B' | 'W' {
+  return c === BLACK ? 'B' : 'W';
+}
+
+function colorLabel(c: Color): string {
+  return c === BLACK ? '黒' : '白';
+}
+
+function moveToNotation(m: Move): string {
+  return `${String.fromCharCode(97 + m.col)}${m.row + 1}`;
+}
+
+function moveKey(row: number, col: number): string {
+  return `${row},${col}`;
+}
+
+interface MoveRecord {
+  color: Color;
+  row: number;
+  col: number;
+}
+
+interface HistorySnapshot {
+  board: Board;
+  currentColor: Color;
+  lastMove: LastMove | null;
+}
+
+interface LastMove extends Move {
+  color: Color;
+}
+
+interface SavedSlot {
+  key: string;
+  name?: string;
+  timestamp?: number;
+  gameMode?: GameMode;
+  aiMode?: AiMode;
+  computerChar?: number;
+  level?: number;
+  kifu?: MoveRecord[];
+  storyProgress?: number;
+  counts?: { black: number; white: number };
+  result?: Color | typeof EMPTY | null;
+}
+
+type GameMode = 'ai' | 'human';
+type AiMode = 'story' | 'free';
+
+const STORAGE_KEY_PROGRESS = 'othello:story_progress';
+const STORAGE_KEY_SAVE_PREFIX = 'othello:save:';
+
 /* ============================================================
-   Components
+   Subcomponents
    ============================================================ */
 
-function AvatarBadge({ kanji, idx, image, size = 'md', selected = false, dim = false, onClick }) {
+interface AvatarBadgeProps {
+  kanji: string;
+  idx: number;
+  image?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  selected?: boolean;
+  dim?: boolean;
+  onClick?: () => void;
+}
+
+function AvatarBadge({
+  kanji,
+  idx,
+  image,
+  size = 'md',
+  selected = false,
+  dim = false,
+  onClick,
+}: AvatarBadgeProps) {
   const sizeClass = {
     xs: 'w-8 h-8 text-sm',
     sm: 'w-10 h-10 text-base',
@@ -345,7 +242,9 @@ function AvatarBadge({ kanji, idx, image, size = 'md', selected = false, dim = f
   return (
     <div
       onClick={onClick}
-      className={`${sizeClass} rounded-full overflow-hidden flex items-center justify-center jp-display font-medium relative transition-all flex-shrink-0 ${onClick ? 'cursor-pointer' : ''}`}
+      className={`${sizeClass} rounded-full overflow-hidden flex items-center justify-center jp-display font-medium relative transition-all flex-shrink-0 ${
+        onClick ? 'cursor-pointer' : ''
+      }`}
       style={{
         background: image
           ? '#0a0805'
@@ -353,7 +252,7 @@ function AvatarBadge({ kanji, idx, image, size = 'md', selected = false, dim = f
             ? `linear-gradient(135deg, hsl(${hue}, 15%, 16%), hsl(${hue}, 20%, 8%))`
             : `linear-gradient(135deg, hsl(${hue}, 38%, 24%), hsl(${hue}, 50%, 11%))`,
         color: '#f5e8c8',
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(0,0,0,0.45)`,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(0,0,0,0.45)',
         border: selected ? '2px solid #c9a961' : '1px solid rgba(201, 169, 97, 0.25)',
         opacity: dim ? 0.45 : 1,
       }}
@@ -367,15 +266,21 @@ function AvatarBadge({ kanji, idx, image, size = 'md', selected = false, dim = f
   );
 }
 
-function ToolbarBtn({ icon: Icon, label, onClick, active, disabled }) {
+interface ToolbarBtnProps {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+}
+
+function ToolbarBtn({ icon: Icon, label, onClick, active, disabled }: ToolbarBtnProps) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={`flex flex-col items-center justify-center gap-1 py-3 transition-colors ${
-        active
-          ? 'bg-amber-200/15 text-amber-100'
-          : 'bg-zinc-950/80 text-amber-100/85'
+        active ? 'bg-amber-200/15 text-amber-100' : 'bg-zinc-950/80 text-amber-100/85'
       } ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-900 hover:text-amber-100'}`}
     >
       <Icon size={20} strokeWidth={1.4} />
@@ -384,19 +289,44 @@ function ToolbarBtn({ icon: Icon, label, onClick, active, disabled }) {
   );
 }
 
-function PlayerPanel({ player, count, isActive, kanji, idx, image, name, quote, level, thinking }) {
+interface PlayerPanelProps {
+  color: Color;
+  count: number;
+  isActive: boolean;
+  kanji: string;
+  idx: number;
+  image?: string;
+  name: string;
+  quote?: string;
+  level?: number;
+  thinking?: boolean;
+}
+
+function PlayerPanel({
+  color,
+  count,
+  isActive,
+  kanji,
+  idx,
+  image,
+  name,
+  quote,
+  level,
+  thinking,
+}: PlayerPanelProps) {
   return (
-    <div className={`relative px-4 md:px-5 py-3 md:py-3.5 border rounded-sm transition-all ${
-      isActive ? 'border-amber-200/60 bg-amber-200/[0.04]' : 'border-amber-200/15'
-    }`}>
+    <div
+      className={`relative px-4 md:px-5 py-3 md:py-3.5 border rounded-sm transition-all ${
+        isActive ? 'border-amber-200/60 bg-amber-200/[0.04]' : 'border-amber-200/15'
+      }`}
+    >
       <div className="flex items-center gap-3 md:gap-4">
-        {/* Avatar (primary identifier) */}
         <AvatarBadge kanji={kanji} idx={idx} image={image} size="md" />
-        {/* Name + quote */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
             <span className="jp-display text-amber-100/95 text-base md:text-lg truncate">
-              {name}{thinking ? '…' : ''}
+              {name}
+              {thinking ? '…' : ''}
             </span>
             {level !== undefined && (
               <span className="latin-display italic text-amber-200/50 text-[11px] md:text-xs tracking-wider flex-shrink-0">
@@ -410,17 +340,18 @@ function PlayerPanel({ player, count, isActive, kanji, idx, image, name, quote, 
             </div>
           )}
         </div>
-        {/* Count with tiny stone marker */}
         <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
           <div
             className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full"
             style={{
-              background: player === 'B'
-                ? 'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)'
-                : 'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
-              boxShadow: player === 'B'
-                ? 'inset -1px -1px 2px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)'
-                : 'inset 1px 1px 2px rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.4)'
+              background:
+                color === BLACK
+                  ? 'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)'
+                  : 'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
+              boxShadow:
+                color === BLACK
+                  ? 'inset -1px -1px 2px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)'
+                  : 'inset 1px 1px 2px rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.4)',
             }}
           />
           <div className="latin-display text-3xl md:text-4xl text-amber-100 tabular-nums font-medium leading-none">
@@ -435,7 +366,12 @@ function PlayerPanel({ player, count, isActive, kanji, idx, image, name, quote, 
   );
 }
 
-function LevelSelector({ level, setLevel }) {
+interface LevelSelectorProps {
+  level: number;
+  setLevel: (n: number) => void;
+}
+
+function LevelSelector({ level, setLevel }: LevelSelectorProps) {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-2">
@@ -443,7 +379,9 @@ function LevelSelector({ level, setLevel }) {
           Level
         </div>
         <div className="flex items-baseline gap-3">
-          <div className="latin-display text-amber-100 text-3xl tabular-nums leading-none">{level}</div>
+          <div className="latin-display text-amber-100 text-3xl tabular-nums leading-none">
+            {level}
+          </div>
           <div className="jp-display text-amber-100/70 text-sm tracking-wider">
             {getLevelLabel(level)}
           </div>
@@ -466,74 +404,87 @@ function LevelSelector({ level, setLevel }) {
         })}
       </div>
       <div className="flex justify-between latin-display italic text-amber-200/30 text-[10px] mt-1.5 px-1">
-        <span>1 入門</span><span>10 中級</span><span>20 達人</span>
+        <span>1 入門</span>
+        <span>10 中級</span>
+        <span>20 達人</span>
       </div>
     </div>
   );
 }
 
 /* ============================================================
-   Main Component
+   Main App
    ============================================================ */
 
 export default function App() {
   // Game state
-  const [board, setBoard] = useState(createInitialBoard);
-  const [currentPlayer, setCurrentPlayer] = useState('B');
-  const [lastMove, setLastMove] = useState(null);
+  const [board, setBoard] = useState<Board>(createInitialBoard);
+  const [currentColor, setCurrentColor] = useState<Color>(BLACK);
+  const [lastMove, setLastMove] = useState<LastMove | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
-  const [passInfo, setPassInfo] = useState(null);
-  const [flipping, setFlipping] = useState({});
-  const [history, setHistory] = useState([]);
+  const [passInfo, setPassInfo] = useState<Color | null>(null);
+  const [flipping, setFlipping] = useState<Record<string, Color>>({});
+  const [history, setHistory] = useState<HistorySnapshot[]>([]);
 
   // Settings state
-  const [gameMode, setGameMode] = useState('ai');
+  const [gameMode, setGameMode] = useState<GameMode>('ai');
   const [p1Avatar, setP1Avatar] = useState(0);
   const [p2Avatar, setP2Avatar] = useState(1);
-  const [computerChar, setComputerChar] = useState(0); // synced by mode
+  const [computerChar, setComputerChar] = useState(0);
   const [level, setLevel] = useState(1);
-  const [aiMode, setAiMode] = useState('story'); // 'story' | 'free'
-  const [storyProgress, setStoryProgress] = useState(0); // 0-20 (chapters completed)
+  const [aiMode, setAiMode] = useState<AiMode>('story');
+  const [storyProgress, setStoryProgress] = useState(0);
   const [storyJustAdvanced, setStoryJustAdvanced] = useState(false);
 
-  // Kifu (move record) and modals
-  const [kifu, setKifu] = useState([]); // [{player, row, col}, ...]
+  // Kifu and modals
+  const [kifu, setKifu] = useState<MoveRecord[]>([]);
   const [infoOpen, setInfoOpen] = useState(false);
   const [kifuOpen, setKifuOpen] = useState(false);
-  const [savedSlots, setSavedSlots] = useState([]);
+  const [savedSlots, setSavedSlots] = useState<SavedSlot[]>([]);
   const [kifuName, setKifuName] = useState('');
 
   // UI state
-  const [hintMove, setHintMove] = useState(null);
+  const [hintMove, setHintMove] = useState<Move | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const validMoves = useMemo(() => getValidMoves(board, currentPlayer), [board, currentPlayer]);
+  const ai = useAiWorker();
+
+  const validMoves = useMemo(() => getValidMoves(board, currentColor), [board, currentColor]);
+  const validMoveMap = useMemo(() => {
+    const m = new Map<string, ValidMove>();
+    for (const v of validMoves) m.set(moveKey(v.row, v.col), v);
+    return m;
+  }, [validMoves]);
   const counts = useMemo(() => countPieces(board), [board]);
   const oppMoves = useMemo(
-    () => getValidMoves(board, currentPlayer === 'B' ? 'W' : 'B'),
-    [board, currentPlayer]
+    () => getValidMoves(board, opponent(currentColor)),
+    [board, currentColor],
   );
-  const noCurrent = Object.keys(validMoves).length === 0;
-  const noOpp = Object.keys(oppMoves).length === 0;
+  const noCurrent = validMoves.length === 0;
+  const noOpp = oppMoves.length === 0;
   const gameOver = noCurrent && noOpp;
-  const isHumanTurn = gameMode === 'human' || currentPlayer === 'B';
+  const isHumanTurn = gameMode === 'human' || currentColor === BLACK;
+
+  /* ----- Effects ----- */
 
   // Load persisted story progress on mount
   useEffect(() => {
     try {
-      const v = localStorage.getItem('othello:story_progress');
+      const v = localStorage.getItem(STORAGE_KEY_PROGRESS);
       if (v) {
         const p = parseInt(v, 10);
         if (!isNaN(p) && p >= 0 && p <= 20) setStoryProgress(p);
       }
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // Sync opponent character/level to story progress when in story mode
   useEffect(() => {
     if (aiMode === 'story' && gameMode === 'ai') {
       const targetLevel = Math.min(Math.max(storyProgress + 1, 1), 20);
-      const idx = COMPUTERS.findIndex(c => c.level === targetLevel);
+      const idx = COMPUTERS.findIndex((c) => c.level === targetLevel);
       if (idx >= 0) {
         setComputerChar(idx);
         setLevel(targetLevel);
@@ -545,86 +496,121 @@ export default function App() {
   // trigger the cleanup function on every state change and clear our own
   // pending timeout, leaving the game stuck on the pass message.
   useEffect(() => {
-    if (gameOver || passInfo) return;
+    if (gameOver || passInfo !== null) return;
     if (noCurrent && !noOpp) {
-      const passer = currentPlayer === 'B' ? '黒' : '白';
-      setPassInfo(passer);
-      const t = setTimeout(() => {
-        setCurrentPlayer(p => (p === 'B' ? 'W' : 'B'));
+      setPassInfo(currentColor);
+      const t = window.setTimeout(() => {
+        setCurrentColor((c) => opponent(c));
         setPassInfo(null);
       }, 1600);
-      return () => clearTimeout(t);
+      return () => window.clearTimeout(t);
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [board, currentPlayer, noCurrent, noOpp, gameOver]);
+  }, [board, currentColor, noCurrent, noOpp, gameOver]);
 
-  // AI move
+  // doMove must be referenced from the AI effect. Use a ref to avoid
+  // making the entire effect dependent on the function identity.
+  const doMoveRef = useRef<(row: number, col: number) => void>(() => {});
+
+  // AI move via Web Worker
   useEffect(() => {
-    if (gameMode !== 'ai' || currentPlayer !== 'W' || gameOver || noCurrent || passInfo) {
+    if (gameMode !== 'ai' || currentColor !== WHITE || gameOver || noCurrent || passInfo !== null) {
       setAiThinking(false);
       return;
     }
     setAiThinking(true);
-    // Slight delay so UI updates first; higher levels feel more "thoughtful"
     const delay = 450 + Math.min(level * 35, 700);
-    const t = setTimeout(() => {
-      const move = pickAIMove(board, validMoves, level, 'W');
-      if (move) doMove(move.row, move.col, false);
-      setAiThinking(false);
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      ai
+        .requestMove(board, WHITE, level)
+        .then((move) => {
+          if (cancelled || !move) return;
+          doMoveRef.current(move.row, move.col);
+        })
+        .catch(() => {
+          /* cancelled by a newer request */
+        })
+        .finally(() => {
+          if (!cancelled) setAiThinking(false);
+        });
     }, delay);
     return () => {
-      clearTimeout(t);
+      cancelled = true;
+      window.clearTimeout(timer);
+      ai.cancel();
       setAiThinking(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPlayer, gameMode, board, level]);
+  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo]);
 
   // Advance story progress on player win in story mode
   useEffect(() => {
     if (
-      gameOver && !storyJustAdvanced &&
-      aiMode === 'story' && gameMode === 'ai' &&
-      storyProgress < 20 && counts.B > counts.W
+      gameOver &&
+      !storyJustAdvanced &&
+      aiMode === 'story' &&
+      gameMode === 'ai' &&
+      storyProgress < 20 &&
+      counts.black > counts.white
     ) {
       const newP = storyProgress + 1;
       setStoryProgress(newP);
-      try { localStorage.setItem('othello:story_progress', String(newP)); } catch {}
+      try {
+        localStorage.setItem(STORAGE_KEY_PROGRESS, String(newP));
+      } catch {
+        /* ignore */
+      }
       setStoryJustAdvanced(true);
     }
-  }, [gameOver, aiMode, gameMode, storyProgress, storyJustAdvanced, counts.B, counts.W]);
+  }, [gameOver, aiMode, gameMode, storyProgress, storyJustAdvanced, counts.black, counts.white]);
 
-  function doMove(row, col, fromHuman = true) {
-    const flips = validMoves[`${row},${col}`];
-    if (!flips) return;
-
-    // Save snapshot
-    setHistory(h => [...h, { board, currentPlayer, lastMove }]);
+  // Cancel hint when turn changes
+  useEffect(() => {
     setHintMove(null);
+  }, [currentColor]);
 
-    const newBoard = board.map(r => [...r]);
-    newBoard[row][col] = currentPlayer;
-    flips.forEach(([fr, fc]) => { newBoard[fr][fc] = currentPlayer; });
-    setBoard(newBoard);
-    setLastMove({ row, col, player: currentPlayer });
-    setKifu(k => [...k, { player: currentPlayer, row, col }]);
+  /* ----- Actions ----- */
 
-    const flipMap = {};
-    flips.forEach(([fr, fc]) => { flipMap[`${fr},${fc}`] = currentPlayer; });
-    setFlipping(flipMap);
-    setTimeout(() => setFlipping({}), 700);
+  const doMove = useCallback(
+    (row: number, col: number) => {
+      const move = validMoveMap.get(moveKey(row, col));
+      if (!move) return;
 
-    setCurrentPlayer(currentPlayer === 'B' ? 'W' : 'B');
-  }
+      setHistory((h) => [...h, { board, currentColor, lastMove }]);
+      setHintMove(null);
 
-  function handleClick(row, col) {
-    if (!isHumanTurn || aiThinking || gameOver || passInfo) return;
-    if (!validMoves[`${row},${col}`]) return;
-    doMove(row, col, true);
+      const next = applyMove(board, row, col, currentColor);
+      if (!next) return;
+      setBoard(next);
+      setLastMove({ row, col, color: currentColor });
+      setKifu((k) => [...k, { color: currentColor, row, col }]);
+
+      const flipMap: Record<string, Color> = {};
+      for (const f of move.flips) flipMap[moveKey(f.row, f.col)] = currentColor;
+      setFlipping(flipMap);
+      window.setTimeout(() => setFlipping({}), 700);
+
+      setCurrentColor(opponent(currentColor));
+    },
+    [board, currentColor, lastMove, validMoveMap],
+  );
+
+  // Keep ref pointed at the latest doMove
+  useEffect(() => {
+    doMoveRef.current = doMove;
+  }, [doMove]);
+
+  function handleClick(row: number, col: number) {
+    if (!isHumanTurn || aiThinking || gameOver || passInfo !== null) return;
+    if (!validMoveMap.has(moveKey(row, col))) return;
+    doMove(row, col);
   }
 
   function reset() {
     setBoard(createInitialBoard());
-    setCurrentPlayer('B');
+    setCurrentColor(BLACK);
     setLastMove(null);
     setPassInfo(null);
     setFlipping({});
@@ -633,21 +619,18 @@ export default function App() {
     setHintMove(null);
     setStoryJustAdvanced(false);
     setKifu([]);
+    ai.cancel();
   }
 
   function resetStoryProgress() {
     setStoryProgress(0);
     setStoryJustAdvanced(false);
-    try { localStorage.setItem('othello:story_progress', '0'); } catch {}
-    setBoard(createInitialBoard());
-    setCurrentPlayer('B');
-    setLastMove(null);
-    setPassInfo(null);
-    setFlipping({});
-    setAiThinking(false);
-    setHistory([]);
-    setHintMove(null);
-    setKifu([]);
+    try {
+      localStorage.setItem(STORAGE_KEY_PROGRESS, '0');
+    } catch {
+      /* ignore */
+    }
+    reset();
   }
 
   function undo() {
@@ -656,60 +639,66 @@ export default function App() {
     setHintMove(null);
     setFlipping({});
     setPassInfo(null);
+    ai.cancel();
 
     if (gameMode === 'ai') {
-      // Roll back to most recent state where it was human's (Black) turn
       let i = history.length - 1;
-      while (i >= 0 && history[i].currentPlayer !== 'B') i--;
+      while (i >= 0 && history[i].currentColor !== BLACK) i--;
       if (i < 0) return;
       const target = history[i];
       setBoard(target.board);
-      setCurrentPlayer('B');
+      setCurrentColor(BLACK);
       setLastMove(target.lastMove);
       setHistory(history.slice(0, i));
       setKifu(kifu.slice(0, i));
     } else {
       const target = history[history.length - 1];
       setBoard(target.board);
-      setCurrentPlayer(target.currentPlayer);
+      setCurrentColor(target.currentColor);
       setLastMove(target.lastMove);
       setHistory(history.slice(0, -1));
       setKifu(kifu.slice(0, -1));
     }
   }
 
-  // Kifu helpers
-  function moveToNotation(m) {
-    return `${String.fromCharCode(97 + m.col)}${m.row + 1}`;
-  }
+  /* ----- Kifu helpers ----- */
 
   function loadSavedSlots() {
     try {
-      const slots = [];
+      const slots: SavedSlot[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('othello:save:')) {
+        if (key && key.startsWith(STORAGE_KEY_SAVE_PREFIX)) {
           try {
             const v = localStorage.getItem(key);
             if (v) {
-              const data = JSON.parse(v);
+              const data = JSON.parse(v) as Omit<SavedSlot, 'key'>;
               slots.push({ key, ...data });
             }
-          } catch {}
+          } catch {
+            /* ignore individual slot errors */
+          }
         }
       }
-      slots.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      slots.sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0));
       setSavedSlots(slots);
     } catch {
       setSavedSlots([]);
     }
   }
 
-  function saveCurrentKifu(name) {
+  function saveCurrentKifu(name: string) {
     if (!name) return;
     const trimmed = name.trim().slice(0, 40);
     if (!trimmed) return;
-    const data = {
+    const result: Color | typeof EMPTY | null = gameOver
+      ? counts.black > counts.white
+        ? BLACK
+        : counts.black < counts.white
+          ? WHITE
+          : EMPTY
+      : null;
+    const data: Omit<SavedSlot, 'key'> = {
       name: trimmed,
       timestamp: Date.now(),
       gameMode,
@@ -718,68 +707,69 @@ export default function App() {
       level,
       kifu,
       storyProgress,
-      counts: { B: counts.B, W: counts.W },
-      result: gameOver ? (counts.B > counts.W ? 'B' : counts.B < counts.W ? 'W' : 'D') : null,
+      counts: { black: counts.black, white: counts.white },
+      result,
     };
     try {
-      const slotKey = `othello:save:${Date.now()}`;
+      const slotKey = `${STORAGE_KEY_SAVE_PREFIX}${Date.now()}`;
       localStorage.setItem(slotKey, JSON.stringify(data));
       loadSavedSlots();
       setKifuName('');
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }
 
-  function deleteSlot(key) {
+  function deleteSlot(key: string) {
     try {
       localStorage.removeItem(key);
       loadSavedSlots();
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }
 
-  function loadKifuMoves(savedKifu) {
+  function loadKifuMoves(savedKifu: MoveRecord[]) {
     let b = createInitialBoard();
     for (const m of savedKifu) {
-      const flips = getFlipsForMove(b, m.row, m.col, m.player);
-      if (flips.length === 0) break;
-      const nb = b.map(r => [...r]);
-      nb[m.row][m.col] = m.player;
-      flips.forEach(([fr, fc]) => { nb[fr][fc] = m.player; });
-      b = nb;
+      const next = applyMove(b, m.row, m.col, m.color);
+      if (!next) break;
+      b = next;
     }
     const lastM = savedKifu.length > 0 ? savedKifu[savedKifu.length - 1] : null;
     setBoard(b);
     setKifu([...savedKifu]);
     setHistory([]);
-    setLastMove(lastM ? { row: lastM.row, col: lastM.col, player: lastM.player } : null);
-    setCurrentPlayer(savedKifu.length % 2 === 0 ? 'B' : 'W');
+    setLastMove(lastM ? { row: lastM.row, col: lastM.col, color: lastM.color } : null);
+    setCurrentColor(savedKifu.length % 2 === 0 ? BLACK : WHITE);
     setHintMove(null);
     setPassInfo(null);
     setFlipping({});
     setStoryJustAdvanced(false);
     setKifuOpen(false);
+    ai.cancel();
   }
+
+  /* ----- Hint ----- */
 
   function toggleHint() {
     if (hintMove) {
       setHintMove(null);
       return;
     }
-    if (!isHumanTurn || aiThinking || gameOver || noCurrent || passInfo) return;
-    // Use a strong AI level for hints
+    if (!isHumanTurn || aiThinking || gameOver || noCurrent || passInfo !== null) return;
     const strongLevel = Math.min(20, Math.max(level + 4, 16));
-    const move = pickAIMove(board, validMoves, strongLevel, currentPlayer);
+    const move = pickAIMove(board, validMoves, strongLevel, currentColor);
     if (move) setHintMove({ row: move.row, col: move.col });
   }
 
-  // Cancel hint when board changes meaningfully
-  useEffect(() => { setHintMove(null); }, [currentPlayer]);
-
-  function selectCharacter(idx) {
+  function selectCharacter(idx: number) {
     setComputerChar(idx);
     setLevel(COMPUTERS[idx].level);
   }
 
-  // Derived display info
+  /* ----- Derived display info ----- */
+
   const blackInfo = {
     kanji: AVATARS[p1Avatar].kanji,
     idx: p1Avatar,
@@ -787,30 +777,40 @@ export default function App() {
     name: AVATARS[p1Avatar].name,
     quote: AVATARS[p1Avatar].quote,
   };
-  const whiteInfo = gameMode === 'ai'
-    ? {
-        kanji: COMPUTERS[computerChar].kanji,
-        idx: computerChar + 100,
-        image: COMPUTERS[computerChar].image,
-        name: COMPUTERS[computerChar].name,
-        quote: COMPUTERS[computerChar].quote,
-        level: COMPUTERS[computerChar].level,
-      }
-    : {
-        kanji: AVATARS[p2Avatar].kanji,
-        idx: p2Avatar + 50,
-        image: AVATARS[p2Avatar].image,
-        name: AVATARS[p2Avatar].name,
-        quote: AVATARS[p2Avatar].quote,
-      };
+  const whiteInfo =
+    gameMode === 'ai'
+      ? {
+          kanji: COMPUTERS[computerChar].kanji,
+          idx: computerChar + 100,
+          image: COMPUTERS[computerChar].image,
+          name: COMPUTERS[computerChar].name,
+          quote: COMPUTERS[computerChar].quote,
+          level: COMPUTERS[computerChar].level,
+        }
+      : {
+          kanji: AVATARS[p2Avatar].kanji,
+          idx: p2Avatar + 50,
+          image: AVATARS[p2Avatar].image,
+          name: AVATARS[p2Avatar].name,
+          quote: AVATARS[p2Avatar].quote,
+          level: undefined,
+        };
 
-  const winner = gameOver ? (counts.B > counts.W ? 'B' : counts.W > counts.B ? 'W' : 'D') : null;
-  const total = counts.B + counts.W;
-  const blackPercent = total > 0 ? (counts.B / total) * 100 : 50;
+  const winner: Color | typeof EMPTY | null = gameOver
+    ? counts.black > counts.white
+      ? BLACK
+      : counts.white > counts.black
+        ? WHITE
+        : EMPTY
+    : null;
+  const total = counts.black + counts.white;
+  const blackPercent = total > 0 ? (counts.black / total) * 100 : 50;
 
-  const canUndo = !aiThinking && history.length > 0 &&
-    (gameMode === 'human' || history.some(h => h.currentPlayer === 'B'));
-  const canHint = isHumanTurn && !aiThinking && !gameOver && !noCurrent && !passInfo;
+  const canUndo =
+    !aiThinking &&
+    history.length > 0 &&
+    (gameMode === 'human' || history.some((h) => h.currentColor === BLACK));
+  const canHint = isHumanTurn && !aiThinking && !gameOver && !noCurrent && passInfo === null;
 
   /* ============================================================
      Render
@@ -859,7 +859,6 @@ export default function App() {
         .cell.valid { cursor: pointer; }
         .cell.valid:hover { background: rgba(201, 169, 97, 0.18); }
 
-        /* Hoshi dots — decorative reference marks (subtle, no animation) */
         .star-dot::after {
           content: ''; position: absolute;
           width: 5px; height: 5px;
@@ -918,7 +917,6 @@ export default function App() {
           50% { opacity: 0.85; transform: scale(1.04); }
         }
 
-        /* Move hint — soft blue-white glow, distinct from any piece color */
         .move-hint {
           width: 46%; height: 46%;
           border-radius: 50%;
@@ -1013,24 +1011,36 @@ export default function App() {
 
       <div className="stage-bg min-h-screen w-full relative">
         <div className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
-
           {/* Top icon toolbar */}
           <div className="grid grid-cols-6 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
-            <ToolbarBtn icon={Menu}       label="メニュー" onClick={() => setSettingsOpen(true)} />
-            <ToolbarBtn icon={Lightbulb}  label="ヒント"   onClick={toggleHint} active={!!hintMove} disabled={!canHint && !hintMove} />
-            <ToolbarBtn icon={Undo2}      label="待った"   onClick={undo} disabled={!canUndo} />
-            <ToolbarBtn icon={Info}       label="対局情報" onClick={() => setInfoOpen(true)} />
-            <ToolbarBtn icon={RotateCcw}  label="新規対局" onClick={reset} />
-            <ToolbarBtn icon={FolderOpen} label="棋譜"     onClick={() => { loadSavedSlots(); setKifuOpen(true); }} />
+            <ToolbarBtn icon={Menu} label="メニュー" onClick={() => setSettingsOpen(true)} />
+            <ToolbarBtn
+              icon={Lightbulb}
+              label="ヒント"
+              onClick={toggleHint}
+              active={hintMove !== null}
+              disabled={!canHint && hintMove === null}
+            />
+            <ToolbarBtn icon={Undo2} label="待った" onClick={undo} disabled={!canUndo} />
+            <ToolbarBtn icon={Info} label="対局情報" onClick={() => setInfoOpen(true)} />
+            <ToolbarBtn icon={RotateCcw} label="新規対局" onClick={reset} />
+            <ToolbarBtn
+              icon={FolderOpen}
+              label="棋譜"
+              onClick={() => {
+                loadSavedSlots();
+                setKifuOpen(true);
+              }}
+            />
           </div>
 
           {/* Score panels + board */}
           <div className="grid md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-6 items-center">
             <div className="md:order-1">
               <PlayerPanel
-                player="B"
-                count={counts.B}
-                isActive={currentPlayer === 'B' && !gameOver && !passInfo}
+                color={BLACK}
+                count={counts.black}
+                isActive={currentColor === BLACK && !gameOver && passInfo === null}
                 kanji={blackInfo.kanji}
                 idx={blackInfo.idx}
                 image={blackInfo.image}
@@ -1042,52 +1052,71 @@ export default function App() {
             <div className="md:order-2">
               <div className="board-felt p-3 md:p-4 rounded-sm relative">
                 <div style={{ width: 'min(86vw, 520px)' }}>
-                  {/* Column letters A-H, offset to align with cells */}
                   <div className="flex mb-1">
                     <div style={{ width: 18 }} />
                     <div className="flex-1 grid grid-cols-8">
                       {Array.from({ length: 8 }, (_, c) => (
-                        <div key={c} className="text-center latin-display italic text-amber-200/45 text-[10px] md:text-xs">
+                        <div
+                          key={c}
+                          className="text-center latin-display italic text-amber-200/45 text-[10px] md:text-xs"
+                        >
                           {String.fromCharCode(65 + c)}
                         </div>
                       ))}
                     </div>
                   </div>
-                  {/* Row labels + cells */}
                   <div className="flex">
                     <div style={{ width: 18 }} className="flex flex-col">
                       {Array.from({ length: 8 }, (_, r) => (
-                        <div key={r} className="flex-1 flex items-center justify-center latin-display italic text-amber-200/45 text-[10px] md:text-xs">
+                        <div
+                          key={r}
+                          className="flex-1 flex items-center justify-center latin-display italic text-amber-200/45 text-[10px] md:text-xs"
+                        >
                           {r + 1}
                         </div>
                       ))}
                     </div>
-                    <div className="flex-1 grid grid-cols-8 grid-rows-8 gap-0" style={{ aspectRatio: '1 / 1' }}>
+                    <div
+                      className="flex-1 grid grid-cols-8 grid-rows-8 gap-0"
+                      style={{ aspectRatio: '1 / 1' }}
+                    >
                       {board.map((row, r) =>
-                        row.map((cell, c) => {
-                          const isValid = !!validMoves[`${r},${c}`] && isHumanTurn && !aiThinking && !gameOver && !passInfo;
+                        row.map((cell: Disc, c) => {
+                          const isValid =
+                            validMoveMap.has(moveKey(r, c)) &&
+                            isHumanTurn &&
+                            !aiThinking &&
+                            !gameOver &&
+                            passInfo === null;
                           const isStar = (r === 2 || r === 6) && (c === 2 || c === 6);
-                          const isLast = lastMove && lastMove.row === r && lastMove.col === c;
-                          const flipTo = flipping[`${r},${c}`];
-                          const isHint = hintMove && hintMove.row === r && hintMove.col === c;
+                          const isLast =
+                            lastMove !== null && lastMove.row === r && lastMove.col === c;
+                          const flipTo = flipping[moveKey(r, c)];
+                          const isHint = hintMove !== null && hintMove.row === r && hintMove.col === c;
                           return (
                             <div
                               key={`${r}-${c}`}
                               onClick={() => isValid && handleClick(r, c)}
-                              className={`cell flex items-center justify-center ${isValid ? 'valid' : ''} ${isStar ? 'star-dot' : ''}`}
+                              className={`cell flex items-center justify-center ${
+                                isValid ? 'valid' : ''
+                              } ${isStar ? 'star-dot' : ''}`}
                             >
-                              {cell && (
+                              {cell !== EMPTY && (
                                 <div
-                                  key={`${r}-${c}-${flipTo || cell}`}
-                                  className={`piece ${flipTo ? `flip-to-${flipTo}` : `piece-${cell}`}`}
+                                  key={`${r}-${c}-${flipTo ?? cell}`}
+                                  className={`piece ${
+                                    flipTo
+                                      ? `flip-to-${colorChar(flipTo)}`
+                                      : `piece-${colorChar(cell as Color)}`
+                                  }`}
                                 />
                               )}
-                              {!cell && isValid && <div className="move-hint" />}
+                              {cell === EMPTY && isValid && <div className="move-hint" />}
                               {isLast && <div className="last-move-ring" />}
                               {isHint && <div className="hint-marker" />}
                             </div>
                           );
-                        })
+                        }),
                       )}
                     </div>
                   </div>
@@ -1097,9 +1126,9 @@ export default function App() {
 
             <div className="md:order-3">
               <PlayerPanel
-                player="W"
-                count={counts.W}
-                isActive={currentPlayer === 'W' && !gameOver && !passInfo}
+                color={WHITE}
+                count={counts.white}
+                isActive={currentColor === WHITE && !gameOver && passInfo === null}
                 kanji={whiteInfo.kanji}
                 idx={whiteInfo.idx}
                 image={whiteInfo.image}
@@ -1130,8 +1159,8 @@ export default function App() {
               />
             </div>
             <div className="flex justify-between mt-1.5 latin-display italic text-amber-200/40 text-xs tracking-wider">
-              <span>{counts.B} 黒</span>
-              <span>白 {counts.W}</span>
+              <span>{counts.black} 黒</span>
+              <span>白 {counts.white}</span>
             </div>
           </div>
 
@@ -1146,11 +1175,11 @@ export default function App() {
           </div>
 
           {/* Pass message */}
-          {passInfo && (
+          {passInfo !== null && (
             <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-30 px-4">
               <div className="bg-black/75 backdrop-blur-sm border border-amber-200/30 px-7 py-4 rounded-sm">
                 <p className="jp-display text-amber-100 text-lg md:text-xl tracking-wider text-center">
-                  {passInfo}は打てる場所がありません — パス
+                  {colorLabel(passInfo)}は打てる場所がありません — パス
                 </p>
               </div>
             </div>
@@ -1162,19 +1191,35 @@ export default function App() {
             const justAdvanced = isStoryMode && storyJustAdvanced;
             const justCompletedStory = justAdvanced && storyProgress >= 20;
             const showNextChapter = justAdvanced && storyProgress < 20;
-            const nextOpp = showNextChapter ? COMPUTERS.find(c => c.level === storyProgress + 1) : null;
+            const nextOpp = showNextChapter
+              ? COMPUTERS.find((c) => c.level === storyProgress + 1)
+              : null;
             const playedChapter = justAdvanced ? storyProgress : storyProgress + 1;
 
             return (
               <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">
                 <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full text-center rounded-sm">
                   <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3">
-                    {justCompletedStory ? '— Story Complete —' : isStoryMode ? `— Chapter ${playedChapter} —` : '— Final Result —'}
+                    {justCompletedStory
+                      ? '— Story Complete —'
+                      : isStoryMode
+                        ? `— Chapter ${playedChapter} —`
+                        : '— Final Result —'}
                   </div>
                   <h2 className="jp-display text-4xl md:text-5xl text-amber-100 font-bold mb-6 tracking-[0.15em]">
-                    {justCompletedStory ? 'エンディング'
-                      : isStoryMode ? (winner === 'B' ? '勝利' : winner === 'D' ? '引き分け' : '敗北')
-                      : (winner === 'D' ? '引き分け' : winner === 'B' ? '黒の勝ち' : '白の勝ち')}
+                    {justCompletedStory
+                      ? 'エンディング'
+                      : isStoryMode
+                        ? winner === BLACK
+                          ? '勝利'
+                          : winner === EMPTY
+                            ? '引き分け'
+                            : '敗北'
+                        : winner === EMPTY
+                          ? '引き分け'
+                          : winner === BLACK
+                            ? '黒の勝ち'
+                            : '白の勝ち'}
                   </h2>
 
                   {justCompletedStory && (
@@ -1187,7 +1232,7 @@ export default function App() {
                       次の対戦相手は <span className="text-amber-100">『{nextOpp.name}』</span>
                     </p>
                   )}
-                  {isStoryMode && winner !== 'B' && (
+                  {isStoryMode && winner !== BLACK && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-5">
                       まだ届かぬか…もう一度挑むがよい
                     </p>
@@ -1195,43 +1240,73 @@ export default function App() {
 
                   <div className="flex justify-center items-center gap-6 md:gap-8 my-6">
                     <div className="flex flex-col items-center gap-2">
-                      <AvatarBadge kanji={blackInfo.kanji} idx={blackInfo.idx} image={blackInfo.image} size="md" />
+                      <AvatarBadge
+                        kanji={blackInfo.kanji}
+                        idx={blackInfo.idx}
+                        image={blackInfo.image}
+                        size="md"
+                      />
                       <div
                         className="w-10 h-10 rounded-full"
                         style={{
-                          background: 'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)',
-                          boxShadow: 'inset -2px -2px 4px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)'
+                          background:
+                            'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)',
+                          boxShadow:
+                            'inset -2px -2px 4px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)',
                         }}
                       />
-                      <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">{counts.B}</div>
+                      <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
+                        {counts.black}
+                      </div>
                     </div>
                     <div className="latin-display italic text-amber-200/40 text-xl">vs</div>
                     <div className="flex flex-col items-center gap-2">
-                      <AvatarBadge kanji={whiteInfo.kanji} idx={whiteInfo.idx} image={whiteInfo.image} size="md" />
+                      <AvatarBadge
+                        kanji={whiteInfo.kanji}
+                        idx={whiteInfo.idx}
+                        image={whiteInfo.image}
+                        size="md"
+                      />
                       <div
                         className="w-10 h-10 rounded-full"
                         style={{
-                          background: 'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
-                          boxShadow: 'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)'
+                          background:
+                            'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
+                          boxShadow:
+                            'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)',
                         }}
                       />
-                      <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">{counts.W}</div>
+                      <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
+                        {counts.white}
+                      </div>
                     </div>
                   </div>
 
                   {!isStoryMode && gameMode === 'ai' && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-2">
-                      「{winner === 'B' ? 'お見事…次は本気を出す' : winner === 'W' ? 'まだまだじゃな' : '互角の戦い、見事だ'}」
+                      「
+                      {winner === BLACK
+                        ? 'お見事…次は本気を出す'
+                        : winner === WHITE
+                          ? 'まだまだじゃな'
+                          : '互角の戦い、見事だ'}
+                      」
                     </p>
                   )}
 
                   <div className="flex justify-center gap-2 mt-4">
                     {justCompletedStory ? (
-                      <button onClick={resetStoryProgress} className="btn">もう一度ストーリーを</button>
+                      <button onClick={resetStoryProgress} className="btn">
+                        もう一度ストーリーを
+                      </button>
                     ) : showNextChapter ? (
-                      <button onClick={reset} className="btn btn-active">次の章へ →</button>
+                      <button onClick={reset} className="btn btn-active">
+                        次の章へ →
+                      </button>
                     ) : (
-                      <button onClick={reset} className="btn">もう一度</button>
+                      <button onClick={reset} className="btn">
+                        もう一度
+                      </button>
                     )}
                   </div>
                 </div>
@@ -1239,74 +1314,119 @@ export default function App() {
             );
           })()}
 
-          {/* 対局情報 modal (Game info) */}
+          {/* Match info modal */}
           {infoOpen && (
             <div className="modal-bg fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-2 md:p-6">
               <div className="modal-card scroll-y w-full max-w-lg max-h-[95vh] rounded-sm p-5 md:p-7">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">— Match Info —</div>
-                    <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">対局情報</h2>
+                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">
+                      — Match Info —
+                    </div>
+                    <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">
+                      対局情報
+                    </h2>
                   </div>
-                  <button onClick={() => setInfoOpen(false)} className="btn">閉じる</button>
+                  <button onClick={() => setInfoOpen(false)} className="btn">
+                    閉じる
+                  </button>
                 </div>
 
-                {/* Mode summary */}
                 <div className="mb-4 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                  <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">Mode</div>
+                  <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
+                    Mode
+                  </div>
                   <div className="jp-display text-amber-100/90 text-sm">
-                    {gameMode === 'human' ? '二人対戦'
+                    {gameMode === 'human'
+                      ? '二人対戦'
                       : aiMode === 'story'
-                        ? (storyProgress >= 20 ? `ストーリー · 完結` : `ストーリー · 第${storyProgress + 1}章`)
+                        ? storyProgress >= 20
+                          ? 'ストーリー · 完結'
+                          : `ストーリー · 第${storyProgress + 1}章`
                         : `フリー · Lv.${level} ${getLevelLabel(level)}`}
                   </div>
                 </div>
 
-                {/* Players */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">Black 黒</div>
+                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
+                      Black 黒
+                    </div>
                     <div className="flex items-center gap-2">
-                      <AvatarBadge kanji={blackInfo.kanji} idx={blackInfo.idx} image={blackInfo.image} size="sm" />
+                      <AvatarBadge
+                        kanji={blackInfo.kanji}
+                        idx={blackInfo.idx}
+                        image={blackInfo.image}
+                        size="sm"
+                      />
                       <div className="min-w-0">
-                        <div className="jp-display text-amber-100/90 text-sm truncate">{blackInfo.name}</div>
-                        <div className="latin-display tabular-nums text-amber-100 text-lg leading-none">{counts.B}</div>
+                        <div className="jp-display text-amber-100/90 text-sm truncate">
+                          {blackInfo.name}
+                        </div>
+                        <div className="latin-display tabular-nums text-amber-100 text-lg leading-none">
+                          {counts.black}
+                        </div>
                       </div>
                     </div>
                   </div>
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">White 白</div>
+                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
+                      White 白
+                    </div>
                     <div className="flex items-center gap-2">
-                      <AvatarBadge kanji={whiteInfo.kanji} idx={whiteInfo.idx} image={whiteInfo.image} size="sm" />
+                      <AvatarBadge
+                        kanji={whiteInfo.kanji}
+                        idx={whiteInfo.idx}
+                        image={whiteInfo.image}
+                        size="sm"
+                      />
                       <div className="min-w-0">
-                        <div className="jp-display text-amber-100/90 text-sm truncate">{whiteInfo.name}</div>
-                        <div className="latin-display tabular-nums text-amber-100 text-lg leading-none">{counts.W}</div>
+                        <div className="jp-display text-amber-100/90 text-sm truncate">
+                          {whiteInfo.name}
+                        </div>
+                        <div className="latin-display tabular-nums text-amber-100 text-lg leading-none">
+                          {counts.white}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-4 text-center">
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">Move</div>
-                    <div className="latin-display tabular-nums text-amber-100 text-xl">{kifu.length}</div>
+                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
+                      Move
+                    </div>
+                    <div className="latin-display tabular-nums text-amber-100 text-xl">
+                      {kifu.length}
+                    </div>
                   </div>
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">Empty</div>
-                    <div className="latin-display tabular-nums text-amber-100 text-xl">{64 - counts.B - counts.W}</div>
+                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
+                      Empty
+                    </div>
+                    <div className="latin-display tabular-nums text-amber-100 text-xl">
+                      {64 - counts.black - counts.white}
+                    </div>
                   </div>
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">Turn</div>
-                    <div className="jp-display text-amber-100 text-base mt-1">{currentPlayer === 'B' ? '黒' : '白'}</div>
+                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
+                      Turn
+                    </div>
+                    <div className="jp-display text-amber-100 text-base mt-1">
+                      {colorLabel(currentColor)}
+                    </div>
                   </div>
                 </div>
 
-                {/* Kifu list */}
                 <div className="mb-2">
-                  <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-2">Kifu — 棋譜</div>
+                  <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-2">
+                    Kifu — 棋譜
+                  </div>
                   {kifu.length === 0 ? (
-                    <p className="jp-display italic text-amber-200/40 text-xs">まだ手が指されていません</p>
+                    <p className="jp-display italic text-amber-200/40 text-xs">
+                      まだ手が指されていません
+                    </p>
                   ) : (
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 max-h-48 scroll-y overflow-y-auto pr-1 border border-amber-200/10 rounded-sm p-2 bg-zinc-950/50">
                       {Array.from({ length: Math.ceil(kifu.length / 2) }, (_, i) => {
@@ -1333,33 +1453,47 @@ export default function App() {
             </div>
           )}
 
-          {/* 棋譜 (kifu save/load) modal */}
+          {/* Kifu library modal */}
           {kifuOpen && (
             <div className="modal-bg fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-2 md:p-6">
               <div className="modal-card scroll-y w-full max-w-xl max-h-[95vh] rounded-sm p-5 md:p-7">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">— Kifu Library —</div>
-                    <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">棋譜・保存と読込</h2>
+                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">
+                      — Kifu Library —
+                    </div>
+                    <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">
+                      棋譜・保存と読込
+                    </h2>
                   </div>
-                  <button onClick={() => setKifuOpen(false)} className="btn">閉じる</button>
+                  <button onClick={() => setKifuOpen(false)} className="btn">
+                    閉じる
+                  </button>
                 </div>
 
-                {/* Save section */}
                 <section className="mb-6">
                   <h3 className="jp-display text-amber-100/90 text-sm tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    現在の対局を保存 <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">— Save</span>
+                    現在の対局を保存
+                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
+                      — Save
+                    </span>
                   </h3>
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm mb-3 text-xs jp-display text-amber-100/80 leading-relaxed">
                     {kifu.length === 0
                       ? '※ まだ手が指されていません。1手以上指してから保存できます。'
-                      : `${kifu.length}手・${gameMode === 'human' ? '二人対戦' : (aiMode === 'story' ? `第${Math.min(storyProgress + 1, 20)}章 vs ${COMPUTERS[computerChar].name}` : `vs ${COMPUTERS[computerChar].name} Lv.${level}`)}`}
+                      : `${kifu.length}手・${
+                          gameMode === 'human'
+                            ? '二人対戦'
+                            : aiMode === 'story'
+                              ? `第${Math.min(storyProgress + 1, 20)}章 vs ${COMPUTERS[computerChar].name}`
+                              : `vs ${COMPUTERS[computerChar].name} Lv.${level}`
+                        }`}
                   </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={kifuName}
-                      onChange={(e) => setKifuName(e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setKifuName(e.target.value)}
                       placeholder="棋譜の名前（例：vs 朝日 大逆転）"
                       maxLength={40}
                       className="jp-display flex-1 px-3 py-2 bg-zinc-950/70 border border-amber-200/20 rounded-sm text-amber-100 text-sm placeholder:text-amber-200/30 focus:border-amber-200/60 focus:outline-none"
@@ -1374,35 +1508,55 @@ export default function App() {
                   </div>
                 </section>
 
-                {/* Load section */}
                 <section>
                   <h3 className="jp-display text-amber-100/90 text-sm tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    保存済みの棋譜 <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">— Saved games</span>
+                    保存済みの棋譜
+                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
+                      — Saved games
+                    </span>
                   </h3>
                   {savedSlots.length === 0 ? (
-                    <p className="jp-display italic text-amber-200/40 text-sm py-3">保存された棋譜はまだありません</p>
+                    <p className="jp-display italic text-amber-200/40 text-sm py-3">
+                      保存された棋譜はまだありません
+                    </p>
                   ) : (
                     <div className="space-y-2 max-h-72 scroll-y overflow-y-auto pr-1">
                       {savedSlots.map((slot) => {
-                        const date = new Date(slot.timestamp || 0);
-                        const dateStr = `${date.getFullYear()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        const date = new Date(slot.timestamp ?? 0);
+                        const dateStr = `${date.getFullYear()}/${(date.getMonth() + 1)
+                          .toString()
+                          .padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')} ${date
+                          .getHours()
+                          .toString()
+                          .padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        const opp =
+                          slot.computerChar !== undefined && COMPUTERS[slot.computerChar]
+                            ? COMPUTERS[slot.computerChar]
+                            : null;
                         return (
                           <div
                             key={slot.key}
                             className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm flex items-center gap-3"
                           >
                             <div className="flex-1 min-w-0">
-                              <div className="jp-display text-amber-100/95 text-sm truncate">{slot.name || '(無題)'}</div>
+                              <div className="jp-display text-amber-100/95 text-sm truncate">
+                                {slot.name ?? '(無題)'}
+                              </div>
                               <div className="latin-display italic text-amber-200/40 text-[10px] tracking-wider mt-0.5">
                                 {dateStr} · {slot.kifu ? slot.kifu.length : 0}手
-                                {slot.gameMode === 'ai' && slot.computerChar !== undefined && COMPUTERS[slot.computerChar] && (
-                                  <> · vs {COMPUTERS[slot.computerChar].name} Lv.{slot.level}</>
+                                {slot.gameMode === 'ai' && opp && (
+                                  <>
+                                    {' '}
+                                    · vs {opp.name} Lv.{slot.level}
+                                  </>
                                 )}
-                                {slot.result && <> · {slot.result === 'B' ? '黒勝' : slot.result === 'W' ? '白勝' : '引分'}</>}
+                                {slot.result === BLACK && <> · 黒勝</>}
+                                {slot.result === WHITE && <> · 白勝</>}
+                                {slot.result === EMPTY && <> · 引分</>}
                               </div>
                             </div>
                             <button
-                              onClick={() => loadKifuMoves(slot.kifu || [])}
+                              onClick={() => loadKifuMoves(slot.kifu ?? [])}
                               className="btn text-xs px-3 py-1.5"
                               title="読込"
                             >
@@ -1429,26 +1583,26 @@ export default function App() {
           {settingsOpen && (
             <div className="modal-bg fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-2 md:p-6">
               <div className="modal-card scroll-y w-full max-w-3xl max-h-[95vh] rounded-sm p-5 md:p-8">
-                {/* Modal header */}
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">— Setup —</div>
+                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">
+                      — Setup —
+                    </div>
                     <h2 className="jp-display text-amber-100 text-2xl md:text-3xl font-bold tracking-[0.15em]">
                       設定
                     </h2>
                   </div>
-                  <button
-                    onClick={() => setSettingsOpen(false)}
-                    className="btn"
-                  >
+                  <button onClick={() => setSettingsOpen(false)} className="btn">
                     閉じる
                   </button>
                 </div>
 
-                {/* Section: あなた */}
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    主人公 <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">— Choose your protagonist</span>
+                    主人公
+                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
+                      — Choose your protagonist
+                    </span>
                   </h3>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
                     {AVATARS.map((a, i) => (
@@ -1465,9 +1619,11 @@ export default function App() {
                         <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
                           {a.name}
                         </div>
-                        <div className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                          p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/40'
-                        }`}>
+                        <div
+                          className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
+                            p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/40'
+                          }`}
+                        >
                           {a.setting}
                         </div>
                       </button>
@@ -1476,7 +1632,9 @@ export default function App() {
                   <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="jp-display text-amber-100/85 text-sm">
                       {AVATARS[p1Avatar].name}
-                      <span className="latin-display italic text-amber-200/40 text-xs ml-2">— {AVATARS[p1Avatar].setting}</span>
+                      <span className="latin-display italic text-amber-200/40 text-xs ml-2">
+                        — {AVATARS[p1Avatar].setting}
+                      </span>
                     </div>
                     <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
                       「{AVATARS[p1Avatar].quote}」
@@ -1484,13 +1642,14 @@ export default function App() {
                   </div>
                 </section>
 
-                {/* Section: 対戦相手 */}
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    対戦相手 <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">— Opponent</span>
+                    対戦相手
+                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
+                      — Opponent
+                    </span>
                   </h3>
 
-                  {/* Mode toggle */}
                   <div className="flex gap-2 mb-5">
                     <button
                       onClick={() => setGameMode('ai')}
@@ -1506,10 +1665,8 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* AI settings */}
                   {gameMode === 'ai' && (
                     <>
-                      {/* Story / Free sub-toggle */}
                       <div className="flex gap-2 mb-5">
                         <button
                           onClick={() => setAiMode('story')}
@@ -1525,19 +1682,21 @@ export default function App() {
                         </button>
                       </div>
 
-                      {/* Story mode panel */}
                       {aiMode === 'story' && (() => {
                         const isComplete = storyProgress >= 20;
                         const targetLevel = isComplete ? 20 : storyProgress + 1;
-                        const oppIdx = COMPUTERS.findIndex(c => c.level === targetLevel);
+                        const oppIdx = COMPUTERS.findIndex((c) => c.level === targetLevel);
                         const opp = COMPUTERS[oppIdx];
                         return (
                           <div className="space-y-4 mb-2">
-                            {/* Progress */}
                             <div>
                               <div className="flex items-center justify-between mb-2">
-                                <span className="latin-display italic text-amber-200/50 text-xs tracking-[0.25em] uppercase">Progress</span>
-                                <span className="latin-display text-amber-100 text-base tabular-nums">{storyProgress} / 20</span>
+                                <span className="latin-display italic text-amber-200/50 text-xs tracking-[0.25em] uppercase">
+                                  Progress
+                                </span>
+                                <span className="latin-display text-amber-100 text-base tabular-nums">
+                                  {storyProgress} / 20
+                                </span>
                               </div>
                               <div className="flex gap-0.5">
                                 {Array.from({ length: 20 }, (_, i) => (
@@ -1551,22 +1710,31 @@ export default function App() {
                               </div>
                             </div>
 
-                            {/* Intro shown only at start */}
                             {storyProgress === 0 && (
                               <p className="jp-display italic text-amber-200/55 text-xs md:text-sm leading-relaxed whitespace-pre-line">
                                 {STORY_INTRO}
                               </p>
                             )}
 
-                            {/* Current chapter card */}
                             {!isComplete ? (
                               <div className="border border-amber-200/30 bg-amber-200/[0.04] rounded-sm p-4">
-                                <div className="latin-display italic ornament text-[10px] uppercase mb-2">— Chapter {targetLevel} —</div>
+                                <div className="latin-display italic ornament text-[10px] uppercase mb-2">
+                                  — Chapter {targetLevel} —
+                                </div>
                                 <div className="flex items-center gap-3 mb-3">
-                                  <AvatarBadge kanji={opp.kanji} idx={oppIdx + 100} image={opp.image} size="md" />
+                                  <AvatarBadge
+                                    kanji={opp.kanji}
+                                    idx={oppIdx + 100}
+                                    image={opp.image}
+                                    size="md"
+                                  />
                                   <div className="min-w-0">
-                                    <div className="jp-display text-amber-100 text-base md:text-lg truncate">第{targetLevel}章 — {opp.name}</div>
-                                    <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">Lv.{opp.level} {getLevelLabel(opp.level)}</div>
+                                    <div className="jp-display text-amber-100 text-base md:text-lg truncate">
+                                      第{targetLevel}章 — {opp.name}
+                                    </div>
+                                    <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">
+                                      Lv.{opp.level} {getLevelLabel(opp.level)}
+                                    </div>
                                   </div>
                                 </div>
                                 <p className="jp-display text-amber-100/80 text-sm leading-relaxed">
@@ -1578,9 +1746,15 @@ export default function App() {
                               </div>
                             ) : (
                               <div className="border border-amber-400/50 bg-amber-300/[0.06] rounded-sm p-4 text-center">
-                                <div className="latin-display italic ornament text-[10px] uppercase mb-3">— Story Complete —</div>
-                                <div className="jp-display text-amber-100 text-xl md:text-2xl mb-3 tracking-wider">エンディング</div>
-                                <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">{STORY_ENDING}</p>
+                                <div className="latin-display italic ornament text-[10px] uppercase mb-3">
+                                  — Story Complete —
+                                </div>
+                                <div className="jp-display text-amber-100 text-xl md:text-2xl mb-3 tracking-wider">
+                                  エンディング
+                                </div>
+                                <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
+                                  {STORY_ENDING}
+                                </p>
                               </div>
                             )}
 
@@ -1593,60 +1767,67 @@ export default function App() {
                         );
                       })()}
 
-                      {/* Free mode — character grid + level slider */}
                       {aiMode === 'free' && (
                         <>
-                      {/* Character grid */}
-                      <div className="mb-5">
-                        <div className="latin-display italic text-amber-200/45 text-xs tracking-[0.25em] uppercase mb-2">
-                          Character — 二十人の対戦相手
-                        </div>
-                        <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                          {COMPUTERS.map((c, i) => (
-                            <button
-                              key={i}
-                              onClick={() => selectCharacter(i)}
-                              className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                                computerChar === i
-                                  ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                                  : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                              }`}
-                            >
-                              <AvatarBadge kanji={c.kanji} idx={i + 100} image={c.image} size="sm" />
-                              <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                                {c.name}
+                          <div className="mb-5">
+                            <div className="latin-display italic text-amber-200/45 text-xs tracking-[0.25em] uppercase mb-2">
+                              Character — 二十人の対戦相手
+                            </div>
+                            <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
+                              {COMPUTERS.map((c, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => selectCharacter(i)}
+                                  className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                                    computerChar === i
+                                      ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                                      : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
+                                  }`}
+                                >
+                                  <AvatarBadge
+                                    kanji={c.kanji}
+                                    idx={i + 100}
+                                    image={c.image}
+                                    size="sm"
+                                  />
+                                  <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                                    {c.name}
+                                  </div>
+                                  <div
+                                    className={`latin-display italic text-[10px] tracking-wider ${
+                                      computerChar === i
+                                        ? 'text-amber-200/80'
+                                        : 'text-amber-200/40'
+                                    }`}
+                                  >
+                                    Lv.{c.level}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
+                              <div className="jp-display text-amber-100/80 text-sm">
+                                {COMPUTERS[computerChar].name}
                               </div>
-                              <div className={`latin-display italic text-[10px] tracking-wider ${
-                                computerChar === i ? 'text-amber-200/80' : 'text-amber-200/40'
-                              }`}>
-                                Lv.{c.level}
+                              <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
+                                「{COMPUTERS[computerChar].quote}」
                               </div>
-                            </button>
-                          ))}
-                        </div>
-                        <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                          <div className="jp-display text-amber-100/80 text-sm">
-                            {COMPUTERS[computerChar].name}
+                            </div>
                           </div>
-                          <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
-                            「{COMPUTERS[computerChar].quote}」
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Level selector */}
-                      <div>
-                        <LevelSelector level={level} setLevel={setLevel} />
-                        <p className="latin-display italic text-amber-200/35 text-[11px] mt-3 leading-relaxed">
-                          Lv.1–5 random / greedy ・ Lv.6–9 positional ・ Lv.10–14 1–2-ply search ・ Lv.15–17 3-ply ・ Lv.18–20 4-ply minimax with mobility & disc parity.
-                        </p>
-                      </div>
+                          <div>
+                            <LevelSelector level={level} setLevel={setLevel} />
+                            <p className="latin-display italic text-amber-200/35 text-[11px] mt-3 leading-relaxed">
+                              Lv.1–5 random / greedy ・ Lv.6–9 positional ・ Lv.10–14 1–2-ply search
+                              ・ Lv.15–17 3-ply ・ Lv.18–20 4-ply minimax with mobility & disc
+                              parity.
+                            </p>
+                          </div>
                         </>
                       )}
                     </>
                   )}
 
-                  {/* Human mode: P2 avatar */}
                   {gameMode === 'human' && (
                     <div>
                       <div className="latin-display italic text-amber-200/45 text-xs tracking-[0.25em] uppercase mb-2">
@@ -1664,13 +1845,21 @@ export default function App() {
                                 : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
                             } ${p1Avatar === i ? 'opacity-40 cursor-not-allowed' : ''}`}
                           >
-                            <AvatarBadge kanji={a.kanji} idx={i + 50} image={a.image} size="sm" dim={p1Avatar === i} />
+                            <AvatarBadge
+                              kanji={a.kanji}
+                              idx={i + 50}
+                              image={a.image}
+                              size="sm"
+                              dim={p1Avatar === i}
+                            />
                             <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
                               {a.name}
                             </div>
-                            <div className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                              p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/40'
-                            }`}>
+                            <div
+                              className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
+                                p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/40'
+                              }`}
+                            >
                               {a.setting}
                             </div>
                           </button>
@@ -1685,9 +1874,14 @@ export default function App() {
                   )}
                 </section>
 
-                {/* Footer */}
                 <div className="flex justify-end gap-2 pt-2 border-t border-amber-200/15">
-                  <button onClick={() => { reset(); setSettingsOpen(false); }} className="btn">
+                  <button
+                    onClick={() => {
+                      reset();
+                      setSettingsOpen(false);
+                    }}
+                    className="btn"
+                  >
                     新しい対局を開始
                   </button>
                   <button onClick={() => setSettingsOpen(false)} className="btn btn-active">
