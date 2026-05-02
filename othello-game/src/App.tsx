@@ -324,7 +324,7 @@ function PlayerPanel({
             )}
           </div>
           {quote && (
-            <div className="jp-display text-amber-200/45 text-[11px] md:text-xs italic truncate mt-0.5">
+            <div className="jp-display text-amber-200/70 text-[11px] md:text-xs italic truncate mt-0.5">
               「{quote}」
             </div>
           )}
@@ -372,7 +372,7 @@ function LevelSelector({ level, setLevel, t }: LevelSelectorProps) {
           <div className="latin-display text-amber-100 text-3xl tabular-nums leading-none">
             {level}
           </div>
-          <div className="jp-display text-amber-100/70 text-sm tracking-wider">
+          <div className="jp-display text-amber-100/85 text-sm tracking-wider">
             {getLevelLabel(level, t)}
           </div>
         </div>
@@ -393,7 +393,7 @@ function LevelSelector({ level, setLevel, t }: LevelSelectorProps) {
           );
         })}
       </div>
-      <div className="flex justify-between latin-display italic text-amber-200/30 text-[10px] mt-1.5 px-1">
+      <div className="flex justify-between latin-display italic text-amber-200/55 text-[10px] mt-1.5 px-1">
         <span>{t.levelLow}</span>
         <span>{t.levelMidLabel}</span>
         <span>{t.levelMaxLabel}</span>
@@ -824,9 +824,9 @@ export default function App() {
 
         .stage-bg {
           background:
-            radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 169, 97, 0.08), transparent 60%),
-            radial-gradient(ellipse 60% 40% at 50% 100%, rgba(31, 88, 71, 0.15), transparent 60%),
-            linear-gradient(180deg, #14110a 0%, #0a0805 100%);
+            radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 169, 97, 0.14), transparent 60%),
+            radial-gradient(ellipse 60% 40% at 50% 100%, rgba(31, 88, 71, 0.22), transparent 60%),
+            linear-gradient(180deg, #1f1a0e 0%, #14110a 100%);
         }
         .stage-bg::before {
           content: ''; position: absolute; inset: 0;
@@ -1067,7 +1067,7 @@ export default function App() {
                       {Array.from({ length: 8 }, (_, c) => (
                         <div
                           key={c}
-                          className="text-center latin-display italic text-amber-200/45 text-[10px] md:text-xs"
+                          className="text-center latin-display italic text-amber-200/70 text-[10px] md:text-xs"
                         >
                           {String.fromCharCode(65 + c)}
                         </div>
@@ -1079,7 +1079,7 @@ export default function App() {
                       {Array.from({ length: 8 }, (_, r) => (
                         <div
                           key={r}
-                          className="flex-1 flex items-center justify-center latin-display italic text-amber-200/45 text-[10px] md:text-xs"
+                          className="flex-1 flex items-center justify-center latin-display italic text-amber-200/70 text-[10px] md:text-xs"
                         >
                           {r + 1}
                         </div>
@@ -1167,13 +1167,13 @@ export default function App() {
                 }}
               />
             </div>
-            <div className="flex justify-between mt-1.5 latin-display italic text-amber-200/40 text-xs tracking-wider">
+            <div className="flex justify-between mt-1.5 latin-display italic text-amber-200/65 text-xs tracking-wider">
               <span>{counts.black} {t.black}</span>
               <span>{t.white} {counts.white}</span>
             </div>
           </div>
 
-          <div className="text-center mt-6 latin-display italic text-amber-200/30 text-xs tracking-[0.3em] uppercase">
+          <div className="text-center mt-6 latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
             {gameMode === 'human'
               ? t.footerHuman
               : aiMode === 'story'
@@ -1268,7 +1268,7 @@ export default function App() {
                         {counts.black}
                       </div>
                     </div>
-                    <div className="latin-display italic text-amber-200/40 text-xl">vs</div>
+                    <div className="latin-display italic text-amber-200/65 text-xl">vs</div>
                     <div className="flex flex-col items-center gap-2">
                       <AvatarBadge
                         kanji={whiteInfo.kanji}
@@ -1342,7 +1342,7 @@ export default function App() {
                 </div>
 
                 <div className="mb-4 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                  <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
+                  <div className="latin-display italic text-amber-200/70 text-[10px] tracking-[0.25em] uppercase mb-1">
                     {t.mode}
                   </div>
                   <div className="jp-display text-amber-100/90 text-sm">
@@ -1358,7 +1358,7 @@ export default function App() {
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
+                    <div className="latin-display italic text-amber-200/70 text-[10px] tracking-[0.25em] uppercase mb-1">
                       {t.black}
                     </div>
                     <div className="flex items-center gap-2">
@@ -1379,7 +1379,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
+                    <div className="latin-display italic text-amber-200/70 text-[10px] tracking-[0.25em] uppercase mb-1">
                       {t.white}
                     </div>
                     <div className="flex items-center gap-2">
@@ -1403,7 +1403,7 @@ export default function App() {
 
                 <div className="grid grid-cols-3 gap-3 mb-4 text-center">
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
+                    <div className="latin-display italic text-amber-200/70 text-[10px] tracking-wider uppercase">
                       {t.statMove}
                     </div>
                     <div className="latin-display tabular-nums text-amber-100 text-xl">
@@ -1411,7 +1411,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
+                    <div className="latin-display italic text-amber-200/70 text-[10px] tracking-wider uppercase">
                       {t.statEmpty}
                     </div>
                     <div className="latin-display tabular-nums text-amber-100 text-xl">
@@ -1419,7 +1419,7 @@ export default function App() {
                     </div>
                   </div>
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
+                    <div className="latin-display italic text-amber-200/70 text-[10px] tracking-wider uppercase">
                       {t.statTurn}
                     </div>
                     <div className="jp-display text-amber-100 text-base mt-1">
@@ -1429,11 +1429,11 @@ export default function App() {
                 </div>
 
                 <div className="mb-2">
-                  <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-2">
+                  <div className="latin-display italic text-amber-200/70 text-[10px] tracking-[0.25em] uppercase mb-2">
                     {t.kifuHeading}
                   </div>
                   {kifu.length === 0 ? (
-                    <p className="jp-display italic text-amber-200/40 text-xs">
+                    <p className="jp-display italic text-amber-200/65 text-xs">
                       {t.noMovesYet}
                     </p>
                   ) : (
@@ -1444,12 +1444,12 @@ export default function App() {
                         return (
                           <Fragment key={i}>
                             <div className="latin-display tabular-nums text-amber-100/90 text-xs flex gap-2">
-                              <span className="text-amber-200/40 w-5 text-right">{i + 1}.</span>
+                              <span className="text-amber-200/65 w-5 text-right">{i + 1}.</span>
                               <span className="text-zinc-300">●</span>
                               <span>{black ? moveToNotation(black).toUpperCase() : ''}</span>
                             </div>
                             <div className="latin-display tabular-nums text-amber-100/90 text-xs flex gap-2">
-                              <span className="text-amber-200/40">○</span>
+                              <span className="text-amber-200/65">○</span>
                               <span>{white ? moveToNotation(white).toUpperCase() : ''}</span>
                             </div>
                           </Fragment>
@@ -1504,7 +1504,7 @@ export default function App() {
                       onChange={(e: ChangeEvent<HTMLInputElement>) => setKifuName(e.target.value)}
                       placeholder={t.inputPlaceholder}
                       maxLength={40}
-                      className="jp-display flex-1 px-3 py-2 bg-zinc-950/70 border border-amber-200/20 rounded-sm text-amber-100 text-sm placeholder:text-amber-200/30 focus:border-amber-200/60 focus:outline-none"
+                      className="jp-display flex-1 px-3 py-2 bg-zinc-950/70 border border-amber-200/20 rounded-sm text-amber-100 text-sm placeholder:text-amber-200/55 focus:border-amber-200/60 focus:outline-none"
                     />
                     <button
                       onClick={() => saveCurrentKifu(kifuName)}
@@ -1521,7 +1521,7 @@ export default function App() {
                     {t.savedGames}
                   </h3>
                   {savedSlots.length === 0 ? (
-                    <p className="jp-display italic text-amber-200/40 text-sm py-3">
+                    <p className="jp-display italic text-amber-200/65 text-sm py-3">
                       {t.noSavedGames}
                     </p>
                   ) : (
@@ -1547,7 +1547,7 @@ export default function App() {
                               <div className="jp-display text-amber-100/95 text-sm truncate">
                                 {slot.name ?? '(無題)'}
                               </div>
-                              <div className="latin-display italic text-amber-200/40 text-[10px] tracking-wider mt-0.5">
+                              <div className="latin-display italic text-amber-200/65 text-[10px] tracking-wider mt-0.5">
                                 {dateStr} · {slot.kifu ? slot.kifu.length : 0}手
                                 {slot.gameMode === 'ai' && opp && (
                                   <>
@@ -1626,7 +1626,7 @@ export default function App() {
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
                     {t.protagonist}
-                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
+                    <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
                       — {t.protagonistSubtitle}
                     </span>
                   </h3>
@@ -1647,7 +1647,7 @@ export default function App() {
                         </div>
                         <div
                           className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                            p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/40'
+                            p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
                           }`}
                         >
                           {a.setting}
@@ -1658,7 +1658,7 @@ export default function App() {
                   <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="jp-display text-amber-100/85 text-sm">
                       {AVATARS[p1Avatar].name}
-                      <span className="latin-display italic text-amber-200/40 text-xs ml-2">
+                      <span className="latin-display italic text-amber-200/65 text-xs ml-2">
                         — {AVATARS[p1Avatar].setting}
                       </span>
                     </div>
@@ -1671,7 +1671,7 @@ export default function App() {
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
                     {t.opponent}
-                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
+                    <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
                       — {t.opponentSubtitle}
                     </span>
                   </h3>
@@ -1796,7 +1796,7 @@ export default function App() {
                       {aiMode === 'free' && (
                         <>
                           <div className="mb-5">
-                            <div className="latin-display italic text-amber-200/45 text-xs tracking-[0.25em] uppercase mb-2">
+                            <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
                               {t.characterGridLabel}
                             </div>
                             <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
@@ -1823,7 +1823,7 @@ export default function App() {
                                     className={`latin-display italic text-[10px] tracking-wider ${
                                       computerChar === i
                                         ? 'text-amber-200/80'
-                                        : 'text-amber-200/40'
+                                        : 'text-amber-200/65'
                                     }`}
                                   >
                                     Lv.{c.level}
@@ -1843,7 +1843,7 @@ export default function App() {
 
                           <div>
                             <LevelSelector level={level} setLevel={setLevel} t={t} />
-                            <p className="latin-display italic text-amber-200/35 text-[11px] mt-3 leading-relaxed">
+                            <p className="latin-display italic text-amber-200/55 text-[11px] mt-3 leading-relaxed">
                               {t.aiLevelExplain}
                             </p>
                           </div>
@@ -1854,7 +1854,7 @@ export default function App() {
 
                   {gameMode === 'human' && (
                     <div>
-                      <div className="latin-display italic text-amber-200/45 text-xs tracking-[0.25em] uppercase mb-2">
+                      <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
                         {t.player2Protagonist}
                       </div>
                       <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
@@ -1881,7 +1881,7 @@ export default function App() {
                             </div>
                             <div
                               className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                                p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/40'
+                                p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
                               }`}
                             >
                               {a.setting}
@@ -1890,7 +1890,7 @@ export default function App() {
                         ))}
                       </div>
                       {p1Avatar === p2Avatar && (
-                        <p className="jp-display text-amber-200/40 text-xs mt-2 italic">
+                        <p className="jp-display text-amber-200/65 text-xs mt-2 italic">
                           {t.cannotChooseSelf}
                         </p>
                       )}

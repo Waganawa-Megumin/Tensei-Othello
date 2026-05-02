@@ -132,7 +132,7 @@ export function TitleScreen({
             </div>
           )}
           {!hasProgress && !completed && (
-            <div className="jp-display italic text-amber-200/45 text-[11px] mt-auto">
+            <div className="jp-display italic text-amber-200/70 text-[11px] mt-auto">
               {t.titleStoryFreshStart(firstChapterName)}
             </div>
           )}
@@ -159,7 +159,7 @@ export function TitleScreen({
           <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4">
             {t.titleFreeDesc}
           </p>
-          <div className="jp-display italic text-amber-200/45 text-[11px]">
+          <div className="jp-display italic text-amber-200/70 text-[11px]">
             {t.titleFreeMeta}
           </div>
         </button>
@@ -185,14 +185,14 @@ export function TitleScreen({
           <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4">
             {t.titleTwoPlayersDesc}
           </p>
-          <div className="jp-display italic text-amber-200/45 text-[11px]">
+          <div className="jp-display italic text-amber-200/70 text-[11px]">
             {t.titleTwoPlayersMeta}
           </div>
         </button>
       </div>
 
       {/* Footer hint */}
-      <div className="relative latin-display italic text-amber-200/30 text-[10px] tracking-[0.3em] uppercase">
+      <div className="relative latin-display italic text-amber-200/55 text-[10px] tracking-[0.3em] uppercase">
         {t.titleFooterHint}
       </div>
     </div>
