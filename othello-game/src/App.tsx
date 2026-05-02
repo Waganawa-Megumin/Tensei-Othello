@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import {
+  AlertTriangle,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -22,6 +23,7 @@ import {
   RotateCcw,
   ScrollText,
   Sparkles,
+  ThumbsUp,
   Trash2,
   Undo2,
   X,
@@ -368,6 +370,10 @@ interface PlayerPanelProps {
   thinking?: boolean;
   /** Remaining lives (story mode, Black side only). Hidden when undefined. */
   lives?: number;
+  /** Compact layout: hides the quote line and tightens vertical
+   *  padding. Used while reviewing a loaded kifu so the replay strip
+   *  + annotation comment fit on one screen without scrolling. */
+  compact?: boolean;
 }
 
 function PlayerPanel({
@@ -382,15 +388,18 @@ function PlayerPanel({
   level,
   thinking,
   lives,
+  compact = false,
 }: PlayerPanelProps) {
   return (
     <div
-      className={`relative px-4 md:px-5 py-3 md:py-3.5 border rounded-sm transition-all ${
+      className={`relative px-4 md:px-5 border rounded-sm transition-all ${
+        compact ? 'py-1.5 md:py-2' : 'py-3 md:py-3.5'
+      } ${
         isActive ? 'border-amber-200/60 bg-amber-200/[0.04]' : 'border-amber-200/15'
       }`}
     >
       <div className="flex items-center gap-3 md:gap-4">
-        <AvatarBadge kanji={kanji} idx={idx} image={image} size="md" />
+        <AvatarBadge kanji={kanji} idx={idx} image={image} size={compact ? 'sm' : 'md'} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
             <span className="jp-display text-amber-100/95 text-base md:text-lg truncate">
@@ -414,7 +423,7 @@ function PlayerPanel({
               </span>
             )}
           </div>
-          {quote && (
+          {quote && !compact && (
             <div className="jp-display text-amber-200/70 text-[11px] md:text-xs italic truncate mt-0.5">
               「{quote}」
             </div>
@@ -718,6 +727,36 @@ export default function App() {
     if (!loadedKifuView || replayCursor === null || replayCursor === 0) return null;
     return annotationByMove.get(replayCursor - 1) ?? null;
   }, [loadedKifuView, replayCursor, annotationByMove]);
+
+  // Quality buckets for the "next bad move" / "next good move" jump
+  // buttons in the replay strip. Inaccuracy is counted as bad so the
+  // user can scan all problem moves quickly; neutral never qualifies
+  // either way (we don't even annotate those).
+  const sortedBadAnnotationIndices = useMemo(() => {
+    if (!activeAnnotations) return [] as number[];
+    return activeAnnotations.annotations
+      .filter((a) => a.quality === 'inaccuracy' || a.quality === 'mistake' || a.quality === 'blunder')
+      .map((a) => a.moveIndex)
+      .sort((x, y) => x - y);
+  }, [activeAnnotations]);
+
+  const sortedGoodAnnotationIndices = useMemo(() => {
+    if (!activeAnnotations) return [] as number[];
+    return activeAnnotations.annotations
+      .filter((a) => a.quality === 'good' || a.quality === 'brilliant')
+      .map((a) => a.moveIndex)
+      .sort((x, y) => x - y);
+  }, [activeAnnotations]);
+
+  const jumpToNextAnnotated = useCallback(
+    (sortedIndices: number[]) => {
+      if (sortedIndices.length === 0) return;
+      const cursorMove = (replayCursor ?? kifu.length) - 1;
+      const next = sortedIndices.find((m) => m > cursorMove) ?? sortedIndices[0];
+      setReplayCursor(next + 1);
+    },
+    [replayCursor, kifu.length],
+  );
   const oppMoves = useMemo(
     () => getValidMoves(board, opponent(currentColor)),
     [board, currentColor],
@@ -1663,6 +1702,7 @@ export default function App() {
                     ? lives
                     : undefined
                 }
+                compact={loadedKifuView}
               />
             </div>
 
@@ -1767,12 +1807,13 @@ export default function App() {
                 quote={whiteInfo.quote}
                 level={whiteInfo.level}
                 thinking={aiThinking}
+                compact={loadedKifuView}
               />
             </div>
           </div>
 
           {/* Progress bar */}
-          <div className="max-w-xl mx-auto mt-7">
+          <div className={`max-w-xl mx-auto ${loadedKifuView ? 'mt-3' : 'mt-7'}`}>
             <div className="h-1.5 rounded-full overflow-hidden flex bg-amber-100/10 border border-amber-200/10">
               <div
                 className="transition-all duration-500 ease-out"
@@ -1850,6 +1891,33 @@ export default function App() {
                   >
                     <ChevronsRight size={16} strokeWidth={1.5} />
                   </button>
+                  {/* Jump to next bad / good annotated move (cycles
+                      back to first if past the last one). Disabled
+                      when no annotation of that quality exists, or
+                      when the kifu has no annotations at all. */}
+                  {activeAnnotations && (
+                    <>
+                      <span className="w-px h-5 bg-amber-200/20 mx-1" />
+                      <button
+                        onClick={() => jumpToNextAnnotated(sortedBadAnnotationIndices)}
+                        disabled={sortedBadAnnotationIndices.length === 0}
+                        className={`${iconBtn} text-orange-300/85`}
+                        title={t.jumpNextBad}
+                        aria-label={t.jumpNextBad}
+                      >
+                        <AlertTriangle size={16} strokeWidth={1.5} />
+                      </button>
+                      <button
+                        onClick={() => jumpToNextAnnotated(sortedGoodAnnotationIndices)}
+                        disabled={sortedGoodAnnotationIndices.length === 0}
+                        className={`${iconBtn} text-emerald-300/85`}
+                        title={t.jumpNextGood}
+                        aria-label={t.jumpNextGood}
+                      >
+                        <ThumbsUp size={16} strokeWidth={1.5} />
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 ml-auto">
                   {loadedSlotReview && (
@@ -1912,15 +1980,20 @@ export default function App() {
             );
           })()}
 
-          <div className="text-center mt-6 latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
-            {gameMode === 'human'
-              ? t.footerHuman
-              : aiMode === 'story'
-                ? storyProgress >= 20
-                  ? t.footerStoryComplete(COMPUTERS[computerChar].name)
-                  : t.footerChapter(storyProgress + 1, COMPUTERS[computerChar].name)
-                : t.footerFree(COMPUTERS[computerChar].name, level, getLevelLabel(level, t))}
-          </div>
+          {/* Footer caption is redundant during a loaded-kifu review
+              (the score bar + replay strip already show all the
+              relevant context) — hide it to free vertical space. */}
+          {!loadedKifuView && (
+            <div className="text-center mt-6 latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
+              {gameMode === 'human'
+                ? t.footerHuman
+                : aiMode === 'story'
+                  ? storyProgress >= 20
+                    ? t.footerStoryComplete(COMPUTERS[computerChar].name)
+                    : t.footerChapter(storyProgress + 1, COMPUTERS[computerChar].name)
+                  : t.footerFree(COMPUTERS[computerChar].name, level, getLevelLabel(level, t))}
+            </div>
+          )}
 
           {/* Pass message */}
           {passInfo !== null && (

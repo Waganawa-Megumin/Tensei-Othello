@@ -168,6 +168,8 @@ export interface Messages {
   replayNext: string;
   replayLast: string;
   reviewGenerateNew: string;
+  jumpNextBad: string;
+  jumpNextGood: string;
 
   // Structured review (per-move annotations)
   reviewSummaryHeading: string;
@@ -391,6 +393,8 @@ export const ja: Messages = {
   replayNext: '1手進める',
   replayLast: '最終局面へ',
   reviewGenerateNew: 'レビューを新規生成',
+  jumpNextBad: '次の悪手へ',
+  jumpNextGood: '次の好手へ',
 
   reviewSummaryHeading: '総評',
   reviewImprovementsHeading: '次回への助言',
@@ -614,6 +618,8 @@ your journey on the board reaches its close.`,
   replayNext: 'Next move',
   replayLast: 'Jump to end',
   reviewGenerateNew: 'Generate new review',
+  jumpNextBad: 'Next mistake',
+  jumpNextGood: 'Next good move',
 
   reviewSummaryHeading: 'Overview',
   reviewImprovementsHeading: 'What to improve',

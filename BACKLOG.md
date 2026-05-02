@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-02 by `claude/othello-game-sHVBZ` (v0.18.0)
+Last updated: 2026-05-02 by `claude/othello-game-sHVBZ` (v0.18.1)
 
 ---
 
@@ -44,6 +44,11 @@ Last updated: 2026-05-02 by `claude/othello-game-sHVBZ` (v0.18.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **棋譜読込時のコンパクト化 + 悪手/好手ジャンプボタン** — completed:
+      2026-05-02 — by: `claude/othello-game-sHVBZ` — commit: (next push) —
+      PlayerPanel に compact prop（quote 非表示、py 縮小、avatar sm）、
+      フッターキャプション非表示、進捗バー mt-7→mt-3。リプレイストリップ
+      に AlertTriangle / ThumbsUp ボタンで cycle-and-wrap ジャンプ。`v0.18.1`
 - [x] **構造化レビュー（盤面アノテーション + コメント）** — completed:
       2026-05-02 — by: `claude/othello-game-sHVBZ` — commit: (next push) —
       Claude tool-use で per-move quality + comment を取得、リプレイ中の
