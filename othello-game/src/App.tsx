@@ -75,49 +75,49 @@ interface ComputerEntry {
 }
 
 const AVATARS: ReadonlyArray<AvatarEntry> = [
-  { kanji: '春', name: 'ハルキ',   setting: '異世界転生の勇者',      quote: '冒険、はじまったな',   image: '/avatars/players/PLR01_haruki.png' },
-  { kanji: '琴', name: '美琴',     setting: '魔法学園の天才',        quote: '論理と魔法は同じ',     image: '/avatars/players/PLR02_mikoto.png' },
-  { kanji: '凛', name: 'リン',     setting: 'VRMMOの最強プレイヤー', quote: '現実より、得意なんだ', image: '/avatars/players/PLR03_rin.png' },
-  { kanji: '蓮', name: '蓮',       setting: '剣道部主将',            quote: '正々堂々、参る',       image: '/avatars/players/PLR04_ren.png' },
-  { kanji: '千', name: '千歳',     setting: 'タイムリープ少女',      quote: 'これで何度目だっけ',   image: '/avatars/players/PLR05_chitose.png' },
-  { kanji: '晴', name: '晴',       setting: '現代の陰陽師',          quote: '妖、見えてるんだ',     image: '/avatars/players/PLR06_haru.png' },
-  { kanji: '海', name: 'カイ',     setting: '空の冒険者',            quote: '風が呼んでる',         image: '/avatars/players/PLR07_kai.png' },
-  { kanji: '夏', name: '千夏',     setting: '聖剣の村娘',            quote: '故郷を、必ず守る',     image: '/avatars/players/PLR08_chinatsu.png' },
-  { kanji: '透', name: '透',       setting: '学園名探偵',            quote: '謎には必ず答えがある', image: '/avatars/players/PLR09_toru.png' },
-  { kanji: 'ノ', name: 'ノア',     setting: '未来から来た少女',      quote: '2099年から、よろしく', image: '/avatars/players/PLR10_noa.png' },
-  { kanji: '凪', name: '凪',       setting: '異世界料理人',          quote: 'お腹空いてる？',       image: '/avatars/players/PLR11_nagi.png' },
-  { kanji: 'エ', name: 'エル',     setting: '元魔王、今は転校生',    quote: 'ふふ、内緒だよ',       image: '/avatars/players/PLR12_el.png' },
-  { kanji: '菫', name: 'スミレ',   setting: '記憶喪失の冒険者',      quote: '私は…誰なの？',        image: '/avatars/players/PLR13_sumire.png' },
-  { kanji: '葉', name: '葉月',     setting: '機械工学の天才',        quote: 'これ、私が作ったの！', image: '/avatars/players/PLR14_hazuki.png' },
-  { kanji: '隼', name: '隼人',     setting: '凄腕ガンナー',          quote: '撃つときは迷わない',   image: '/avatars/players/PLR15_hayato.png' },
-  { kanji: '光', name: 'ひかり',   setting: '光の精霊使い',          quote: 'みんな、笑ってほしい', image: '/avatars/players/PLR16_hikari.png' },
-  { kanji: '夜', name: 'ヨル',     setting: '半吸血鬼',              quote: '血は、欲しくない',     image: '/avatars/players/PLR17_yoru.png' },
-  { kanji: '湊', name: '湊',       setting: '海の冒険者',            quote: '世界の果てへ',         image: '/avatars/players/PLR18_minato.png' },
-  { kanji: '奏', name: '奏太',     setting: '天才ピアニスト',        quote: 'この旋律、聴いてくれ', image: '/avatars/players/PLR19_souta.png' },
-  { kanji: '悠', name: '悠',       setting: '神話の英雄',            quote: '神々よ、いざ尋常に',   image: '/avatars/players/PLR20_yu.png' },
+  { kanji: '春', name: 'ハルキ',   setting: '異世界転生の勇者',      quote: '冒険、はじまったな',   image: 'avatars/players/PLR01_haruki.png' },
+  { kanji: '琴', name: '美琴',     setting: '魔法学園の天才',        quote: '論理と魔法は同じ',     image: 'avatars/players/PLR02_mikoto.png' },
+  { kanji: '凛', name: 'リン',     setting: 'VRMMOの最強プレイヤー', quote: '現実より、得意なんだ', image: 'avatars/players/PLR03_rin.png' },
+  { kanji: '蓮', name: '蓮',       setting: '剣道部主将',            quote: '正々堂々、参る',       image: 'avatars/players/PLR04_ren.png' },
+  { kanji: '千', name: '千歳',     setting: 'タイムリープ少女',      quote: 'これで何度目だっけ',   image: 'avatars/players/PLR05_chitose.png' },
+  { kanji: '晴', name: '晴',       setting: '現代の陰陽師',          quote: '妖、見えてるんだ',     image: 'avatars/players/PLR06_haru.png' },
+  { kanji: '海', name: 'カイ',     setting: '空の冒険者',            quote: '風が呼んでる',         image: 'avatars/players/PLR07_kai.png' },
+  { kanji: '夏', name: '千夏',     setting: '聖剣の村娘',            quote: '故郷を、必ず守る',     image: 'avatars/players/PLR08_chinatsu.png' },
+  { kanji: '透', name: '透',       setting: '学園名探偵',            quote: '謎には必ず答えがある', image: 'avatars/players/PLR09_toru.png' },
+  { kanji: 'ノ', name: 'ノア',     setting: '未来から来た少女',      quote: '2099年から、よろしく', image: 'avatars/players/PLR10_noa.png' },
+  { kanji: '凪', name: '凪',       setting: '異世界料理人',          quote: 'お腹空いてる？',       image: 'avatars/players/PLR11_nagi.png' },
+  { kanji: 'エ', name: 'エル',     setting: '元魔王、今は転校生',    quote: 'ふふ、内緒だよ',       image: 'avatars/players/PLR12_el.png' },
+  { kanji: '菫', name: 'スミレ',   setting: '記憶喪失の冒険者',      quote: '私は…誰なの？',        image: 'avatars/players/PLR13_sumire.png' },
+  { kanji: '葉', name: '葉月',     setting: '機械工学の天才',        quote: 'これ、私が作ったの！', image: 'avatars/players/PLR14_hazuki.png' },
+  { kanji: '隼', name: '隼人',     setting: '凄腕ガンナー',          quote: '撃つときは迷わない',   image: 'avatars/players/PLR15_hayato.png' },
+  { kanji: '光', name: 'ひかり',   setting: '光の精霊使い',          quote: 'みんな、笑ってほしい', image: 'avatars/players/PLR16_hikari.png' },
+  { kanji: '夜', name: 'ヨル',     setting: '半吸血鬼',              quote: '血は、欲しくない',     image: 'avatars/players/PLR17_yoru.png' },
+  { kanji: '湊', name: '湊',       setting: '海の冒険者',            quote: '世界の果てへ',         image: 'avatars/players/PLR18_minato.png' },
+  { kanji: '奏', name: '奏太',     setting: '天才ピアニスト',        quote: 'この旋律、聴いてくれ', image: 'avatars/players/PLR19_souta.png' },
+  { kanji: '悠', name: '悠',       setting: '神話の英雄',            quote: '神々よ、いざ尋常に',   image: 'avatars/players/PLR20_yu.png' },
 ];
 
 const COMPUTERS: ReadonlyArray<ComputerEntry> = [
-  { kanji: '苺', name: 'いちか',   level: 1,  quote: 'ふぁいとぉ♪ 楽しんで！',       image: '/avatars/opponents/OPP01_ichika.png' },
-  { kanji: '葵', name: '葵',       level: 2,  quote: '狙いはバッチリだよっ！',         image: '/avatars/opponents/OPP02_aoi.png' },
-  { kanji: '朝', name: '朝日',     level: 3,  quote: 'いざ尋常に！',                   image: '/avatars/opponents/OPP03_asahi.png' },
-  { kanji: '撫', name: 'なでしこ', level: 4,  quote: '無理せずいきましょう',           image: '/avatars/opponents/OPP04_nadeshiko.png' },
-  { kanji: '響', name: '響',       level: 5,  quote: '楽しい一局を奏でよう♪',         image: '/avatars/opponents/OPP05_hibiki.png' },
-  { kanji: '紬', name: 'つむぎ',   level: 6,  quote: '相棒もわくわくしてる',           image: '/avatars/opponents/OPP06_tsumugi.png' },
-  { kanji: '茜', name: '茜',       level: 7,  quote: '歯車みたいにかっちりね！',       image: '/avatars/opponents/OPP07_akane.png' },
-  { kanji: '薬', name: 'メル',     level: 8,  quote: 'ふふ、ちょっと混ぜてみよっか？', image: '/avatars/opponents/OPP08_mel.png' },
-  { kanji: '悟', name: '悟',       level: 9,  quote: '無心に石を置く、ただそれだけ',   image: '/avatars/opponents/OPP09_satoru.png' },
-  { kanji: '黒', name: 'シキ',     level: 10, quote: '気付いた時には遅いよ',           image: '/avatars/opponents/OPP10_shiki.png' },
-  { kanji: '詩', name: 'シオン',   level: 11, quote: 'すべては予測の内だ',             image: '/avatars/opponents/OPP11_shion.png' },
-  { kanji: '夢', name: 'ルナ',     level: 12, quote: '夢の中でもう勝ってるよ♡',       image: '/avatars/opponents/OPP12_luna.png' },
-  { kanji: '雪', name: '雪乃',     level: 13, quote: 'この程度、解析するまでもない',   image: '/avatars/opponents/OPP13_yukino.png' },
-  { kanji: '暁', name: 'アキラ',   level: 14, quote: '君の手筋、見えているよ',         image: '/avatars/opponents/OPP14_akira.png' },
-  { kanji: '銀', name: 'シエル',   level: 15, quote: '全データ把握、戦況優位',         image: '/avatars/opponents/OPP15_ciel.png' },
-  { kanji: '姫', name: 'アリア',   level: 16, quote: 'お手柔らかに、ですわ',           image: '/avatars/opponents/OPP16_aria.png' },
-  { kanji: '獅', name: 'レオン',   level: 17, quote: '正々堂々、参る！',               image: '/avatars/opponents/OPP17_leon.png' },
-  { kanji: '宗', name: '宗次郎',   level: 18, quote: '我が一刀、避けられはせぬ',       image: '/avatars/opponents/OPP18_sojiro.png' },
-  { kanji: '嵐', name: '嵐',       level: 19, quote: '我が竜の前に膝を折れ！',         image: '/avatars/opponents/OPP19_arashi.png' },
-  { kanji: '零', name: 'ゼロ',     level: 20, quote: '全ての変分は計算済み。詰みだ',   image: '/avatars/opponents/OPP20_zero.png' },
+  { kanji: '苺', name: 'いちか',   level: 1,  quote: 'ふぁいとぉ♪ 楽しんで！',       image: 'avatars/opponents/OPP01_ichika.png' },
+  { kanji: '葵', name: '葵',       level: 2,  quote: '狙いはバッチリだよっ！',         image: 'avatars/opponents/OPP02_aoi.png' },
+  { kanji: '朝', name: '朝日',     level: 3,  quote: 'いざ尋常に！',                   image: 'avatars/opponents/OPP03_asahi.png' },
+  { kanji: '撫', name: 'なでしこ', level: 4,  quote: '無理せずいきましょう',           image: 'avatars/opponents/OPP04_nadeshiko.png' },
+  { kanji: '響', name: '響',       level: 5,  quote: '楽しい一局を奏でよう♪',         image: 'avatars/opponents/OPP05_hibiki.png' },
+  { kanji: '紬', name: 'つむぎ',   level: 6,  quote: '相棒もわくわくしてる',           image: 'avatars/opponents/OPP06_tsumugi.png' },
+  { kanji: '茜', name: '茜',       level: 7,  quote: '歯車みたいにかっちりね！',       image: 'avatars/opponents/OPP07_akane.png' },
+  { kanji: '薬', name: 'メル',     level: 8,  quote: 'ふふ、ちょっと混ぜてみよっか？', image: 'avatars/opponents/OPP08_mel.png' },
+  { kanji: '悟', name: '悟',       level: 9,  quote: '無心に石を置く、ただそれだけ',   image: 'avatars/opponents/OPP09_satoru.png' },
+  { kanji: '黒', name: 'シキ',     level: 10, quote: '気付いた時には遅いよ',           image: 'avatars/opponents/OPP10_shiki.png' },
+  { kanji: '詩', name: 'シオン',   level: 11, quote: 'すべては予測の内だ',             image: 'avatars/opponents/OPP11_shion.png' },
+  { kanji: '夢', name: 'ルナ',     level: 12, quote: '夢の中でもう勝ってるよ♡',       image: 'avatars/opponents/OPP12_luna.png' },
+  { kanji: '雪', name: '雪乃',     level: 13, quote: 'この程度、解析するまでもない',   image: 'avatars/opponents/OPP13_yukino.png' },
+  { kanji: '暁', name: 'アキラ',   level: 14, quote: '君の手筋、見えているよ',         image: 'avatars/opponents/OPP14_akira.png' },
+  { kanji: '銀', name: 'シエル',   level: 15, quote: '全データ把握、戦況優位',         image: 'avatars/opponents/OPP15_ciel.png' },
+  { kanji: '姫', name: 'アリア',   level: 16, quote: 'お手柔らかに、ですわ',           image: 'avatars/opponents/OPP16_aria.png' },
+  { kanji: '獅', name: 'レオン',   level: 17, quote: '正々堂々、参る！',               image: 'avatars/opponents/OPP17_leon.png' },
+  { kanji: '宗', name: '宗次郎',   level: 18, quote: '我が一刀、避けられはせぬ',       image: 'avatars/opponents/OPP18_sojiro.png' },
+  { kanji: '嵐', name: '嵐',       level: 19, quote: '我が竜の前に膝を折れ！',         image: 'avatars/opponents/OPP19_arashi.png' },
+  { kanji: '零', name: 'ゼロ',     level: 20, quote: '全ての変分は計算済み。詰みだ',   image: 'avatars/opponents/OPP20_zero.png' },
 ];
 
 const STORY_INTRO = `——気づくと、君は見知らぬ世界にいた。
@@ -556,6 +556,42 @@ export default function App() {
   useEffect(() => {
     setHintMove(null);
   }, [currentColor]);
+
+  // Android / browser back button: close the topmost layer instead of
+  // exiting the PWA. Each "layer" pushes a history entry so popstate
+  // brings us back one step. Order of priority: modal -> game -> title.
+  useEffect(() => {
+    const onPopState = () => {
+      if (settingsOpen) {
+        setSettingsOpen(false);
+      } else if (kifuOpen) {
+        setKifuOpen(false);
+      } else if (infoOpen) {
+        setInfoOpen(false);
+      } else if (screen === 'game') {
+        setScreen('title');
+      }
+      // Otherwise: let the browser handle (exits the PWA on title screen).
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [settingsOpen, kifuOpen, infoOpen, screen]);
+
+  // Push a history entry whenever a new layer opens, so the back button
+  // has something to pop. We compare against the previous depth to avoid
+  // pushing on close.
+  const layerDepthRef = useRef(0);
+  useEffect(() => {
+    const depth =
+      (screen === 'game' ? 1 : 0) +
+      (settingsOpen ? 1 : 0) +
+      (kifuOpen ? 1 : 0) +
+      (infoOpen ? 1 : 0);
+    if (depth > layerDepthRef.current) {
+      window.history.pushState({ depth }, '');
+    }
+    layerDepthRef.current = depth;
+  }, [screen, settingsOpen, kifuOpen, infoOpen]);
 
   /* ----- Actions ----- */
 
