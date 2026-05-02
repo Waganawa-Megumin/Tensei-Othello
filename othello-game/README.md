@@ -82,3 +82,7 @@ src/
 - `docs/illustrations/README.md` — 挿絵制作のステップ別ロードマップ（Step 1〜6）
 - `docs/illustration_brief.md` — 全アセット一括の包括リファレンス
 - `docs/player_character_prompts.md` — プレイヤーアバター生成プロンプト
+
+## ライセンス
+
+**All Rights Reserved** / 個人利用前提。リポジトリルートの [`../LICENSE.md`](../LICENSE.md) を参照。
