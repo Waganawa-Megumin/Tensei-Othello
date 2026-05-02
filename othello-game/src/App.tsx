@@ -278,6 +278,8 @@ interface PlayerPanelProps {
   quote?: string;
   level?: number;
   thinking?: boolean;
+  /** Remaining lives (story mode, Black side only). Hidden when undefined. */
+  lives?: number;
 }
 
 function PlayerPanel({
@@ -291,6 +293,7 @@ function PlayerPanel({
   quote,
   level,
   thinking,
+  lives,
 }: PlayerPanelProps) {
   return (
     <div
@@ -309,6 +312,17 @@ function PlayerPanel({
             {level !== undefined && (
               <span className="latin-display italic text-amber-200/50 text-[11px] md:text-xs tracking-wider flex-shrink-0">
                 Lv.{level}
+              </span>
+            )}
+            {lives !== undefined && (
+              <span
+                className={`latin-display tabular-nums text-[11px] md:text-xs tracking-wider flex-shrink-0 ${
+                  lives === 0 ? 'text-red-300/95' : 'text-amber-200/85'
+                }`}
+                title={`Lives: ${lives}`}
+                aria-label={`Lives: ${lives}`}
+              >
+                ♥ {lives}
               </span>
             )}
           </div>
@@ -1282,6 +1296,11 @@ export default function App() {
                 image={blackInfo.image}
                 name={blackInfo.name}
                 quote={blackInfo.quote}
+                lives={
+                  gameMode === 'ai' && aiMode === 'story' && activeSlot
+                    ? lives
+                    : undefined
+                }
               />
             </div>
 
