@@ -32,7 +32,8 @@
 ```
 Tensei-Othello/
 ├── .github/workflows/
-│   └── test.yml             # CI: typecheck + vitest + build
+│   ├── test.yml             # CI: typecheck + vitest + build
+│   └── pages-deploy.yml     # GitHub Pages 自動デプロイ
 └── othello-game/
     ├── package.json
     ├── tsconfig.json
@@ -59,29 +60,29 @@ Tensei-Othello/
 
 ## スマホからの開発フロー
 
-ユーザがスマホで触るのは GitHub と Cloudflare のダッシュボードだけ。コードは Claude Code が書き、ビルドと配信は GitHub Actions と Cloudflare に任せる。
+ユーザがスマホで触るのは GitHub のダッシュボードだけ。コードは Claude Code が書き、ビルドと配信は GitHub Actions に任せる。
 
-### 1. Cloudflare Pages の自動デプロイ（一度だけセットアップ）
+### 1. GitHub Pages を有効化（一度だけ）
 
-スマホ Chrome / Safari で https://dash.cloudflare.com/ → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**。
+スマホ Chrome の **PC 版表示** で：
 
-| 設定項目 | 値 |
-|---|---|
-| Repository | `Waganawa-Megumin/Tensei-Othello` |
-| Production branch | `main`（必要に応じて変更可） |
-| Framework preset | `Vite` |
-| Build command | `npm ci && npm run build` |
-| Build output directory | `dist` |
-| Root directory | `othello-game` |
-| Node version | `20`（Environment variables で `NODE_VERSION=20`）|
+1. https://github.com/Waganawa-Megumin/Tensei-Othello/settings/pages を開く
+2. **Build and deployment** の **Source** ドロップダウンを **GitHub Actions** に切替
+3. main または `claude/**` ブランチに push されると `pages-deploy.yml` が走り、自動でデプロイ
 
-保存すると次回 push から `https://tensei-othello.pages.dev` に自動デプロイ。スマホ Chrome で開けば PWA が動き、メニューから「ホーム画面に追加」でアプリ風に起動できる。
+公開 URL: `https://waganawa-megumin.github.io/Tensei-Othello/`
+
+スマホ Chrome で開けば PWA が動き、メニューから「ホーム画面に追加」でアプリ風起動できる。
 
 ### 2. テスト・ビルドの確認
 
-GitHub Actions タブ → **Test & Build** → 緑チェック確認。失敗時はログを開いて原因を読む。
+GitHub Actions タブ → **Test & Build** が緑チェックなら CI 成功。失敗時はログを開いて原因を読む。
 
-### 3. APK ビルド（Phase 3 で追加予定）
+### 3. Cloudflare Workers プロキシ（Phase 2）
+
+Phase 2 の Claude API プロキシは Cloudflare Workers を使う。Pages とは別の仕組みで、**GitHub Secrets に `CLOUDFLARE_API_TOKEN` を入れて wrangler が GitHub Actions からデプロイ**するため、Cloudflare 側で Git 連携を設定する必要はない。詳細は Phase 2 着手時のガイドを参照。
+
+### 4. APK ビルド（Phase 3 で追加予定）
 
 `workflow_dispatch` で手動実行 → Artifacts から `app-debug.apk` をダウンロード → スマホで開いて「不明なアプリのインストール」許可 → インストール。Play Store 登録不要、$25 開発者アカウント不要。
 
