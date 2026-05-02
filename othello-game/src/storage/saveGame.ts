@@ -10,6 +10,7 @@
  * synchronous, because Capacitor Preferences is async.
  */
 import type { Color, EMPTY as EmptyT } from '../engine/types';
+import type { ReviewAnnotations } from '../prompts/review';
 
 export const STORY_PROGRESS_KEY = 'othello:story_progress';
 const SAVE_PREFIX = 'othello:save:';
@@ -43,8 +44,18 @@ interface PersistedSlotV1 {
   storyProgress: number;
   counts: { black: number; white: number };
   result: Color | typeof EmptyT | null;
-  /** Optional Claude review text saved with the kifu. */
+  /**
+   * Optional Claude review text. Older slots and slots whose review
+   * came from the legacy text-streaming path keep this populated.
+   * New tool-use reviews leave this `undefined` and use
+   * `reviewAnnotations` instead.
+   */
   review?: string;
+  /**
+   * Optional structured per-move annotations. Present on slots whose
+   * review was generated via the annotate_othello_game tool call.
+   */
+  reviewAnnotations?: ReviewAnnotations;
 }
 
 export type PersistedSlot = PersistedSlotV1;
@@ -178,5 +189,8 @@ function migrateSlot(raw: unknown): PersistedSlot | null {
         ? (raw.result as PersistedSlot['result'])
         : null,
     review: typeof raw.review === 'string' ? raw.review : undefined,
+    reviewAnnotations: isObject(raw.reviewAnnotations)
+      ? (raw.reviewAnnotations as unknown as ReviewAnnotations)
+      : undefined,
   };
 }

@@ -8,15 +8,25 @@ import {
   type ChangeEvent,
 } from 'react';
 import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Flag,
   FolderOpen,
   Home,
   Info,
   Lightbulb,
+  Lock,
   Menu,
   RotateCcw,
+  ScrollText,
+  Sparkles,
+  ThumbsUp,
   Trash2,
   Undo2,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -51,7 +61,11 @@ import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
 import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
 import { SlotPicker } from './components/SlotPicker';
-import { streamReview, type StreamMessageHandle } from './services/claude';
+import {
+  fetchStructuredReview,
+  type StructuredReviewHandle,
+} from './services/claude';
+import type { MoveAnnotation, MoveQuality, ReviewAnnotations } from './prompts/review';
 import {
   defaultSlot,
   getSlots,
@@ -95,6 +109,20 @@ interface ComputerEntry {
    */
   chapterArt?: string;
 }
+
+// Default protagonist — always available, used as the player's starting
+// avatar. The 20 entries in AVATARS_DATA are bonus characters that unlock
+// only after the story is fully cleared (storyProgress >= 20).
+const DEFAULT_AVATAR_DATA: AvatarEntry = {
+  kanji: '君',
+  name: 'あなた',
+  name_en: 'You',
+  setting: '盤上世界の旅人',
+  setting_en: 'Traveler of Bansho Sekai',
+  quote: 'いざ、参る',
+  quote_en: 'Here I go.',
+  image: 'avatars/players/PLR00_default.png',
+};
 
 const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
   { kanji: '春', name: 'ハルキ',   name_en: 'Haruki',    setting: '異世界転生の勇者',      setting_en: 'Isekai Hero',                quote: '冒険、はじまったな',     quote_en: 'The adventure begins.',              image: 'avatars/players/PLR01_haruki.png' },
@@ -169,6 +197,68 @@ function colorChar(c: Color): 'B' | 'W' {
 
 function moveToNotation(m: Move): string {
   return `${String.fromCharCode(97 + m.col)}${m.row + 1}`;
+}
+
+/* ---------------- Move-quality presentation ---------------- */
+
+interface QualityStyle {
+  /** Tailwind classes for the inline badge (background + text + border). */
+  badge: string;
+  /** Tailwind classes for the cell ring shown on the annotated square. */
+  ring: string;
+  /** Hex glow used in the cell ring's box-shadow (more visible than the
+   *  ring on busy boards). */
+  glow: string;
+}
+
+const QUALITY_STYLES: Record<MoveQuality, QualityStyle> = {
+  brilliant: {
+    badge: 'bg-amber-300/25 text-amber-100 border-amber-300/70',
+    ring: 'ring-2 ring-amber-300/85',
+    glow: '0 0 12px rgba(252, 211, 77, 0.85)',
+  },
+  good: {
+    badge: 'bg-emerald-400/20 text-emerald-100 border-emerald-400/60',
+    ring: 'ring-2 ring-emerald-400/85',
+    glow: '0 0 12px rgba(74, 222, 128, 0.75)',
+  },
+  neutral: {
+    badge: 'bg-zinc-500/20 text-zinc-200 border-zinc-500/45',
+    ring: 'ring-2 ring-zinc-300/60',
+    glow: '0 0 8px rgba(180, 180, 180, 0.55)',
+  },
+  inaccuracy: {
+    badge: 'bg-yellow-500/20 text-yellow-100 border-yellow-500/55',
+    ring: 'ring-2 ring-yellow-400/85',
+    glow: '0 0 12px rgba(234, 179, 8, 0.75)',
+  },
+  mistake: {
+    badge: 'bg-orange-500/25 text-orange-100 border-orange-500/65',
+    ring: 'ring-2 ring-orange-500/90',
+    glow: '0 0 12px rgba(249, 115, 22, 0.8)',
+  },
+  blunder: {
+    badge: 'bg-red-500/30 text-red-100 border-red-500/75',
+    ring: 'ring-2 ring-red-500/90',
+    glow: '0 0 14px rgba(239, 68, 68, 0.85)',
+  },
+};
+
+function qualityLabel(q: MoveQuality, t: Messages): string {
+  switch (q) {
+    case 'brilliant':
+      return t.qualityBrilliant;
+    case 'good':
+      return t.qualityGood;
+    case 'neutral':
+      return t.qualityNeutral;
+    case 'inaccuracy':
+      return t.qualityInaccuracy;
+    case 'mistake':
+      return t.qualityMistake;
+    case 'blunder':
+      return t.qualityBlunder;
+  }
 }
 
 function moveKey(row: number, col: number): string {
@@ -280,6 +370,10 @@ interface PlayerPanelProps {
   thinking?: boolean;
   /** Remaining lives (story mode, Black side only). Hidden when undefined. */
   lives?: number;
+  /** Compact layout: hides the quote line and tightens vertical
+   *  padding. Used while reviewing a loaded kifu so the replay strip
+   *  + annotation comment fit on one screen without scrolling. */
+  compact?: boolean;
 }
 
 function PlayerPanel({
@@ -294,15 +388,18 @@ function PlayerPanel({
   level,
   thinking,
   lives,
+  compact = false,
 }: PlayerPanelProps) {
   return (
     <div
-      className={`relative px-4 md:px-5 py-3 md:py-3.5 border rounded-sm transition-all ${
+      className={`relative px-4 md:px-5 border rounded-sm transition-all ${
+        compact ? 'py-1.5 md:py-2' : 'py-3 md:py-3.5'
+      } ${
         isActive ? 'border-amber-200/60 bg-amber-200/[0.04]' : 'border-amber-200/15'
       }`}
     >
       <div className="flex items-center gap-3 md:gap-4">
-        <AvatarBadge kanji={kanji} idx={idx} image={image} size="md" />
+        <AvatarBadge kanji={kanji} idx={idx} image={image} size={compact ? 'sm' : 'md'} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
             <span className="jp-display text-amber-100/95 text-base md:text-lg truncate">
@@ -326,7 +423,7 @@ function PlayerPanel({
               </span>
             )}
           </div>
-          {quote && (
+          {quote && !compact && (
             <div className="jp-display text-amber-200/70 text-[11px] md:text-xs italic truncate mt-0.5">
               「{quote}」
             </div>
@@ -444,8 +541,10 @@ export default function App() {
 
   // Settings state
   const [gameMode, setGameMode] = useState<GameMode>('ai');
+  // Both default to index 0 (the always-available default avatar). The
+  // 20 bonus characters at indices 1..20 are gated on story completion.
   const [p1Avatar, setP1Avatar] = useState(0);
-  const [p2Avatar, setP2Avatar] = useState(1);
+  const [p2Avatar, setP2Avatar] = useState(0);
   const [computerChar, setComputerChar] = useState(0);
   const [level, setLevel] = useState(1);
   const [aiMode, setAiMode] = useState<AiMode>('story');
@@ -458,6 +557,25 @@ export default function App() {
   const [activeSlotId, setActiveSlotIdState] = useState<number | null>(null);
   const [slotPickerOpen, setSlotPickerOpen] = useState(false);
   /** Set once per gameOver to prevent double-recording stats. */
+  // Set true when a saved kifu is loaded for review. Suppresses the
+  // gameOver-driven result recording and the gameOver modal so the
+  // loaded board can be inspected without re-firing the win/loss flow.
+  // Cleared by reset() and by the first user click on the board.
+  const [loadedKifuView, setLoadedKifuView] = useState(false);
+  // Step-replay cursor for the loaded kifu. null = not in replay mode
+  // (use `board` directly). 0 = initial empty-center board, 1..N =
+  // board after replaying the first N moves of `kifu`.
+  const [replayCursor, setReplayCursor] = useState<number | null>(null);
+  // Saved Claude review attached to the currently-loaded kifu, if any.
+  // `annotations` is the new structured per-move payload; `text` is the
+  // legacy plain-text payload from older saves. Either or both may be
+  // populated. Surfaces a "view saved review" button in the loaded-kifu
+  // banner.
+  const [loadedSlotReview, setLoadedSlotReview] = useState<{
+    annotations?: ReviewAnnotations;
+    text?: string;
+    savedAt: number;
+  } | null>(null);
   const [resultRecorded, setResultRecorded] = useState(false);
   /** Last recorded result, used by the gameOver modal to know whether
    *  to show "Next chapter" vs "Try again". Set synchronously when
@@ -492,6 +610,13 @@ export default function App() {
 
   // Post-game review state
   const [reviewOpen, setReviewOpen] = useState(false);
+  // Structured review payload shown in the review modal & annotated
+  // on the board. Set by startReview (live generation) or by
+  // viewSavedReview (loading a saved structured review).
+  const [reviewAnnotations, setReviewAnnotations] = useState<ReviewAnnotations | null>(null);
+  // Legacy plain-text review, only used when viewing a saved review
+  // that predates the structured-tool format. New reviews leave this
+  // empty.
   const [reviewText, setReviewText] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -501,7 +626,9 @@ export default function App() {
   /** Saved-at timestamp shown in the read-only review view. */
   const [reviewSavedAt, setReviewSavedAtState] = useState<number | null>(null);
   const [reviewSavedFlash, setReviewSavedFlash] = useState(false);
-  const reviewHandleRef = useRef<StreamMessageHandle | null>(null);
+  // Either a streaming legacy review, a structured fetch handle, or
+  // null. Both expose .abort().
+  const reviewHandleRef = useRef<{ abort: () => void } | null>(null);
 
   const ai = useAiWorker();
   const { locale, setLocale, t } = useLocale();
@@ -511,7 +638,7 @@ export default function App() {
   // automatically returns the right language.
   const AVATARS = useMemo(
     () =>
-      AVATARS_DATA.map((a) => ({
+      [DEFAULT_AVATAR_DATA, ...AVATARS_DATA].map((a) => ({
         ...a,
         name: locale === 'en' ? a.name_en : a.name,
         setting: locale === 'en' ? a.setting_en : a.setting,
@@ -543,6 +670,93 @@ export default function App() {
     return m;
   }, [validMoves]);
   const counts = useMemo(() => countPieces(board), [board]);
+
+  // Step-replay derived view of the board. When the loaded-kifu cursor
+  // is parked on an intermediate move, replay from the initial position
+  // up to that move and use the result for everything the user sees:
+  // cells, last-move ring, score, status bar. Game-state effects
+  // (recording, AI move, saving, etc.) keep using `board`/`counts`
+  // because they're already gated by loadedKifuView.
+  const displayBoard = useMemo(() => {
+    if (!loadedKifuView || replayCursor === null) return board;
+    let b = createInitialBoard();
+    const stop = Math.min(replayCursor, kifu.length);
+    for (let i = 0; i < stop; i++) {
+      const m = kifu[i];
+      const next = applyMove(b, m.row, m.col, m.color);
+      if (!next) break;
+      b = next;
+    }
+    return b;
+  }, [loadedKifuView, replayCursor, kifu, board]);
+
+  const displayCounts = useMemo(
+    () => (displayBoard === board ? counts : countPieces(displayBoard)),
+    [displayBoard, board, counts],
+  );
+
+  const displayLastMove = useMemo<LastMove | null>(() => {
+    if (!loadedKifuView || replayCursor === null) return lastMove;
+    if (replayCursor === 0) return null;
+    const m = kifu[replayCursor - 1];
+    if (!m) return null;
+    return { row: m.row, col: m.col, color: m.color };
+  }, [loadedKifuView, replayCursor, kifu, lastMove]);
+
+  // Combined source of structured review annotations for the current
+  // view: prefer the just-generated review, fall back to whatever was
+  // saved with the loaded kifu. null when neither is available.
+  const activeAnnotations = useMemo<ReviewAnnotations | null>(
+    () => reviewAnnotations ?? loadedSlotReview?.annotations ?? null,
+    [reviewAnnotations, loadedSlotReview],
+  );
+
+  // Map<moveIndex, MoveAnnotation> for O(1) lookup from the cell map
+  // and the replay strip.
+  const annotationByMove = useMemo<Map<number, MoveAnnotation>>(() => {
+    const m = new Map<number, MoveAnnotation>();
+    if (activeAnnotations) {
+      for (const a of activeAnnotations.annotations) m.set(a.moveIndex, a);
+    }
+    return m;
+  }, [activeAnnotations]);
+
+  // Annotation for the move currently parked at, if any. Used by the
+  // replay strip's inline comment block.
+  const currentAnnotation = useMemo<MoveAnnotation | null>(() => {
+    if (!loadedKifuView || replayCursor === null || replayCursor === 0) return null;
+    return annotationByMove.get(replayCursor - 1) ?? null;
+  }, [loadedKifuView, replayCursor, annotationByMove]);
+
+  // Quality buckets for the "next bad move" / "next good move" jump
+  // buttons in the replay strip. Inaccuracy is counted as bad so the
+  // user can scan all problem moves quickly; neutral never qualifies
+  // either way (we don't even annotate those).
+  const sortedBadAnnotationIndices = useMemo(() => {
+    if (!activeAnnotations) return [] as number[];
+    return activeAnnotations.annotations
+      .filter((a) => a.quality === 'inaccuracy' || a.quality === 'mistake' || a.quality === 'blunder')
+      .map((a) => a.moveIndex)
+      .sort((x, y) => x - y);
+  }, [activeAnnotations]);
+
+  const sortedGoodAnnotationIndices = useMemo(() => {
+    if (!activeAnnotations) return [] as number[];
+    return activeAnnotations.annotations
+      .filter((a) => a.quality === 'good' || a.quality === 'brilliant')
+      .map((a) => a.moveIndex)
+      .sort((x, y) => x - y);
+  }, [activeAnnotations]);
+
+  const jumpToNextAnnotated = useCallback(
+    (sortedIndices: number[]) => {
+      if (sortedIndices.length === 0) return;
+      const cursorMove = (replayCursor ?? kifu.length) - 1;
+      const next = sortedIndices.find((m) => m > cursorMove) ?? sortedIndices[0];
+      setReplayCursor(next + 1);
+    },
+    [replayCursor, kifu.length],
+  );
   const oppMoves = useMemo(
     () => getValidMoves(board, opponent(currentColor)),
     [board, currentColor],
@@ -567,8 +781,12 @@ export default function App() {
     };
   }, []);
 
-  // Sync opponent character/level to story progress when in story mode
+  // Sync opponent character/level to story progress when in story mode.
+  // Skip while a saved kifu is being viewed — otherwise the opponent we
+  // restored from the slot gets immediately overwritten with the user's
+  // current chapter's opponent.
   useEffect(() => {
+    if (loadedKifuView) return;
     if (aiMode === 'story' && gameMode === 'ai') {
       const targetLevel = Math.min(Math.max(storyProgress + 1, 1), 20);
       const idx = COMPUTERS.findIndex((c) => c.level === targetLevel);
@@ -577,7 +795,7 @@ export default function App() {
         setLevel(targetLevel);
       }
     }
-  }, [aiMode, storyProgress, gameMode]);
+  }, [aiMode, storyProgress, gameMode, loadedKifuView]);
 
   // Auto-pass — passInfo intentionally NOT in deps: including it would
   // trigger the cleanup function on every state change and clear our own
@@ -637,7 +855,7 @@ export default function App() {
   // loss). Free matches feed the global free-stats bucket. Two-player
   // matches are not recorded.
   useEffect(() => {
-    if (!gameOver || resultRecorded) return;
+    if (!gameOver || resultRecorded || loadedKifuView) return;
     if (gameMode !== 'ai') {
       // Two-player: nothing to record, but mark as handled to keep the
       // gate logic simple.
@@ -673,6 +891,7 @@ export default function App() {
   }, [
     gameOver,
     resultRecorded,
+    loadedKifuView,
     aiMode,
     gameMode,
     counts.black,
@@ -771,6 +990,10 @@ export default function App() {
   function handleClick(row: number, col: number) {
     if (!isHumanTurn || aiThinking || gameOver || passInfo !== null) return;
     if (!validMoveMap.has(moveKey(row, col))) return;
+    // First user click after loading a kifu means they want to resume
+    // play, not just review — exit the loaded-view gate so subsequent
+    // gameOver flow records normally.
+    if (loadedKifuView) setLoadedKifuView(false);
     doMove(row, col);
   }
 
@@ -786,6 +1009,13 @@ export default function App() {
     setLastResult(null);
     setKifu([]);
     setResigned(null);
+    setLoadedKifuView(false);
+    setReplayCursor(null);
+    setLoadedSlotReview(null);
+    // Drop the on-board annotation overlay too — a fresh game shouldn't
+    // inherit the previous match's review markers.
+    setReviewAnnotations(null);
+    setReviewText('');
     ai.cancel();
   }
 
@@ -930,7 +1160,8 @@ export default function App() {
     void storageDeleteSlot(key).then(loadSavedSlots);
   }
 
-  function loadKifuMoves(savedKifu: MoveRecord[]) {
+  function loadKifuMoves(slot: SavedSlot) {
+    const savedKifu = slot.kifu ?? [];
     let b = createInitialBoard();
     for (const m of savedKifu) {
       const next = applyMove(b, m.row, m.col, m.color);
@@ -950,6 +1181,34 @@ export default function App() {
     setResigned(null);
     setKifuOpen(false);
     ai.cancel();
+    // Restore the match context the kifu was saved in so the player
+    // panels show the actual opponent (and level badge) rather than
+    // whatever chapter the user is currently up to.
+    if (
+      typeof slot.computerChar === 'number' &&
+      slot.computerChar >= 0 &&
+      slot.computerChar < COMPUTERS.length
+    ) {
+      setComputerChar(slot.computerChar);
+    }
+    if (typeof slot.level === 'number' && slot.level >= 1 && slot.level <= 20) {
+      setLevel(slot.level);
+    }
+    setLoadedKifuView(true);
+    setResultRecorded(true);
+    // Park the replay cursor at the final move so the loaded board
+    // shows the position the user actually saved. Stepping backward
+    // happens via the banner controls.
+    setReplayCursor(savedKifu.length);
+    if (slot.reviewAnnotations || slot.review) {
+      setLoadedSlotReview({
+        annotations: slot.reviewAnnotations,
+        text: slot.review,
+        savedAt: slot.timestamp ?? 0,
+      });
+    } else {
+      setLoadedSlotReview(null);
+    }
   }
 
   /* ----- Hint ----- */
@@ -978,6 +1237,7 @@ export default function App() {
     reviewHandleRef.current?.abort();
     setReviewError(null);
     setReviewText('');
+    setReviewAnnotations(null);
     setReviewLoading(true);
     setReviewOpen(true);
     setReviewReadOnly(false);
@@ -1009,14 +1269,22 @@ export default function App() {
           : undefined,
     };
 
-    reviewHandleRef.current = streamReview(args, locale, {
-      onText: (delta) => setReviewText((prev) => prev + delta),
-      onError: (err) => {
-        setReviewError(err.message);
-        setReviewLoading(false);
-      },
-      onDone: () => setReviewLoading(false),
-    });
+    const handle: StructuredReviewHandle = fetchStructuredReview(args, locale);
+    reviewHandleRef.current = { abort: handle.abort };
+    handle.result
+      .then((annotations) => {
+        // Only apply if this request wasn't superseded.
+        if (reviewHandleRef.current?.abort === handle.abort) {
+          setReviewAnnotations(annotations);
+          setReviewLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (reviewHandleRef.current?.abort === handle.abort) {
+          setReviewError(err instanceof Error ? err.message : String(err));
+          setReviewLoading(false);
+        }
+      });
   }
 
   function closeReview() {
@@ -1027,6 +1295,9 @@ export default function App() {
     setReviewReadOnly(false);
     setReviewSavedAtState(null);
     setReviewSavedFlash(false);
+    // Note: we keep `reviewAnnotations` so closing the modal doesn't
+    // discard the on-board annotation overlay (the user may want to
+    // step through the kifu while reading the comment per move).
   }
 
   function cancelReview() {
@@ -1035,11 +1306,15 @@ export default function App() {
     setReviewLoading(false);
   }
 
-  /** Persist the streamed review together with the current kifu so the
-   *  user can revisit it from the Kifu Library later. Auto-generates a
-   *  short name (e.g. "Ch.5 vs 響") so the user doesn't have to type. */
+  /** Persist the structured (or legacy text) review together with the
+   *  current kifu so the user can revisit it from the Kifu Library
+   *  later. Auto-generates a short name (e.g. "第5章 vs 響") so the
+   *  user doesn't have to type. */
   function saveReviewWithKifu() {
-    if (!reviewText.trim() || kifu.length === 0) return;
+    const haveAnnotations = reviewAnnotations !== null;
+    const haveLegacyText = reviewText.trim().length > 0;
+    if (!haveAnnotations && !haveLegacyText) return;
+    if (kifu.length === 0) return;
     const ts = new Date();
     const stamp = `${ts.getMonth() + 1}/${ts.getDate()} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
     // Use the just-defeated opponent (snapshot), not the auto-bumped
@@ -1072,23 +1347,30 @@ export default function App() {
       storyProgress,
       counts: { black: counts.black, white: counts.white },
       result,
-      review: reviewText,
+      review: haveLegacyText ? reviewText : undefined,
+      reviewAnnotations: reviewAnnotations ?? undefined,
     }).then(() => {
       setReviewSavedFlash(true);
       window.setTimeout(() => setReviewSavedFlash(false), 2000);
     });
   }
 
-  /** Open the review modal in read-only mode showing a previously saved
-   *  review string. */
-  function viewSavedReview(text: string, savedAt: number) {
+  /** Open the review modal in read-only mode for a previously saved
+   *  review (either the structured annotations payload or the legacy
+   *  text string — passing both is allowed). */
+  function viewSavedReview(payload: {
+    annotations?: ReviewAnnotations;
+    text?: string;
+    savedAt: number;
+  }) {
     reviewHandleRef.current?.abort();
     reviewHandleRef.current = null;
     setReviewError(null);
     setReviewLoading(false);
-    setReviewText(text);
+    setReviewAnnotations(payload.annotations ?? null);
+    setReviewText(payload.text ?? '');
     setReviewReadOnly(true);
-    setReviewSavedAtState(savedAt);
+    setReviewSavedAtState(payload.savedAt);
     setReviewSavedFlash(false);
     setKifuOpen(false);
     setReviewOpen(true);
@@ -1145,9 +1427,16 @@ export default function App() {
 
   const canUndo =
     !aiThinking &&
+    !loadedKifuView &&
     history.length > 0 &&
     (gameMode === 'human' || history.some((h) => h.currentColor === BLACK));
-  const canHint = isHumanTurn && !aiThinking && !gameOver && !noCurrent && passInfo === null;
+  const canHint =
+    isHumanTurn &&
+    !aiThinking &&
+    !gameOver &&
+    !noCurrent &&
+    passInfo === null &&
+    !loadedKifuView;
 
   /* ============================================================
      Render
@@ -1401,7 +1690,7 @@ export default function App() {
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}
-                count={counts.black}
+                count={displayCounts.black}
                 isActive={currentColor === BLACK && !gameOver && passInfo === null}
                 kanji={blackInfo.kanji}
                 idx={blackInfo.idx}
@@ -1413,6 +1702,7 @@ export default function App() {
                     ? lives
                     : undefined
                 }
+                compact={loadedKifuView}
               />
             </div>
 
@@ -1447,19 +1737,32 @@ export default function App() {
                       className="flex-1 grid grid-cols-8 grid-rows-8 gap-0"
                       style={{ aspectRatio: '1 / 1' }}
                     >
-                      {board.map((row, r) =>
+                      {displayBoard.map((row, r) =>
                         row.map((cell: Disc, c) => {
                           const isValid =
                             validMoveMap.has(moveKey(r, c)) &&
                             isHumanTurn &&
                             !aiThinking &&
                             !gameOver &&
-                            passInfo === null;
+                            passInfo === null &&
+                            !loadedKifuView;
                           const isStar = (r === 2 || r === 6) && (c === 2 || c === 6);
                           const isLast =
-                            lastMove !== null && lastMove.row === r && lastMove.col === c;
+                            displayLastMove !== null &&
+                            displayLastMove.row === r &&
+                            displayLastMove.col === c;
                           const flipTo = flipping[moveKey(r, c)];
                           const isHint = hintMove !== null && hintMove.row === r && hintMove.col === c;
+                          // If the current cursor's move has a Claude
+                          // annotation, replace the default red last-move
+                          // ring with a quality-colored glow so the user
+                          // sees at a glance whether this move was good or
+                          // a mistake.
+                          const cellAnnotation =
+                            isLast && currentAnnotation ? currentAnnotation : null;
+                          const qStyle = cellAnnotation
+                            ? QUALITY_STYLES[cellAnnotation.quality]
+                            : null;
                           return (
                             <div
                               key={`${r}-${c}`}
@@ -1467,6 +1770,7 @@ export default function App() {
                               className={`cell flex items-center justify-center ${
                                 isValid ? 'valid' : ''
                               } ${isStar ? 'star-dot' : ''}`}
+                              style={qStyle ? { boxShadow: qStyle.glow } : undefined}
                             >
                               {cell !== EMPTY && (
                                 <div
@@ -1479,7 +1783,7 @@ export default function App() {
                                 />
                               )}
                               {cell === EMPTY && isValid && <div className="move-hint" />}
-                              {isLast && <div className="last-move-ring" />}
+                              {isLast && !cellAnnotation && <div className="last-move-ring" />}
                               {isHint && <div className="hint-marker" />}
                             </div>
                           );
@@ -1494,7 +1798,7 @@ export default function App() {
             <div className="md:order-3">
               <PlayerPanel
                 color={WHITE}
-                count={counts.white}
+                count={displayCounts.white}
                 isActive={currentColor === WHITE && !gameOver && passInfo === null}
                 kanji={whiteInfo.kanji}
                 idx={whiteInfo.idx}
@@ -1503,12 +1807,13 @@ export default function App() {
                 quote={whiteInfo.quote}
                 level={whiteInfo.level}
                 thinking={aiThinking}
+                compact={loadedKifuView}
               />
             </div>
           </div>
 
           {/* Progress bar */}
-          <div className="max-w-xl mx-auto mt-7">
+          <div className={`max-w-xl mx-auto ${loadedKifuView ? 'mt-3' : 'mt-7'}`}>
             <div className="h-1.5 rounded-full overflow-hidden flex bg-amber-100/10 border border-amber-200/10">
               <div
                 className="transition-all duration-500 ease-out"
@@ -1526,20 +1831,169 @@ export default function App() {
               />
             </div>
             <div className="flex justify-between mt-1.5 latin-display italic text-amber-200/65 text-xs tracking-wider">
-              <span>{counts.black} {t.black}</span>
-              <span>{t.white} {counts.white}</span>
+              <span>{displayCounts.black} {t.black}</span>
+              <span>{t.white} {displayCounts.white}</span>
             </div>
           </div>
 
-          <div className="text-center mt-6 latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
-            {gameMode === 'human'
-              ? t.footerHuman
-              : aiMode === 'story'
-                ? storyProgress >= 20
-                  ? t.footerStoryComplete(COMPUTERS[computerChar].name)
-                  : t.footerChapter(storyProgress + 1, COMPUTERS[computerChar].name)
-                : t.footerFree(COMPUTERS[computerChar].name, level, getLevelLabel(level, t))}
-          </div>
+          {/* Inline replay strip — appears in document flow below the
+              status bar so it never overlaps the board. Icon-only
+              buttons, single row on phones thanks to flex-wrap. */}
+          {loadedKifuView && (() => {
+            const cursor = replayCursor ?? kifu.length;
+            const atStart = cursor <= 0;
+            const atEnd = cursor >= kifu.length;
+            const currentNotation =
+              cursor > 0 && cursor <= kifu.length
+                ? moveToNotation(kifu[cursor - 1]).toUpperCase()
+                : null;
+            const iconBtn =
+              'btn p-2 disabled:opacity-30 disabled:cursor-not-allowed';
+            return (
+              <div className="mt-3 px-2 py-2 rounded-sm border border-amber-200/25 bg-zinc-950/60 flex items-center justify-between gap-2 flex-wrap">
+                <div className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider px-1">
+                  {t.kifuMoveCounter(cursor, kifu.length, currentNotation)}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setReplayCursor(0)}
+                    disabled={atStart}
+                    className={iconBtn}
+                    title={t.replayFirst}
+                    aria-label={t.replayFirst}
+                  >
+                    <ChevronsLeft size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor((c) => Math.max(0, (c ?? kifu.length) - 1))}
+                    disabled={atStart}
+                    className={iconBtn}
+                    title={t.replayPrev}
+                    aria-label={t.replayPrev}
+                  >
+                    <ChevronLeft size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor((c) => Math.min(kifu.length, (c ?? 0) + 1))}
+                    disabled={atEnd}
+                    className={iconBtn}
+                    title={t.replayNext}
+                    aria-label={t.replayNext}
+                  >
+                    <ChevronRight size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor(kifu.length)}
+                    disabled={atEnd}
+                    className={iconBtn}
+                    title={t.replayLast}
+                    aria-label={t.replayLast}
+                  >
+                    <ChevronsRight size={16} strokeWidth={1.5} />
+                  </button>
+                  {/* Jump to next bad / good annotated move (cycles
+                      back to first if past the last one). Disabled
+                      when no annotation of that quality exists, or
+                      when the kifu has no annotations at all. */}
+                  {activeAnnotations && (
+                    <>
+                      <span className="w-px h-5 bg-amber-200/20 mx-1" />
+                      <button
+                        onClick={() => jumpToNextAnnotated(sortedBadAnnotationIndices)}
+                        disabled={sortedBadAnnotationIndices.length === 0}
+                        className={`${iconBtn} text-orange-300/85`}
+                        title={t.jumpNextBad}
+                        aria-label={t.jumpNextBad}
+                      >
+                        <AlertTriangle size={16} strokeWidth={1.5} />
+                      </button>
+                      <button
+                        onClick={() => jumpToNextAnnotated(sortedGoodAnnotationIndices)}
+                        disabled={sortedGoodAnnotationIndices.length === 0}
+                        className={`${iconBtn} text-emerald-300/85`}
+                        title={t.jumpNextGood}
+                        aria-label={t.jumpNextGood}
+                      >
+                        <ThumbsUp size={16} strokeWidth={1.5} />
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 ml-auto">
+                  {loadedSlotReview && (
+                    <button
+                      onClick={() =>
+                        viewSavedReview({
+                          annotations: loadedSlotReview.annotations,
+                          text: loadedSlotReview.text,
+                          savedAt: loadedSlotReview.savedAt,
+                        })
+                      }
+                      className={iconBtn}
+                      title={t.reviewViewSaved}
+                      aria-label={t.reviewViewSaved}
+                    >
+                      <ScrollText size={16} strokeWidth={1.5} />
+                    </button>
+                  )}
+                  {gameMode === 'ai' && kifu.length > 0 && (
+                    <button
+                      onClick={startReview}
+                      className={iconBtn}
+                      title={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
+                      aria-label={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
+                    >
+                      <Sparkles size={16} strokeWidth={1.5} />
+                    </button>
+                  )}
+                  <button
+                    onClick={reset}
+                    className={iconBtn}
+                    title={t.kifuViewingClose}
+                    aria-label={t.kifuViewingClose}
+                  >
+                    <X size={16} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Per-move annotation comment. Shown directly under the replay
+              strip when the cursor is parked on an annotated move. The
+              quality badge reuses the same colors as the on-board ring
+              so the user can correlate at a glance. */}
+          {loadedKifuView && currentAnnotation && (() => {
+            const q = currentAnnotation.quality;
+            const style = QUALITY_STYLES[q];
+            return (
+              <div className="mt-2 px-3 py-2.5 rounded-sm border border-amber-200/20 bg-zinc-950/60 flex items-start gap-2">
+                <span
+                  className={`shrink-0 latin-display text-[10px] tracking-[0.2em] uppercase border px-2 py-0.5 rounded-sm ${style.badge}`}
+                >
+                  {qualityLabel(q, t)}
+                </span>
+                <p className="jp-display text-amber-100/90 text-xs md:text-sm leading-relaxed">
+                  {currentAnnotation.comment}
+                </p>
+              </div>
+            );
+          })()}
+
+          {/* Footer caption is redundant during a loaded-kifu review
+              (the score bar + replay strip already show all the
+              relevant context) — hide it to free vertical space. */}
+          {!loadedKifuView && (
+            <div className="text-center mt-6 latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
+              {gameMode === 'human'
+                ? t.footerHuman
+                : aiMode === 'story'
+                  ? storyProgress >= 20
+                    ? t.footerStoryComplete(COMPUTERS[computerChar].name)
+                    : t.footerChapter(storyProgress + 1, COMPUTERS[computerChar].name)
+                  : t.footerFree(COMPUTERS[computerChar].name, level, getLevelLabel(level, t))}
+            </div>
+          )}
 
           {/* Pass message */}
           {passInfo !== null && (
@@ -1553,7 +2007,7 @@ export default function App() {
           )}
 
           {/* Game over modal */}
-          {gameOver && !settingsOpen && (() => {
+          {gameOver && !settingsOpen && !loadedKifuView && (() => {
             const isStoryMode = aiMode === 'story' && gameMode === 'ai';
             const justAdvanced = isStoryMode && lastResult === 'win';
             const justCompletedStory = justAdvanced && storyProgress >= 20;
@@ -1820,6 +2274,10 @@ export default function App() {
             );
           })()}
 
+          {/* (Replay strip is now embedded inline below the score bar so
+              it never overlaps the board. See the loadedKifuView block
+              earlier in this file.) */}
+
           {/* Match info modal */}
           {infoOpen && (
             <div className="modal-bg fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-2 md:p-6">
@@ -2055,17 +2513,21 @@ export default function App() {
                                 {slot.result === BLACK && <> · {t.blackWinShort}</>}
                                 {slot.result === WHITE && <> · {t.whiteWinShort}</>}
                                 {slot.result === EMPTY && <> · {t.drawShort}</>}
-                                {slot.review && (
+                                {(slot.review || slot.reviewAnnotations) && (
                                   <span className="ml-1 text-amber-200/85">
                                     · 📝 {t.reviewSavedIndicator}
                                   </span>
                                 )}
                               </div>
                             </div>
-                            {slot.review && (
+                            {(slot.review || slot.reviewAnnotations) && (
                               <button
                                 onClick={() =>
-                                  viewSavedReview(slot.review ?? '', slot.timestamp ?? 0)
+                                  viewSavedReview({
+                                    annotations: slot.reviewAnnotations,
+                                    text: slot.review,
+                                    savedAt: slot.timestamp ?? 0,
+                                  })
                                 }
                                 className="btn text-xs px-2 py-1.5"
                                 title={t.reviewViewSaved}
@@ -2075,7 +2537,7 @@ export default function App() {
                               </button>
                             )}
                             <button
-                              onClick={() => loadKifuMoves(slot.kifu ?? [])}
+                              onClick={() => loadKifuMoves(slot)}
                               className="btn text-xs px-3 py-1.5"
                               title={t.loadButton}
                             >
@@ -2121,11 +2583,85 @@ export default function App() {
                     <p className="jp-display text-red-300/90 text-sm leading-relaxed mb-3">
                       {t.reviewError(reviewError)}
                     </p>
-                  ) : reviewText.length === 0 && reviewLoading ? (
+                  ) : reviewLoading && !reviewAnnotations ? (
                     <p className="jp-display italic text-amber-200/65 text-sm">
                       {t.reviewLoading}
                     </p>
-                  ) : (
+                  ) : reviewAnnotations ? (
+                    /* Structured (new) review view */
+                    <div className="space-y-4">
+                      <section>
+                        <h3 className="jp-display text-amber-100 text-base font-bold tracking-wider mb-1.5 pb-1 border-b border-amber-200/15">
+                          {t.reviewSummaryHeading}
+                        </h3>
+                        <p className="jp-display text-amber-100/90 text-sm leading-relaxed">
+                          {reviewAnnotations.summary}
+                        </p>
+                      </section>
+                      <section>
+                        <h3 className="jp-display text-amber-100 text-base font-bold tracking-wider mb-1.5 pb-1 border-b border-amber-200/15">
+                          {t.reviewImprovementsHeading}
+                        </h3>
+                        <p className="jp-display text-amber-100/90 text-sm leading-relaxed">
+                          {reviewAnnotations.improvements}
+                        </p>
+                      </section>
+                      <section>
+                        <h3 className="jp-display text-amber-100 text-base font-bold tracking-wider mb-2 pb-1 border-b border-amber-200/15">
+                          {t.reviewMovesHeading}
+                        </h3>
+                        {reviewAnnotations.annotations.length === 0 ? (
+                          <p className="jp-display italic text-amber-200/65 text-sm">
+                            {t.reviewNoAnnotations}
+                          </p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {[...reviewAnnotations.annotations]
+                              .sort((a, b) => a.moveIndex - b.moveIndex)
+                              .map((a) => {
+                                const move = kifu[a.moveIndex];
+                                if (!move) return null;
+                                const notation = moveToNotation(move).toUpperCase();
+                                const side: 'B' | 'W' = move.color === BLACK ? 'B' : 'W';
+                                const qStyle = QUALITY_STYLES[a.quality];
+                                const canJump = loadedKifuView;
+                                return (
+                                  <li
+                                    key={a.moveIndex}
+                                    className={`flex items-start gap-2 px-2 py-2 rounded-sm border border-amber-200/15 bg-amber-200/[0.02] ${
+                                      canJump
+                                        ? 'cursor-pointer hover:bg-amber-200/[0.06] hover:border-amber-200/35'
+                                        : ''
+                                    }`}
+                                    onClick={() => {
+                                      if (!canJump) return;
+                                      setReplayCursor(a.moveIndex + 1);
+                                      setReviewOpen(false);
+                                    }}
+                                  >
+                                    <span
+                                      className={`shrink-0 latin-display text-[10px] tracking-[0.2em] uppercase border px-2 py-0.5 rounded-sm ${qStyle.badge}`}
+                                    >
+                                      {qualityLabel(a.quality, t)}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider mb-0.5">
+                                        {t.reviewMoveLabel(a.moveIndex + 1, notation, side)}
+                                      </div>
+                                      <p className="jp-display text-amber-100/90 text-xs leading-relaxed">
+                                        {a.comment}
+                                      </p>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                          </ul>
+                        )}
+                      </section>
+                    </div>
+                  ) : reviewText.length > 0 ? (
+                    /* Legacy plain-text review view (saved before
+                       structured tool-use, kept for backward compat) */
                     <div className="jp-display text-amber-100/90 text-sm leading-relaxed">
                       {reviewText.split('\n').map((line, i) => {
                         if (line.startsWith('## ')) {
@@ -2154,11 +2690,8 @@ export default function App() {
                           </p>
                         );
                       })}
-                      {reviewLoading && reviewText.length > 0 && (
-                        <span className="inline-block w-2 h-4 bg-amber-200/60 ml-1 animate-pulse align-middle" />
-                      )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-200/15">
@@ -2184,7 +2717,7 @@ export default function App() {
                     )}
                     {!reviewReadOnly &&
                       !reviewLoading &&
-                      reviewText.trim().length > 0 &&
+                      (reviewAnnotations !== null || reviewText.trim().length > 0) &&
                       !reviewError && (
                         <button
                           onClick={saveReviewWithKifu}
@@ -2195,7 +2728,7 @@ export default function App() {
                       )}
                     {!reviewReadOnly &&
                       !reviewLoading &&
-                      (reviewError || reviewText.length > 0) && (
+                      (reviewError || reviewAnnotations !== null || reviewText.length > 0) && (
                         <button onClick={startReview} className="btn text-xs px-3 py-1.5">
                           {t.reviewRegenerate}
                         </button>
@@ -2296,30 +2829,50 @@ export default function App() {
                     </span>
                   </h3>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                    {AVATARS.map((a, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setP1Avatar(i)}
-                        className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                          p1Avatar === i
-                            ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                            : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                        }`}
-                      >
-                        <AvatarBadge kanji={a.kanji} idx={i} image={a.image} size="sm" />
-                        <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                          {a.name}
-                        </div>
-                        <div
-                          className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                            p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
-                          }`}
+                    {AVATARS.map((a, i) => {
+                      const isLocked = i > 0 && storyProgress < 20;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => !isLocked && setP1Avatar(i)}
+                          disabled={isLocked}
+                          className={`relative p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                            p1Avatar === i
+                              ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                              : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
+                          } ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
                         >
-                          {a.setting}
-                        </div>
-                      </button>
-                    ))}
+                          <AvatarBadge
+                            kanji={a.kanji}
+                            idx={i}
+                            image={a.image}
+                            size="sm"
+                            dim={isLocked}
+                          />
+                          <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                            {a.name}
+                          </div>
+                          <div
+                            className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
+                              p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
+                            }`}
+                          >
+                            {a.setting}
+                          </div>
+                          {isLocked && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <Lock size={20} strokeWidth={1.4} className="text-amber-200/85" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {storyProgress < 20 && (
+                    <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
+                      {t.protagonistLockHint}
+                    </p>
+                  )}
                   <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="jp-display text-amber-100/85 text-sm">
                       {AVATARS[p1Avatar].name}
@@ -2524,38 +3077,61 @@ export default function App() {
                         {t.player2Protagonist}
                       </div>
                       <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                        {AVATARS.map((a, i) => (
-                          <button
-                            key={i}
-                            onClick={() => p1Avatar !== i && setP2Avatar(i)}
-                            disabled={p1Avatar === i}
-                            className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                              p2Avatar === i
-                                ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                                : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                            } ${p1Avatar === i ? 'opacity-40 cursor-not-allowed' : ''}`}
-                          >
-                            <AvatarBadge
-                              kanji={a.kanji}
-                              idx={i + 50}
-                              image={a.image}
-                              size="sm"
-                              dim={p1Avatar === i}
-                            />
-                            <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                              {a.name}
-                            </div>
-                            <div
-                              className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                                p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
-                              }`}
+                        {AVATARS.map((a, i) => {
+                          const isLocked = i > 0 && storyProgress < 20;
+                          // Allow both players to share the default avatar
+                          // when no bonus characters are unlocked yet —
+                          // otherwise 2P mode would have no valid p2 pick.
+                          const collidesWithP1 =
+                            p1Avatar === i && storyProgress >= 20;
+                          const isDisabled = isLocked || collidesWithP1;
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => !isDisabled && setP2Avatar(i)}
+                              disabled={isDisabled}
+                              className={`relative p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                                p2Avatar === i
+                                  ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                                  : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
+                              } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                             >
-                              {a.setting}
-                            </div>
-                          </button>
-                        ))}
+                              <AvatarBadge
+                                kanji={a.kanji}
+                                idx={i + 50}
+                                image={a.image}
+                                size="sm"
+                                dim={isDisabled}
+                              />
+                              <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                                {a.name}
+                              </div>
+                              <div
+                                className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
+                                  p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
+                                }`}
+                              >
+                                {a.setting}
+                              </div>
+                              {isLocked && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <Lock
+                                    size={20}
+                                    strokeWidth={1.4}
+                                    className="text-amber-200/85"
+                                  />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
-                      {p1Avatar === p2Avatar && (
+                      {storyProgress < 20 && (
+                        <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
+                          {t.protagonistLockHint}
+                        </p>
+                      )}
+                      {p1Avatar === p2Avatar && storyProgress >= 20 && (
                         <p className="jp-display text-amber-200/65 text-xs mt-2 italic">
                           {t.cannotChooseSelf}
                         </p>

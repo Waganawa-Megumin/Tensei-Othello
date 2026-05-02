@@ -102,6 +102,7 @@ export interface Messages {
   freeMode: string;
   player2Protagonist: string;
   cannotChooseSelf: string;
+  protagonistLockHint: string;
   startNewGame: string;
   keepSettings: string;
   progress: string;
@@ -157,6 +158,31 @@ export interface Messages {
   reviewViewSaved: string;
   reviewSavedAt: (timestamp: string) => string;
   reviewSavedIndicator: string;
+
+  // Loaded-kifu review-mode overlay
+  kifuViewingLabel: string;
+  kifuViewingClose: string;
+  kifuMoveCounter: (current: number, total: number, notation: string | null) => string;
+  replayFirst: string;
+  replayPrev: string;
+  replayNext: string;
+  replayLast: string;
+  reviewGenerateNew: string;
+  jumpNextBad: string;
+  jumpNextGood: string;
+
+  // Structured review (per-move annotations)
+  reviewSummaryHeading: string;
+  reviewImprovementsHeading: string;
+  reviewMovesHeading: string;
+  reviewMoveLabel: (n: number, notation: string, side: 'B' | 'W') => string;
+  reviewNoAnnotations: string;
+  qualityBrilliant: string;
+  qualityGood: string;
+  qualityNeutral: string;
+  qualityInaccuracy: string;
+  qualityMistake: string;
+  qualityBlunder: string;
 
   // Save slots (story mode)
   slotPickerTitle: string;
@@ -278,6 +304,7 @@ export const ja: Messages = {
   freeMode: 'フリー',
   player2Protagonist: 'Player 2 protagonist',
   cannotChooseSelf: '※あなたと同じ名は選べません',
+  protagonistLockHint: '※隠れキャラクターは全章クリアで解放されます',
   startNewGame: '新しい対局を開始',
   keepSettings: 'この設定で続ける',
   progress: 'Progress',
@@ -356,6 +383,31 @@ export const ja: Messages = {
   reviewViewSaved: 'レビューを見る',
   reviewSavedAt: (timestamp) => `保存日時：${timestamp}`,
   reviewSavedIndicator: 'レビューあり',
+
+  kifuViewingLabel: '棋譜を閲覧中',
+  kifuViewingClose: '閲覧を終了',
+  kifuMoveCounter: (current, total, notation) =>
+    notation ? `${current}/${total}手 · ${notation}` : `${current}/${total}手`,
+  replayFirst: '初手前まで戻す',
+  replayPrev: '1手戻る',
+  replayNext: '1手進める',
+  replayLast: '最終局面へ',
+  reviewGenerateNew: 'レビューを新規生成',
+  jumpNextBad: '次の悪手へ',
+  jumpNextGood: '次の好手へ',
+
+  reviewSummaryHeading: '総評',
+  reviewImprovementsHeading: '次回への助言',
+  reviewMovesHeading: '注目の手',
+  reviewMoveLabel: (n, notation, side) =>
+    `第${n}手 ${side === 'B' ? '黒' : '白'} ${notation}`,
+  reviewNoAnnotations: '注釈付きの手はありません。',
+  qualityBrilliant: '妙手',
+  qualityGood: '好手',
+  qualityNeutral: '普通',
+  qualityInaccuracy: '緩手',
+  qualityMistake: '悪手',
+  qualityBlunder: '大悪手',
 
   slotPickerTitle: 'セーブを選ぶ',
   slotPickerSubtitle: 'Choose a save',
@@ -477,6 +529,7 @@ export const en: Messages = {
   freeMode: 'Free',
   player2Protagonist: 'Player 2 protagonist',
   cannotChooseSelf: 'Cannot pick the same name as yourself',
+  protagonistLockHint: 'Hidden characters unlock after clearing all chapters.',
   startNewGame: 'Start new game',
   keepSettings: 'Keep these settings',
   progress: 'Progress',
@@ -555,6 +608,31 @@ your journey on the board reaches its close.`,
   reviewViewSaved: 'View review',
   reviewSavedAt: (timestamp) => `Saved at: ${timestamp}`,
   reviewSavedIndicator: 'review attached',
+
+  kifuViewingLabel: 'Viewing kifu',
+  kifuViewingClose: 'Close',
+  kifuMoveCounter: (current, total, notation) =>
+    notation ? `${current}/${total} · ${notation}` : `${current}/${total}`,
+  replayFirst: 'Jump to start',
+  replayPrev: 'Previous move',
+  replayNext: 'Next move',
+  replayLast: 'Jump to end',
+  reviewGenerateNew: 'Generate new review',
+  jumpNextBad: 'Next mistake',
+  jumpNextGood: 'Next good move',
+
+  reviewSummaryHeading: 'Overview',
+  reviewImprovementsHeading: 'What to improve',
+  reviewMovesHeading: 'Annotated moves',
+  reviewMoveLabel: (n, notation, side) =>
+    `Move ${n} · ${side === 'B' ? 'Black' : 'White'} ${notation}`,
+  reviewNoAnnotations: 'No annotated moves.',
+  qualityBrilliant: 'Brilliant',
+  qualityGood: 'Good',
+  qualityNeutral: 'Neutral',
+  qualityInaccuracy: 'Inaccuracy',
+  qualityMistake: 'Mistake',
+  qualityBlunder: 'Blunder',
 
   slotPickerTitle: 'Choose a Save',
   slotPickerSubtitle: 'Save Slots',

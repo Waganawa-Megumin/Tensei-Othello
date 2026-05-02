@@ -4,6 +4,19 @@
   "description": "Authoritative character asset registry. Stable IDs (PLRxx for players, OPPxx for opponents) are the primary key.",
   "players": [
     {
+      "id": "PLR00",
+      "index": 0,
+      "kanji": "君",
+      "name_ja": "あなた",
+      "name_en": "You",
+      "slug": "default",
+      "archetype_ja": "盤上世界の旅人",
+      "archetype_en": "Traveler of Bansho Sekai",
+      "quote": "いざ、参る",
+      "base_image": "players/PLR00_default.png",
+      "original_source": "(default protagonist, always unlocked; PLR01-20 unlock after clearing all 20 story chapters)"
+    },
+    {
       "id": "PLR01",
       "index": 1,
       "kanji": "春",
