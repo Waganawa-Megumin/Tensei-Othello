@@ -8,6 +8,10 @@ import {
   type ChangeEvent,
 } from 'react';
 import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Flag,
   FolderOpen,
   Home,
@@ -16,6 +20,7 @@ import {
   Lock,
   Menu,
   RotateCcw,
+  ScrollText,
   Trash2,
   Undo2,
   type LucideIcon,
@@ -480,6 +485,17 @@ export default function App() {
   // loaded board can be inspected without re-firing the win/loss flow.
   // Cleared by reset() and by the first user click on the board.
   const [loadedKifuView, setLoadedKifuView] = useState(false);
+  // Step-replay cursor for the loaded kifu. null = not in replay mode
+  // (use `board` directly). 0 = initial empty-center board, 1..N =
+  // board after replaying the first N moves of `kifu`.
+  const [replayCursor, setReplayCursor] = useState<number | null>(null);
+  // Saved Claude review attached to the currently-loaded kifu, if any.
+  // Surfaces a "view saved review" button in the loaded-kifu banner so
+  // the user doesn't have to dig back through the kifu library.
+  const [loadedSlotReview, setLoadedSlotReview] = useState<{
+    text: string;
+    savedAt: number;
+  } | null>(null);
   const [resultRecorded, setResultRecorded] = useState(false);
   /** Last recorded result, used by the gameOver modal to know whether
    *  to show "Next chapter" vs "Try again". Set synchronously when
@@ -565,6 +581,38 @@ export default function App() {
     return m;
   }, [validMoves]);
   const counts = useMemo(() => countPieces(board), [board]);
+
+  // Step-replay derived view of the board. When the loaded-kifu cursor
+  // is parked on an intermediate move, replay from the initial position
+  // up to that move and use the result for everything the user sees:
+  // cells, last-move ring, score, status bar. Game-state effects
+  // (recording, AI move, saving, etc.) keep using `board`/`counts`
+  // because they're already gated by loadedKifuView.
+  const displayBoard = useMemo(() => {
+    if (!loadedKifuView || replayCursor === null) return board;
+    let b = createInitialBoard();
+    const stop = Math.min(replayCursor, kifu.length);
+    for (let i = 0; i < stop; i++) {
+      const m = kifu[i];
+      const next = applyMove(b, m.row, m.col, m.color);
+      if (!next) break;
+      b = next;
+    }
+    return b;
+  }, [loadedKifuView, replayCursor, kifu, board]);
+
+  const displayCounts = useMemo(
+    () => (displayBoard === board ? counts : countPieces(displayBoard)),
+    [displayBoard, board, counts],
+  );
+
+  const displayLastMove = useMemo<LastMove | null>(() => {
+    if (!loadedKifuView || replayCursor === null) return lastMove;
+    if (replayCursor === 0) return null;
+    const m = kifu[replayCursor - 1];
+    if (!m) return null;
+    return { row: m.row, col: m.col, color: m.color };
+  }, [loadedKifuView, replayCursor, kifu, lastMove]);
   const oppMoves = useMemo(
     () => getValidMoves(board, opponent(currentColor)),
     [board, currentColor],
@@ -818,6 +866,8 @@ export default function App() {
     setKifu([]);
     setResigned(null);
     setLoadedKifuView(false);
+    setReplayCursor(null);
+    setLoadedSlotReview(null);
     ai.cancel();
   }
 
@@ -998,6 +1048,15 @@ export default function App() {
     }
     setLoadedKifuView(true);
     setResultRecorded(true);
+    // Park the replay cursor at the final move so the loaded board
+    // shows the position the user actually saved. Stepping backward
+    // happens via the banner controls.
+    setReplayCursor(savedKifu.length);
+    setLoadedSlotReview(
+      slot.review
+        ? { text: slot.review, savedAt: slot.timestamp ?? 0 }
+        : null,
+    );
   }
 
   /* ----- Hint ----- */
@@ -1193,9 +1252,16 @@ export default function App() {
 
   const canUndo =
     !aiThinking &&
+    !loadedKifuView &&
     history.length > 0 &&
     (gameMode === 'human' || history.some((h) => h.currentColor === BLACK));
-  const canHint = isHumanTurn && !aiThinking && !gameOver && !noCurrent && passInfo === null;
+  const canHint =
+    isHumanTurn &&
+    !aiThinking &&
+    !gameOver &&
+    !noCurrent &&
+    passInfo === null &&
+    !loadedKifuView;
 
   /* ============================================================
      Render
@@ -1449,7 +1515,7 @@ export default function App() {
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}
-                count={counts.black}
+                count={displayCounts.black}
                 isActive={currentColor === BLACK && !gameOver && passInfo === null}
                 kanji={blackInfo.kanji}
                 idx={blackInfo.idx}
@@ -1495,17 +1561,20 @@ export default function App() {
                       className="flex-1 grid grid-cols-8 grid-rows-8 gap-0"
                       style={{ aspectRatio: '1 / 1' }}
                     >
-                      {board.map((row, r) =>
+                      {displayBoard.map((row, r) =>
                         row.map((cell: Disc, c) => {
                           const isValid =
                             validMoveMap.has(moveKey(r, c)) &&
                             isHumanTurn &&
                             !aiThinking &&
                             !gameOver &&
-                            passInfo === null;
+                            passInfo === null &&
+                            !loadedKifuView;
                           const isStar = (r === 2 || r === 6) && (c === 2 || c === 6);
                           const isLast =
-                            lastMove !== null && lastMove.row === r && lastMove.col === c;
+                            displayLastMove !== null &&
+                            displayLastMove.row === r &&
+                            displayLastMove.col === c;
                           const flipTo = flipping[moveKey(r, c)];
                           const isHint = hintMove !== null && hintMove.row === r && hintMove.col === c;
                           return (
@@ -1542,7 +1611,7 @@ export default function App() {
             <div className="md:order-3">
               <PlayerPanel
                 color={WHITE}
-                count={counts.white}
+                count={displayCounts.white}
                 isActive={currentColor === WHITE && !gameOver && passInfo === null}
                 kanji={whiteInfo.kanji}
                 idx={whiteInfo.idx}
@@ -1574,8 +1643,8 @@ export default function App() {
               />
             </div>
             <div className="flex justify-between mt-1.5 latin-display italic text-amber-200/65 text-xs tracking-wider">
-              <span>{counts.black} {t.black}</span>
-              <span>{t.white} {counts.white}</span>
+              <span>{displayCounts.black} {t.black}</span>
+              <span>{t.white} {displayCounts.white}</span>
             </div>
           </div>
 
@@ -1870,24 +1939,94 @@ export default function App() {
 
           {/* Loaded-kifu review banner. Replaces the gameOver modal
               while a saved kifu is being inspected so the user can:
-              - read the kifu log via Info
-              - generate / view a Claude review
+              - step through the kifu (replay controls)
+              - see the move counter and current move notation
+              - view the saved Claude review (if any) or generate a new one
               - close the view to start a fresh game */}
-          {loadedKifuView && !infoOpen && !kifuOpen && !reviewOpen && !settingsOpen && (
-            <div className="fixed left-1/2 -translate-x-1/2 bottom-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-sm border border-amber-200/30 bg-zinc-950/85 backdrop-blur-sm shadow-lg">
-              <span className="latin-display italic text-amber-200/70 text-[11px] tracking-[0.25em] uppercase pr-1">
-                {t.kifuViewingLabel}
-              </span>
-              {gameMode === 'ai' && kifu.length > 0 && (
-                <button onClick={startReview} className="btn text-xs px-3 py-1.5">
-                  {t.reviewMatchButton}
-                </button>
-              )}
-              <button onClick={reset} className="btn text-xs px-3 py-1.5">
-                {t.kifuViewingClose}
-              </button>
-            </div>
-          )}
+          {loadedKifuView && !infoOpen && !kifuOpen && !reviewOpen && !settingsOpen && (() => {
+            const cursor = replayCursor ?? kifu.length;
+            const atStart = cursor <= 0;
+            const atEnd = cursor >= kifu.length;
+            const currentNotation =
+              cursor > 0 && cursor <= kifu.length
+                ? moveToNotation(kifu[cursor - 1]).toUpperCase()
+                : null;
+            return (
+              <div className="fixed left-1/2 -translate-x-1/2 bottom-3 z-30 flex flex-col gap-2 px-3 py-2.5 rounded-sm border border-amber-200/30 bg-zinc-950/90 backdrop-blur-sm shadow-lg max-w-[96vw]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="latin-display italic text-amber-200/70 text-[11px] tracking-[0.25em] uppercase">
+                    {t.kifuViewingLabel}
+                  </span>
+                  <span className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider">
+                    {t.kifuMoveCounter(cursor, kifu.length, currentNotation)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => setReplayCursor(0)}
+                    disabled={atStart}
+                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={t.replayFirst}
+                    aria-label={t.replayFirst}
+                  >
+                    <ChevronsLeft size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor((c) => Math.max(0, (c ?? kifu.length) - 1))}
+                    disabled={atStart}
+                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={t.replayPrev}
+                    aria-label={t.replayPrev}
+                  >
+                    <ChevronLeft size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor((c) => Math.min(kifu.length, (c ?? 0) + 1))}
+                    disabled={atEnd}
+                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={t.replayNext}
+                    aria-label={t.replayNext}
+                  >
+                    <ChevronRight size={16} strokeWidth={1.5} />
+                  </button>
+                  <button
+                    onClick={() => setReplayCursor(kifu.length)}
+                    disabled={atEnd}
+                    className="btn text-xs p-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title={t.replayLast}
+                    aria-label={t.replayLast}
+                  >
+                    <ChevronsRight size={16} strokeWidth={1.5} />
+                  </button>
+                  <span className="flex-1" />
+                  {loadedSlotReview && (
+                    <button
+                      onClick={() =>
+                        viewSavedReview(loadedSlotReview.text, loadedSlotReview.savedAt)
+                      }
+                      className="btn text-xs px-2.5 py-1.5 inline-flex items-center gap-1"
+                      title={t.reviewViewSaved}
+                    >
+                      <ScrollText size={14} strokeWidth={1.5} />
+                      <span>{t.reviewViewSaved}</span>
+                    </button>
+                  )}
+                  {gameMode === 'ai' && kifu.length > 0 && (
+                    <button
+                      onClick={startReview}
+                      className="btn text-xs px-2.5 py-1.5"
+                      title={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
+                    >
+                      {loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
+                    </button>
+                  )}
+                  <button onClick={reset} className="btn text-xs px-2.5 py-1.5">
+                    {t.kifuViewingClose}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Match info modal */}
           {infoOpen && (

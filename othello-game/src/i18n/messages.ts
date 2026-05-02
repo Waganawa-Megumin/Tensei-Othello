@@ -162,6 +162,12 @@ export interface Messages {
   // Loaded-kifu review-mode overlay
   kifuViewingLabel: string;
   kifuViewingClose: string;
+  kifuMoveCounter: (current: number, total: number, notation: string | null) => string;
+  replayFirst: string;
+  replayPrev: string;
+  replayNext: string;
+  replayLast: string;
+  reviewGenerateNew: string;
 
   // Save slots (story mode)
   slotPickerTitle: string;
@@ -365,6 +371,13 @@ export const ja: Messages = {
 
   kifuViewingLabel: '棋譜を閲覧中',
   kifuViewingClose: '閲覧を終了',
+  kifuMoveCounter: (current, total, notation) =>
+    notation ? `${current}/${total}手 · ${notation}` : `${current}/${total}手`,
+  replayFirst: '初手前まで戻す',
+  replayPrev: '1手戻る',
+  replayNext: '1手進める',
+  replayLast: '最終局面へ',
+  reviewGenerateNew: 'レビューを新規生成',
 
   slotPickerTitle: 'セーブを選ぶ',
   slotPickerSubtitle: 'Choose a save',
@@ -568,6 +581,13 @@ your journey on the board reaches its close.`,
 
   kifuViewingLabel: 'Viewing kifu',
   kifuViewingClose: 'Close',
+  kifuMoveCounter: (current, total, notation) =>
+    notation ? `${current}/${total} · ${notation}` : `${current}/${total}`,
+  replayFirst: 'Jump to start',
+  replayPrev: 'Previous move',
+  replayNext: 'Next move',
+  replayLast: 'Jump to end',
+  reviewGenerateNew: 'Generate new review',
 
   slotPickerTitle: 'Choose a Save',
   slotPickerSubtitle: 'Save Slots',
