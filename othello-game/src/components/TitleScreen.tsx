@@ -1,5 +1,5 @@
 import { Sparkles, Swords, Users } from 'lucide-react';
-import type { Messages } from '../i18n/messages';
+import type { Locale, Messages } from '../i18n/messages';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -11,6 +11,8 @@ interface TitleScreenProps {
   firstChapterName: string;
   onStart: (selection: TitleStartMode) => void;
   t: Messages;
+  locale: Locale;
+  onLocaleChange: (locale: Locale) => void;
 }
 
 export function TitleScreen({
@@ -18,6 +20,8 @@ export function TitleScreen({
   firstChapterName,
   onStart,
   t,
+  locale,
+  onLocaleChange,
 }: TitleScreenProps) {
   const hasProgress = storyProgress > 0 && storyProgress < 20;
   const completed = storyProgress >= 20;
@@ -191,9 +195,35 @@ export function TitleScreen({
         </button>
       </div>
 
-      {/* Footer hint */}
-      <div className="relative latin-display italic text-amber-200/55 text-[10px] tracking-[0.3em] uppercase">
-        {t.titleFooterHint}
+      {/* Footer hint + language toggle */}
+      <div className="relative flex flex-col items-center gap-3">
+        <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.3em] uppercase">
+          {t.titleFooterHint}
+        </div>
+        <div className="flex gap-1 jp-display text-[11px]">
+          <button
+            onClick={() => onLocaleChange('ja')}
+            className={`px-3 py-1 rounded-sm border transition-colors ${
+              locale === 'ja'
+                ? 'border-amber-200/60 text-amber-100 bg-amber-200/[0.06]'
+                : 'border-transparent text-amber-200/55 hover:text-amber-200/85'
+            }`}
+            aria-pressed={locale === 'ja'}
+          >
+            日本語
+          </button>
+          <button
+            onClick={() => onLocaleChange('en')}
+            className={`px-3 py-1 rounded-sm border transition-colors latin-display ${
+              locale === 'en'
+                ? 'border-amber-200/60 text-amber-100 bg-amber-200/[0.06]'
+                : 'border-transparent text-amber-200/55 hover:text-amber-200/85'
+            }`}
+            aria-pressed={locale === 'en'}
+          >
+            English
+          </button>
+        </div>
       </div>
     </div>
   );

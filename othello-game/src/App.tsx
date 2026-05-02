@@ -125,39 +125,6 @@ const COMPUTERS_DATA: ReadonlyArray<ComputerEntry> = [
   { kanji: '零', name: 'ゼロ',     name_en: 'Zero',      level: 20, quote: '全ての変分は計算済み。詰みだ',   quote_en: 'All variations computed. Checkmate.',       image: 'avatars/opponents/OPP20_zero.png' },
 ];
 
-const STORY_INTRO = `——気づくと、君は見知らぬ世界にいた。
-そこは異界『盤上世界』。黒と白の石が舞い、20人の達人が住むという。
-「すべての達人を打ち破った者だけが、元の世界へ還れる」
-そう告げる声が、盤の上から響いた。
-転生したらオセロ世界でした——君の物語が、いま始まる。`;
-
-const STORY_ENDING = `君は20人すべての達人を打ち破った。
-盤上世界の扉が開き、現実への光が差し込む——
-君の盤上の旅は、ここに完結する。`;
-
-const STORY_CHAPTERS: ReadonlyArray<string> = [
-  '最初の住人はアイドル「いちか」。歌うように軽やかな手筋を打つ。',
-  '弓使い「葵」。盤の隅を狙う鋭い射撃のような一手。',
-  '若き剣士「朝日」。真っ向勝負、剣術のごとき正道の打ち回し。',
-  '治療師「なでしこ」。守り重視、相手のミスを待つ穏やかな戦い方。',
-  '吟遊詩人「響」。リズムを刻むように石を置き、盤に旋律を生む。',
-  '獣使い「つむぎ」。直感と野生の勘で予測を超えてくる。',
-  '技師「茜」。歯車のように噛み合った精密な手筋。',
-  '錬金術師「メル」。盤面を実験のように混ぜ合わせ、新たな解を導く。',
-  '修行僧「悟」。無心の打ち回し、読まれぬ静の極致。',
-  '盗賊「シキ」。盤の死角を突く、影の手筋。',
-  '魔術師「シオン」。冷静な計算と先読みで全てを見通す。',
-  '夢の魔女「ルナ」。幻のような曲線で君を翻弄する。',
-  '軍師「雪乃」。盤を戦場とみなし、論理で詰める。',
-  '探偵「アキラ」。君の手筋を読み切り、罠を逆手に取る。',
-  'サイバー斥候「シエル」。データ最適化された手筋を高速で繰り出す。',
-  '姫「アリア」。優雅にして致命、王者の一手。',
-  '騎士「レオン」。正々堂々の正攻法、しかし鉄壁。',
-  '侍「宗次郎」。一刀のごとき必殺の一手。',
-  '竜騎士「嵐」。圧倒的な勢いで盤を制圧する古典の極北。',
-  '最後の門番「ゼロ」。盤上世界を支配する究極のハッカー。すべての変分を計算し終えた。',
-];
-
 /* ============================================================
    Helpers
    ============================================================ */
@@ -1037,6 +1004,8 @@ export default function App() {
           firstChapterName={COMPUTERS[0].name}
           onStart={startGame}
           t={t}
+          locale={locale}
+          onLocaleChange={setLocale}
         />
       )}
 
@@ -1257,7 +1226,7 @@ export default function App() {
 
                   {justCompletedStory && (
                     <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line">
-                      {STORY_ENDING}
+                      {t.storyEndingProse}
                     </p>
                   )}
                   {showNextChapter && nextOpp && (
@@ -1319,10 +1288,10 @@ export default function App() {
                     <p className="jp-display text-amber-200/60 text-sm italic mb-2">
                       「
                       {winner === BLACK
-                        ? 'お見事…次は本気を出す'
+                        ? t.gameOverAiQuoteWin
                         : winner === WHITE
-                          ? 'まだまだじゃな'
-                          : '互角の戦い、見事だ'}
+                          ? t.gameOverAiQuoteLose
+                          : t.gameOverAiQuoteDraw}
                       」
                     </p>
                   )}
@@ -1762,7 +1731,7 @@ export default function App() {
 
                             {storyProgress === 0 && (
                               <p className="jp-display italic text-amber-200/55 text-xs md:text-sm leading-relaxed whitespace-pre-line">
-                                {STORY_INTRO}
+                                {t.storyIntro}
                               </p>
                             )}
 
@@ -1788,7 +1757,7 @@ export default function App() {
                                   </div>
                                 </div>
                                 <p className="jp-display text-amber-100/80 text-sm leading-relaxed">
-                                  {STORY_CHAPTERS[storyProgress]}
+                                  {t.storyChapters[storyProgress]}
                                 </p>
                                 <p className="jp-display italic text-amber-200/55 text-xs mt-2">
                                   「{opp.quote}」
@@ -1803,7 +1772,7 @@ export default function App() {
                                   {t.storyEnding}
                                 </div>
                                 <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
-                                  {STORY_ENDING}
+                                  {t.storyEndingProse}
                                 </p>
                               </div>
                             )}
