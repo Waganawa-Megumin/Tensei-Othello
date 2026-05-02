@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import {
+  Flag,
   FolderOpen,
   Home,
   Info,
@@ -415,6 +416,8 @@ export default function App() {
   const [passInfo, setPassInfo] = useState<Color | null>(null);
   const [flipping, setFlipping] = useState<Record<string, Color>>({});
   const [history, setHistory] = useState<HistorySnapshot[]>([]);
+  /** Color of the side that resigned, or null if no resignation. */
+  const [resigned, setResigned] = useState<Color | null>(null);
 
   // Settings state
   const [gameMode, setGameMode] = useState<GameMode>('ai');
@@ -484,7 +487,7 @@ export default function App() {
   );
   const noCurrent = validMoves.length === 0;
   const noOpp = oppMoves.length === 0;
-  const gameOver = noCurrent && noOpp;
+  const gameOver = (noCurrent && noOpp) || resigned !== null;
   const isHumanTurn = gameMode === 'human' || currentColor === BLACK;
 
   /* ----- Effects ----- */
@@ -676,7 +679,27 @@ export default function App() {
     setHintMove(null);
     setStoryJustAdvanced(false);
     setKifu([]);
+    setResigned(null);
     ai.cancel();
+  }
+
+  /**
+   * Resignation. The current side forfeits; the opponent is recorded as
+   * the winner. Disabled during AI thinking, on pass, before any move,
+   * or once the game is already over.
+   */
+  function resign() {
+    if (gameOver || aiThinking || passInfo !== null || kifu.length === 0) return;
+    if (!window.confirm(t.resignConfirm)) return;
+    // The losing color is the side currently to move (in two-player) or
+    // always Black in AI mode (the human is Black). Both reduce to
+    // "currentColor" because the AI auto-plays so resign during AI's
+    // turn shouldn't be reachable anyway.
+    const loser: Color = gameMode === 'ai' ? BLACK : currentColor;
+    setResigned(loser);
+    ai.cancel();
+    setAiThinking(false);
+    setHintMove(null);
   }
 
   function startGame(selection: TitleStartMode) {
@@ -779,6 +802,7 @@ export default function App() {
     setPassInfo(null);
     setFlipping({});
     setStoryJustAdvanced(false);
+    setResigned(null);
     setKifuOpen(false);
     ai.cancel();
   }
@@ -888,11 +912,14 @@ export default function App() {
         };
 
   const winner: Color | typeof EMPTY | null = gameOver
-    ? counts.black > counts.white
-      ? BLACK
-      : counts.white > counts.black
-        ? WHITE
-        : EMPTY
+    ? resigned !== null
+      ? // The side that resigned forfeits; opponent wins.
+        opponent(resigned)
+      : counts.black > counts.white
+        ? BLACK
+        : counts.white > counts.black
+          ? WHITE
+          : EMPTY
     : null;
   const total = counts.black + counts.white;
   const blackPercent = total > 0 ? (counts.black / total) * 100 : 50;
@@ -1111,7 +1138,7 @@ export default function App() {
       <div className="stage-bg min-h-screen w-full relative">
         <div className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
           {/* Top icon toolbar */}
-          <div className="grid grid-cols-7 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
+          <div className="grid grid-cols-8 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
             <ToolbarBtn icon={Home} label={t.toolbarTitle} onClick={() => setScreen('title')} />
             <ToolbarBtn icon={Menu} label={t.toolbarMenu} onClick={() => setSettingsOpen(true)} />
             <ToolbarBtn
@@ -1123,6 +1150,12 @@ export default function App() {
             />
             <ToolbarBtn icon={Undo2} label={t.toolbarUndo} onClick={undo} disabled={!canUndo} />
             <ToolbarBtn icon={Info} label={t.toolbarInfo} onClick={() => setInfoOpen(true)} />
+            <ToolbarBtn
+              icon={Flag}
+              label={t.toolbarResign}
+              onClick={resign}
+              disabled={gameOver || aiThinking || passInfo !== null || kifu.length === 0}
+            />
             <ToolbarBtn icon={RotateCcw} label={t.toolbarReset} onClick={reset} />
             <ToolbarBtn
               icon={FolderOpen}

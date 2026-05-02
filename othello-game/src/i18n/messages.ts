@@ -31,8 +31,12 @@ export interface Messages {
   toolbarHint: string;
   toolbarUndo: string;
   toolbarInfo: string;
+  toolbarResign: string;
   toolbarReset: string;
   toolbarKifu: string;
+
+  // Resign confirmation
+  resignConfirm: string;
 
   // Score colors
   black: string;
@@ -178,8 +182,11 @@ export const ja: Messages = {
   toolbarHint: 'ヒント',
   toolbarUndo: '待った',
   toolbarInfo: '情報',
+  toolbarResign: '投了',
   toolbarReset: '新規',
   toolbarKifu: '棋譜',
+
+  resignConfirm: '本当に投了しますか？敗北として記録されます。',
 
   black: '黒',
   white: '白',
@@ -342,8 +349,11 @@ export const en: Messages = {
   toolbarHint: 'Hint',
   toolbarUndo: 'Undo',
   toolbarInfo: 'Info',
+  toolbarResign: 'Resign',
   toolbarReset: 'New',
   toolbarKifu: 'Kifu',
+
+  resignConfirm: 'Resign this match? It will be recorded as a loss.',
 
   black: 'Black',
   white: 'White',
