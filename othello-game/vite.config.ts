@@ -17,9 +17,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       manifest: {
-        name: '盤上世界 — Tensei Othello',
-        short_name: '盤上世界',
-        description: '20章のストーリー × 20キャラの和風オセロ',
+        name: '転生したらオセロ世界でした！',
+        short_name: '転生オセロ',
+        description: '異界『盤上世界』に挑む20章のオセロアドベンチャー',
         lang: 'ja',
         start_url: '.',
         scope: '.',

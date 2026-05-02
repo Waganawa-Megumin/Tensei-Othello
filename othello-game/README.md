@@ -1,6 +1,15 @@
 # othello-game
 
-`Tensei-Othello/othello-game/` — Vite + React 18 + TypeScript + Tailwind 3 のフロントエンドサブプロジェクト。スマホ完結の運用方針はリポジトリルートの `README.md` を参照。
+`Tensei-Othello/othello-game/` — 転生したらオセロ世界でした！の Vite + React 18 + TypeScript + Tailwind 3 フロントエンドサブプロジェクト。スマホ完結の運用方針はリポジトリルートの `README.md` を参照。
+
+## タイトル・呼称ルール
+
+| 用途 | 表記 |
+|---|---|
+| アプリ／作品タイトル | 転生したらオセロ世界でした！ |
+| 作中異界の名前 | 盤上世界 / Bansho Sekai |
+
+詳細は `CLAUDE.md` の Section 0.5 を参照。
 
 ## npm スクリプト
 
@@ -28,10 +37,10 @@ src/
 │   ├── ai.ts             # minimax + alpha-beta + pickAIMove
 │   ├── endgame.ts        # 完全読みソルバ（Phase 4 で実装）
 │   └── __tests__/        # vitest
-├── workers/
-│   └── ai.worker.ts      # AI 探索を別スレッドで実行
-└── hooks/
-    └── useAiWorker.ts    # Worker のライフサイクルとリクエスト管理
+├── workers/ai.worker.ts  # AI 探索を別スレッドで実行
+├── hooks/useAiWorker.ts  # Worker のライフサイクルとリクエスト管理
+├── storage/saveGame.ts   # localStorage 抽象（schemaVersion: 1）
+└── i18n/                 # JA/EN 辞書 + useLocale フック
 ```
 
 ## ゲーム機能
@@ -54,8 +63,8 @@ src/
 実装は `engine/ai.ts:pickAIMove`。Web Worker 経由で実行されるため、Lv.18–20 の深い探索でも UI はブロックしない。
 
 ### UI
-- 上部ツールバー（6ボタン）: メニュー / ヒント / 待った / 対局情報 / 新規対局 / 棋譜
-- 盤面: A–H × 1–8 ラベル、最終手リング、合法手のグロー、ヒント時の星マーカー
+- 上部ツールバー: タイトル / 設定 / ヒント / 待った / 情報 / 新規 / 棋譜
+- 盤面: A–H × 1–8 ラベル、最終手リング、合法手の青白いグロー、ヒント時の星マーカー
 - 棋譜は標準記法（`a1`〜`h8`）。localStorage に保存・読込可
 
 ### PWA
@@ -65,14 +74,11 @@ src/
 
 ## キャラクター
 
-| 種別 | 配列 | 画像 |
-|---|---|---|
-| コンピュータ 20体 | `App.tsx` の `COMPUTERS` | `public/avatars/*.png` |
-| プレイヤー 20体 | `App.tsx` の `AVATARS` | `public/avatars/players/*.png` |
+20体のコンピュータキャラ（達人）+ 20体のプレイヤーキャラ（主人公）。詳細は `App.tsx` の `COMPUTERS` / `AVATARS` 配列、または `character_assets/manifest.json` を参照。
 
-詳細は `CLAUDE.md` のロスター表を参照。
+## 関連ドキュメント
 
-## 内部ドキュメント
-
-- `CLAUDE.md` — 設計判断・却下案・ハマりどころのハンドオフ資料
+- `CLAUDE.md` — Claude Code 用プロジェクトハンドオフ（タイトル・呼称ルール、設計判断、既知の罠）
+- `docs/illustrations/README.md` — 挿絵制作のステップ別ロードマップ（Step 1〜6）
+- `docs/illustration_brief.md` — 全アセット一括の包括リファレンス
 - `docs/player_character_prompts.md` — プレイヤーアバター生成プロンプト

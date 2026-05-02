@@ -20,5 +20,5 @@
   <circle cx="332" cy="332" r="86" fill="url(#white)"/>
   <text x="256" y="486" font-family="'Shippori Mincho', 'Noto Serif JP', serif"
         font-size="72" font-weight="700" text-anchor="middle"
-        fill="#c9a961" letter-spacing="6">盤上世界</text>
+        fill="#c9a961" letter-spacing="6">転生オセロ</text>
 </svg>
