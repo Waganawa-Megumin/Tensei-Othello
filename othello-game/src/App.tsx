@@ -13,6 +13,7 @@ import {
   Home,
   Info,
   Lightbulb,
+  Lock,
   Menu,
   RotateCcw,
   Trash2,
@@ -86,6 +87,20 @@ interface ComputerEntry {
    */
   chapterArt?: string;
 }
+
+// Default protagonist — always available, used as the player's starting
+// avatar. The 20 entries in AVATARS_DATA are bonus characters that unlock
+// only after the story is fully cleared (storyProgress >= 20).
+const DEFAULT_AVATAR_DATA: AvatarEntry = {
+  kanji: '君',
+  name: 'あなた',
+  name_en: 'You',
+  setting: '盤上世界の旅人',
+  setting_en: 'Traveler of Bansho Sekai',
+  quote: 'いざ、参る',
+  quote_en: 'Here I go.',
+  image: 'avatars/players/PLR00_default.png',
+};
 
 const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
   { kanji: '春', name: 'ハルキ',   name_en: 'Haruki',    setting: '異世界転生の勇者',      setting_en: 'Isekai Hero',                quote: '冒険、はじまったな',     quote_en: 'The adventure begins.',              image: 'avatars/players/PLR01_haruki.png' },
@@ -421,8 +436,10 @@ export default function App() {
 
   // Settings state
   const [gameMode, setGameMode] = useState<GameMode>('ai');
+  // Both default to index 0 (the always-available default avatar). The
+  // 20 bonus characters at indices 1..20 are gated on story completion.
   const [p1Avatar, setP1Avatar] = useState(0);
-  const [p2Avatar, setP2Avatar] = useState(1);
+  const [p2Avatar, setP2Avatar] = useState(0);
   const [computerChar, setComputerChar] = useState(0);
   const [level, setLevel] = useState(1);
   const [aiMode, setAiMode] = useState<AiMode>('story');
@@ -456,7 +473,7 @@ export default function App() {
   // automatically returns the right language.
   const AVATARS = useMemo(
     () =>
-      AVATARS_DATA.map((a) => ({
+      [DEFAULT_AVATAR_DATA, ...AVATARS_DATA].map((a) => ({
         ...a,
         name: locale === 'en' ? a.name_en : a.name,
         setting: locale === 'en' ? a.setting_en : a.setting,
@@ -1847,30 +1864,50 @@ export default function App() {
                     </span>
                   </h3>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                    {AVATARS.map((a, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setP1Avatar(i)}
-                        className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                          p1Avatar === i
-                            ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                            : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                        }`}
-                      >
-                        <AvatarBadge kanji={a.kanji} idx={i} image={a.image} size="sm" />
-                        <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                          {a.name}
-                        </div>
-                        <div
-                          className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                            p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
-                          }`}
+                    {AVATARS.map((a, i) => {
+                      const isLocked = i > 0 && storyProgress < 20;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => !isLocked && setP1Avatar(i)}
+                          disabled={isLocked}
+                          className={`relative p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                            p1Avatar === i
+                              ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                              : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
+                          } ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
                         >
-                          {a.setting}
-                        </div>
-                      </button>
-                    ))}
+                          <AvatarBadge
+                            kanji={a.kanji}
+                            idx={i}
+                            image={a.image}
+                            size="sm"
+                            dim={isLocked}
+                          />
+                          <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                            {a.name}
+                          </div>
+                          <div
+                            className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
+                              p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
+                            }`}
+                          >
+                            {a.setting}
+                          </div>
+                          {isLocked && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <Lock size={20} strokeWidth={1.4} className="text-amber-200/85" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {storyProgress < 20 && (
+                    <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
+                      {t.protagonistLockHint}
+                    </p>
+                  )}
                   <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="jp-display text-amber-100/85 text-sm">
                       {AVATARS[p1Avatar].name}
@@ -2075,38 +2112,61 @@ export default function App() {
                         {t.player2Protagonist}
                       </div>
                       <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                        {AVATARS.map((a, i) => (
-                          <button
-                            key={i}
-                            onClick={() => p1Avatar !== i && setP2Avatar(i)}
-                            disabled={p1Avatar === i}
-                            className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                              p2Avatar === i
-                                ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                                : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                            } ${p1Avatar === i ? 'opacity-40 cursor-not-allowed' : ''}`}
-                          >
-                            <AvatarBadge
-                              kanji={a.kanji}
-                              idx={i + 50}
-                              image={a.image}
-                              size="sm"
-                              dim={p1Avatar === i}
-                            />
-                            <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                              {a.name}
-                            </div>
-                            <div
-                              className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                                p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
-                              }`}
+                        {AVATARS.map((a, i) => {
+                          const isLocked = i > 0 && storyProgress < 20;
+                          // Allow both players to share the default avatar
+                          // when no bonus characters are unlocked yet —
+                          // otherwise 2P mode would have no valid p2 pick.
+                          const collidesWithP1 =
+                            p1Avatar === i && storyProgress >= 20;
+                          const isDisabled = isLocked || collidesWithP1;
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => !isDisabled && setP2Avatar(i)}
+                              disabled={isDisabled}
+                              className={`relative p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                                p2Avatar === i
+                                  ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                                  : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
+                              } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                             >
-                              {a.setting}
-                            </div>
-                          </button>
-                        ))}
+                              <AvatarBadge
+                                kanji={a.kanji}
+                                idx={i + 50}
+                                image={a.image}
+                                size="sm"
+                                dim={isDisabled}
+                              />
+                              <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                                {a.name}
+                              </div>
+                              <div
+                                className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
+                                  p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
+                                }`}
+                              >
+                                {a.setting}
+                              </div>
+                              {isLocked && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <Lock
+                                    size={20}
+                                    strokeWidth={1.4}
+                                    className="text-amber-200/85"
+                                  />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
-                      {p1Avatar === p2Avatar && (
+                      {storyProgress < 20 && (
+                        <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
+                          {t.protagonistLockHint}
+                        </p>
+                      )}
+                      {p1Avatar === p2Avatar && storyProgress >= 20 && (
                         <p className="jp-display text-amber-200/65 text-xs mt-2 italic">
                           {t.cannotChooseSelf}
                         </p>

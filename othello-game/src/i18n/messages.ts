@@ -102,6 +102,7 @@ export interface Messages {
   freeMode: string;
   player2Protagonist: string;
   cannotChooseSelf: string;
+  protagonistLockHint: string;
   startNewGame: string;
   keepSettings: string;
   progress: string;
@@ -246,6 +247,7 @@ export const ja: Messages = {
   freeMode: 'フリー',
   player2Protagonist: 'Player 2 protagonist',
   cannotChooseSelf: '※あなたと同じ名は選べません',
+  protagonistLockHint: '※隠れキャラクターは全章クリアで解放されます',
   startNewGame: '新しい対局を開始',
   keepSettings: 'この設定で続ける',
   progress: 'Progress',
@@ -413,6 +415,7 @@ export const en: Messages = {
   freeMode: 'Free',
   player2Protagonist: 'Player 2 protagonist',
   cannotChooseSelf: 'Cannot pick the same name as yourself',
+  protagonistLockHint: 'Hidden characters unlock after clearing all chapters.',
   startNewGame: 'Start new game',
   keepSettings: 'Keep these settings',
   progress: 'Progress',
