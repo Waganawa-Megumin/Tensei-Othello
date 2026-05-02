@@ -475,6 +475,11 @@ export default function App() {
   const [activeSlotId, setActiveSlotIdState] = useState<number | null>(null);
   const [slotPickerOpen, setSlotPickerOpen] = useState(false);
   /** Set once per gameOver to prevent double-recording stats. */
+  // Set true when a saved kifu is loaded for review. Suppresses the
+  // gameOver-driven result recording and the gameOver modal so the
+  // loaded board can be inspected without re-firing the win/loss flow.
+  // Cleared by reset() and by the first user click on the board.
+  const [loadedKifuView, setLoadedKifuView] = useState(false);
   const [resultRecorded, setResultRecorded] = useState(false);
   /** Last recorded result, used by the gameOver modal to know whether
    *  to show "Next chapter" vs "Try again". Set synchronously when
@@ -654,7 +659,7 @@ export default function App() {
   // loss). Free matches feed the global free-stats bucket. Two-player
   // matches are not recorded.
   useEffect(() => {
-    if (!gameOver || resultRecorded) return;
+    if (!gameOver || resultRecorded || loadedKifuView) return;
     if (gameMode !== 'ai') {
       // Two-player: nothing to record, but mark as handled to keep the
       // gate logic simple.
@@ -690,6 +695,7 @@ export default function App() {
   }, [
     gameOver,
     resultRecorded,
+    loadedKifuView,
     aiMode,
     gameMode,
     counts.black,
@@ -788,6 +794,10 @@ export default function App() {
   function handleClick(row: number, col: number) {
     if (!isHumanTurn || aiThinking || gameOver || passInfo !== null) return;
     if (!validMoveMap.has(moveKey(row, col))) return;
+    // First user click after loading a kifu means they want to resume
+    // play, not just review — exit the loaded-view gate so subsequent
+    // gameOver flow records normally.
+    if (loadedKifuView) setLoadedKifuView(false);
     doMove(row, col);
   }
 
@@ -803,6 +813,7 @@ export default function App() {
     setLastResult(null);
     setKifu([]);
     setResigned(null);
+    setLoadedKifuView(false);
     ai.cancel();
   }
 
@@ -967,6 +978,8 @@ export default function App() {
     setResigned(null);
     setKifuOpen(false);
     ai.cancel();
+    setLoadedKifuView(true);
+    setResultRecorded(true);
   }
 
   /* ----- Hint ----- */
@@ -1570,7 +1583,7 @@ export default function App() {
           )}
 
           {/* Game over modal */}
-          {gameOver && !settingsOpen && (() => {
+          {gameOver && !settingsOpen && !loadedKifuView && (() => {
             const isStoryMode = aiMode === 'story' && gameMode === 'ai';
             const justAdvanced = isStoryMode && lastResult === 'win';
             const justCompletedStory = justAdvanced && storyProgress >= 20;
