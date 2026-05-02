@@ -10,9 +10,14 @@ function detectInitialLocale(): Locale {
   } catch {
     /* ignore */
   }
-  // Default is Japanese for everyone. EN users will switch via the
-  // title-screen toggle, and that choice persists in localStorage.
-  return 'ja';
+  // Match the system locale: Japanese device -> ja, anything else -> en.
+  // The user's explicit toggle on the title screen overrides this and
+  // is persisted to localStorage above.
+  if (typeof navigator !== 'undefined') {
+    const lang = (navigator.language || '').toLowerCase();
+    if (lang.startsWith('ja')) return 'ja';
+  }
+  return 'en';
 }
 
 export interface UseLocale {
