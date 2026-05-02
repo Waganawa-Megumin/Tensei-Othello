@@ -465,6 +465,18 @@ export default function App() {
   const [lastResult, setLastResult] = useState<
     'win' | 'loss' | 'draw' | 'resign' | null
   >(null);
+  /** Snapshot of the opponent at the start of the current game. Used by
+   *  the gameOver modal so the avatars/score area shows who was just
+   *  played, not who's queued up next. (When storyProgress advances on
+   *  a win, computerChar follows immediately, so we can't read it
+   *  directly any more.) */
+  const [opponentSnapshot, setOpponentSnapshot] = useState<{
+    kanji: string;
+    name: string;
+    image: string;
+    level: number;
+    quote: string;
+  } | null>(null);
 
   // Kifu and modals
   const [kifu, setKifu] = useState<MoveRecord[]>([]);
@@ -777,6 +789,26 @@ export default function App() {
     ai.cancel();
   }
 
+  // Snapshot the current opponent while the game is in progress; once
+  // gameOver fires we stop following computerChar so the gameOver modal
+  // keeps showing the just-defeated opponent (storyProgress advancing
+  // re-points computerChar to the *next* chapter, otherwise).
+  useEffect(() => {
+    if (gameOver) return;
+    if (gameMode !== 'ai') {
+      setOpponentSnapshot(null);
+      return;
+    }
+    const c = COMPUTERS[computerChar];
+    setOpponentSnapshot({
+      kanji: c.kanji,
+      name: c.name,
+      image: c.image,
+      level: c.level,
+      quote: c.quote,
+    });
+  }, [gameOver, gameMode, computerChar, COMPUTERS]);
+
   /**
    * Resignation. The current side forfeits; the opponent is recorded as
    * the winner. Disabled during AI thinking, on pass, before any move,
@@ -952,19 +984,28 @@ export default function App() {
     setReviewSavedAtState(null);
     setReviewSavedFlash(false);
 
-    const oppLevel = gameMode === 'ai' ? COMPUTERS[computerChar].level : undefined;
+    // Reviewing the *played* opponent: pull from the snapshot (not the
+    // possibly-already-bumped computerChar). Falls back to current for
+    // free / two-player matches.
+    const oppLevel =
+      gameMode === 'ai'
+        ? (opponentSnapshot?.level ?? COMPUTERS[computerChar].level)
+        : undefined;
+    const oppName =
+      gameMode === 'ai'
+        ? (opponentSnapshot?.name ?? COMPUTERS[computerChar].name)
+        : AVATARS[p2Avatar].name;
     const args = {
       kifu,
       blackCount: counts.black,
       whiteCount: counts.white,
       blackName: AVATARS[p1Avatar].name,
-      whiteName:
-        gameMode === 'ai' ? COMPUTERS[computerChar].name : AVATARS[p2Avatar].name,
+      whiteName: oppName,
       level: oppLevel,
       levelLabel: oppLevel !== undefined ? getLevelLabel(oppLevel, t) : undefined,
       chapter:
-        aiMode === 'story' && gameMode === 'ai'
-          ? Math.min(storyProgress + 1, 20)
+        aiMode === 'story' && gameMode === 'ai' && oppLevel !== undefined
+          ? oppLevel
           : undefined,
     };
 
@@ -1001,12 +1042,17 @@ export default function App() {
     if (!reviewText.trim() || kifu.length === 0) return;
     const ts = new Date();
     const stamp = `${ts.getMonth() + 1}/${ts.getDate()} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
-    const opp = COMPUTERS[computerChar];
+    // Use the just-defeated opponent (snapshot), not the auto-bumped
+    // current opponent. Falls back to COMPUTERS[computerChar] for
+    // free / two-player matches where the snapshot was never set.
+    const oppName = opponentSnapshot?.name ?? COMPUTERS[computerChar].name;
+    const oppLevel = opponentSnapshot?.level ?? COMPUTERS[computerChar].level;
+    const oppIdx = COMPUTERS.findIndex((c) => c.level === oppLevel);
     const isStory = aiMode === 'story' && gameMode === 'ai';
     const baseName = isStory
-      ? `第${Math.min(storyProgress + (lastResult === 'win' ? 0 : 1), 20)}章 vs ${opp.name}`
+      ? `第${oppLevel}章 vs ${oppName}`
       : gameMode === 'ai'
-        ? `vs ${opp.name} Lv.${opp.level}`
+        ? `vs ${oppName} Lv.${oppLevel}`
         : `${AVATARS[p1Avatar].name} vs ${AVATARS[p2Avatar].name}`;
     const name = `${baseName} (${stamp})`;
     const result: Color | typeof EMPTY | null = gameOver
@@ -1020,8 +1066,8 @@ export default function App() {
       name,
       gameMode,
       aiMode,
-      computerChar,
-      level: opp.level,
+      computerChar: oppIdx >= 0 ? oppIdx : computerChar,
+      level: oppLevel,
       kifu,
       storyProgress,
       counts: { black: counts.black, white: counts.white },
@@ -1614,32 +1660,14 @@ export default function App() {
                       {t.storyEndingProse}
                     </p>
                   )}
-                  {showNextChapter && nextOpp && (
-                    <p className="jp-display text-amber-100/80 text-sm leading-relaxed mb-5">
-                      {t.nextOpponentIs(nextOpp.name)}
-                    </p>
-                  )}
                   {isStoryMode && winner !== BLACK && (
-                    <p className="jp-display text-amber-200/60 text-sm italic mb-5">
+                    <p className="jp-display text-amber-200/60 text-sm italic mb-3">
                       {t.storyEncouragement}
                     </p>
                   )}
 
-                  {isStoryMode && activeSlot && (
-                    <div className="flex items-center justify-center gap-2 mb-3 latin-display italic text-amber-200/65 text-xs tracking-wider">
-                      <span>{t.livesLabel}:</span>
-                      <span className="text-amber-100/95 tabular-nums text-base">
-                        ♥ {lives}
-                      </span>
-                      {lives === 0 && (
-                        <span className="jp-display text-amber-200/55 text-[10px] ml-2">
-                          {t.livesGameOverWarning}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex justify-center items-center gap-6 md:gap-8 my-6">
+                  {/* You vs the opponent that was just played + final score. */}
+                  <div className="flex justify-center items-center gap-6 md:gap-8 my-5">
                     <div className="flex flex-col items-center gap-2">
                       <AvatarBadge
                         kanji={blackInfo.kanji}
@@ -1656,32 +1684,101 @@ export default function App() {
                             'inset -2px -2px 4px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)',
                         }}
                       />
+                      <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
+                        {blackInfo.name}
+                      </div>
                       <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
                         {counts.black}
                       </div>
                     </div>
                     <div className="latin-display italic text-amber-200/65 text-xl">vs</div>
                     <div className="flex flex-col items-center gap-2">
-                      <AvatarBadge
-                        kanji={whiteInfo.kanji}
-                        idx={whiteInfo.idx}
-                        image={whiteInfo.image}
-                        size="md"
-                      />
-                      <div
-                        className="w-10 h-10 rounded-full"
-                        style={{
-                          background:
-                            'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
-                          boxShadow:
-                            'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)',
-                        }}
-                      />
-                      <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
-                        {counts.white}
-                      </div>
+                      {(() => {
+                        // For AI matches use the opponent snapshot (the
+                        // character that was actually just played); for
+                        // human matches stick with whiteInfo (P2 avatar).
+                        const opp =
+                          gameMode === 'ai' && opponentSnapshot
+                            ? {
+                                kanji: opponentSnapshot.kanji,
+                                idx: 100 + opponentSnapshot.level,
+                                image: opponentSnapshot.image,
+                                name: opponentSnapshot.name,
+                              }
+                            : {
+                                kanji: whiteInfo.kanji,
+                                idx: whiteInfo.idx,
+                                image: whiteInfo.image,
+                                name: whiteInfo.name,
+                              };
+                        return (
+                          <>
+                            <AvatarBadge
+                              kanji={opp.kanji}
+                              idx={opp.idx}
+                              image={opp.image}
+                              size="md"
+                            />
+                            <div
+                              className="w-10 h-10 rounded-full"
+                              style={{
+                                background:
+                                  'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
+                                boxShadow:
+                                  'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)',
+                              }}
+                            />
+                            <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
+                              {opp.name}
+                            </div>
+                            <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
+                              {counts.white}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
+
+                  {isStoryMode && activeSlot && (
+                    <div className="flex items-center justify-center gap-2 mb-3 latin-display italic text-amber-200/65 text-xs tracking-wider">
+                      <span>{t.livesLabel}:</span>
+                      <span className="text-amber-100/95 tabular-nums text-base">
+                        ♥ {lives}
+                      </span>
+                      {lives === 0 && (
+                        <span className="jp-display text-amber-200/55 text-[10px] ml-2">
+                          {t.livesGameOverWarning}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Next-chapter preview block — shown after the score so the
+                       just-defeated opponent isn't visually replaced. */}
+                  {showNextChapter && nextOpp && (
+                    <div className="mt-3 mb-3 px-3 py-3 bg-amber-200/[0.06] border border-amber-200/25 rounded-sm">
+                      <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.25em] uppercase mb-2">
+                        Next Chapter ▸
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <AvatarBadge
+                          kanji={nextOpp.kanji}
+                          idx={100 + nextOpp.level}
+                          image={nextOpp.image}
+                          size="sm"
+                        />
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="jp-display text-amber-100/95 text-sm truncate">
+                            {t.nextOpponentIs(nextOpp.name)}
+                          </div>
+                          <div className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
+                            Lv.{nextOpp.level} {getLevelLabel(nextOpp.level, t)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {!isStoryMode && gameMode === 'ai' && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-2">
