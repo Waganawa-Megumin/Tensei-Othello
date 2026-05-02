@@ -169,6 +169,19 @@ export interface Messages {
   replayLast: string;
   reviewGenerateNew: string;
 
+  // Structured review (per-move annotations)
+  reviewSummaryHeading: string;
+  reviewImprovementsHeading: string;
+  reviewMovesHeading: string;
+  reviewMoveLabel: (n: number, notation: string, side: 'B' | 'W') => string;
+  reviewNoAnnotations: string;
+  qualityBrilliant: string;
+  qualityGood: string;
+  qualityNeutral: string;
+  qualityInaccuracy: string;
+  qualityMistake: string;
+  qualityBlunder: string;
+
   // Save slots (story mode)
   slotPickerTitle: string;
   slotPickerSubtitle: string;
@@ -379,6 +392,19 @@ export const ja: Messages = {
   replayLast: '最終局面へ',
   reviewGenerateNew: 'レビューを新規生成',
 
+  reviewSummaryHeading: '総評',
+  reviewImprovementsHeading: '次回への助言',
+  reviewMovesHeading: '注目の手',
+  reviewMoveLabel: (n, notation, side) =>
+    `第${n}手 ${side === 'B' ? '黒' : '白'} ${notation}`,
+  reviewNoAnnotations: '注釈付きの手はありません。',
+  qualityBrilliant: '妙手',
+  qualityGood: '好手',
+  qualityNeutral: '普通',
+  qualityInaccuracy: '緩手',
+  qualityMistake: '悪手',
+  qualityBlunder: '大悪手',
+
   slotPickerTitle: 'セーブを選ぶ',
   slotPickerSubtitle: 'Choose a save',
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
@@ -588,6 +614,19 @@ your journey on the board reaches its close.`,
   replayNext: 'Next move',
   replayLast: 'Jump to end',
   reviewGenerateNew: 'Generate new review',
+
+  reviewSummaryHeading: 'Overview',
+  reviewImprovementsHeading: 'What to improve',
+  reviewMovesHeading: 'Annotated moves',
+  reviewMoveLabel: (n, notation, side) =>
+    `Move ${n} · ${side === 'B' ? 'Black' : 'White'} ${notation}`,
+  reviewNoAnnotations: 'No annotated moves.',
+  qualityBrilliant: 'Brilliant',
+  qualityGood: 'Good',
+  qualityNeutral: 'Neutral',
+  qualityInaccuracy: 'Inaccuracy',
+  qualityMistake: 'Mistake',
+  qualityBlunder: 'Blunder',
 
   slotPickerTitle: 'Choose a Save',
   slotPickerSubtitle: 'Save Slots',

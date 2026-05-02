@@ -59,7 +59,11 @@ import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
 import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
 import { SlotPicker } from './components/SlotPicker';
-import { streamReview, type StreamMessageHandle } from './services/claude';
+import {
+  fetchStructuredReview,
+  type StructuredReviewHandle,
+} from './services/claude';
+import type { MoveAnnotation, MoveQuality, ReviewAnnotations } from './prompts/review';
 import {
   defaultSlot,
   getSlots,
@@ -191,6 +195,68 @@ function colorChar(c: Color): 'B' | 'W' {
 
 function moveToNotation(m: Move): string {
   return `${String.fromCharCode(97 + m.col)}${m.row + 1}`;
+}
+
+/* ---------------- Move-quality presentation ---------------- */
+
+interface QualityStyle {
+  /** Tailwind classes for the inline badge (background + text + border). */
+  badge: string;
+  /** Tailwind classes for the cell ring shown on the annotated square. */
+  ring: string;
+  /** Hex glow used in the cell ring's box-shadow (more visible than the
+   *  ring on busy boards). */
+  glow: string;
+}
+
+const QUALITY_STYLES: Record<MoveQuality, QualityStyle> = {
+  brilliant: {
+    badge: 'bg-amber-300/25 text-amber-100 border-amber-300/70',
+    ring: 'ring-2 ring-amber-300/85',
+    glow: '0 0 12px rgba(252, 211, 77, 0.85)',
+  },
+  good: {
+    badge: 'bg-emerald-400/20 text-emerald-100 border-emerald-400/60',
+    ring: 'ring-2 ring-emerald-400/85',
+    glow: '0 0 12px rgba(74, 222, 128, 0.75)',
+  },
+  neutral: {
+    badge: 'bg-zinc-500/20 text-zinc-200 border-zinc-500/45',
+    ring: 'ring-2 ring-zinc-300/60',
+    glow: '0 0 8px rgba(180, 180, 180, 0.55)',
+  },
+  inaccuracy: {
+    badge: 'bg-yellow-500/20 text-yellow-100 border-yellow-500/55',
+    ring: 'ring-2 ring-yellow-400/85',
+    glow: '0 0 12px rgba(234, 179, 8, 0.75)',
+  },
+  mistake: {
+    badge: 'bg-orange-500/25 text-orange-100 border-orange-500/65',
+    ring: 'ring-2 ring-orange-500/90',
+    glow: '0 0 12px rgba(249, 115, 22, 0.8)',
+  },
+  blunder: {
+    badge: 'bg-red-500/30 text-red-100 border-red-500/75',
+    ring: 'ring-2 ring-red-500/90',
+    glow: '0 0 14px rgba(239, 68, 68, 0.85)',
+  },
+};
+
+function qualityLabel(q: MoveQuality, t: Messages): string {
+  switch (q) {
+    case 'brilliant':
+      return t.qualityBrilliant;
+    case 'good':
+      return t.qualityGood;
+    case 'neutral':
+      return t.qualityNeutral;
+    case 'inaccuracy':
+      return t.qualityInaccuracy;
+    case 'mistake':
+      return t.qualityMistake;
+    case 'blunder':
+      return t.qualityBlunder;
+  }
 }
 
 function moveKey(row: number, col: number): string {
@@ -492,10 +558,13 @@ export default function App() {
   // board after replaying the first N moves of `kifu`.
   const [replayCursor, setReplayCursor] = useState<number | null>(null);
   // Saved Claude review attached to the currently-loaded kifu, if any.
-  // Surfaces a "view saved review" button in the loaded-kifu banner so
-  // the user doesn't have to dig back through the kifu library.
+  // `annotations` is the new structured per-move payload; `text` is the
+  // legacy plain-text payload from older saves. Either or both may be
+  // populated. Surfaces a "view saved review" button in the loaded-kifu
+  // banner.
   const [loadedSlotReview, setLoadedSlotReview] = useState<{
-    text: string;
+    annotations?: ReviewAnnotations;
+    text?: string;
     savedAt: number;
   } | null>(null);
   const [resultRecorded, setResultRecorded] = useState(false);
@@ -532,6 +601,13 @@ export default function App() {
 
   // Post-game review state
   const [reviewOpen, setReviewOpen] = useState(false);
+  // Structured review payload shown in the review modal & annotated
+  // on the board. Set by startReview (live generation) or by
+  // viewSavedReview (loading a saved structured review).
+  const [reviewAnnotations, setReviewAnnotations] = useState<ReviewAnnotations | null>(null);
+  // Legacy plain-text review, only used when viewing a saved review
+  // that predates the structured-tool format. New reviews leave this
+  // empty.
   const [reviewText, setReviewText] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -541,7 +617,9 @@ export default function App() {
   /** Saved-at timestamp shown in the read-only review view. */
   const [reviewSavedAt, setReviewSavedAtState] = useState<number | null>(null);
   const [reviewSavedFlash, setReviewSavedFlash] = useState(false);
-  const reviewHandleRef = useRef<StreamMessageHandle | null>(null);
+  // Either a streaming legacy review, a structured fetch handle, or
+  // null. Both expose .abort().
+  const reviewHandleRef = useRef<{ abort: () => void } | null>(null);
 
   const ai = useAiWorker();
   const { locale, setLocale, t } = useLocale();
@@ -615,6 +693,31 @@ export default function App() {
     if (!m) return null;
     return { row: m.row, col: m.col, color: m.color };
   }, [loadedKifuView, replayCursor, kifu, lastMove]);
+
+  // Combined source of structured review annotations for the current
+  // view: prefer the just-generated review, fall back to whatever was
+  // saved with the loaded kifu. null when neither is available.
+  const activeAnnotations = useMemo<ReviewAnnotations | null>(
+    () => reviewAnnotations ?? loadedSlotReview?.annotations ?? null,
+    [reviewAnnotations, loadedSlotReview],
+  );
+
+  // Map<moveIndex, MoveAnnotation> for O(1) lookup from the cell map
+  // and the replay strip.
+  const annotationByMove = useMemo<Map<number, MoveAnnotation>>(() => {
+    const m = new Map<number, MoveAnnotation>();
+    if (activeAnnotations) {
+      for (const a of activeAnnotations.annotations) m.set(a.moveIndex, a);
+    }
+    return m;
+  }, [activeAnnotations]);
+
+  // Annotation for the move currently parked at, if any. Used by the
+  // replay strip's inline comment block.
+  const currentAnnotation = useMemo<MoveAnnotation | null>(() => {
+    if (!loadedKifuView || replayCursor === null || replayCursor === 0) return null;
+    return annotationByMove.get(replayCursor - 1) ?? null;
+  }, [loadedKifuView, replayCursor, annotationByMove]);
   const oppMoves = useMemo(
     () => getValidMoves(board, opponent(currentColor)),
     [board, currentColor],
@@ -870,6 +973,10 @@ export default function App() {
     setLoadedKifuView(false);
     setReplayCursor(null);
     setLoadedSlotReview(null);
+    // Drop the on-board annotation overlay too — a fresh game shouldn't
+    // inherit the previous match's review markers.
+    setReviewAnnotations(null);
+    setReviewText('');
     ai.cancel();
   }
 
@@ -1054,11 +1161,15 @@ export default function App() {
     // shows the position the user actually saved. Stepping backward
     // happens via the banner controls.
     setReplayCursor(savedKifu.length);
-    setLoadedSlotReview(
-      slot.review
-        ? { text: slot.review, savedAt: slot.timestamp ?? 0 }
-        : null,
-    );
+    if (slot.reviewAnnotations || slot.review) {
+      setLoadedSlotReview({
+        annotations: slot.reviewAnnotations,
+        text: slot.review,
+        savedAt: slot.timestamp ?? 0,
+      });
+    } else {
+      setLoadedSlotReview(null);
+    }
   }
 
   /* ----- Hint ----- */
@@ -1087,6 +1198,7 @@ export default function App() {
     reviewHandleRef.current?.abort();
     setReviewError(null);
     setReviewText('');
+    setReviewAnnotations(null);
     setReviewLoading(true);
     setReviewOpen(true);
     setReviewReadOnly(false);
@@ -1118,14 +1230,22 @@ export default function App() {
           : undefined,
     };
 
-    reviewHandleRef.current = streamReview(args, locale, {
-      onText: (delta) => setReviewText((prev) => prev + delta),
-      onError: (err) => {
-        setReviewError(err.message);
-        setReviewLoading(false);
-      },
-      onDone: () => setReviewLoading(false),
-    });
+    const handle: StructuredReviewHandle = fetchStructuredReview(args, locale);
+    reviewHandleRef.current = { abort: handle.abort };
+    handle.result
+      .then((annotations) => {
+        // Only apply if this request wasn't superseded.
+        if (reviewHandleRef.current?.abort === handle.abort) {
+          setReviewAnnotations(annotations);
+          setReviewLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (reviewHandleRef.current?.abort === handle.abort) {
+          setReviewError(err instanceof Error ? err.message : String(err));
+          setReviewLoading(false);
+        }
+      });
   }
 
   function closeReview() {
@@ -1136,6 +1256,9 @@ export default function App() {
     setReviewReadOnly(false);
     setReviewSavedAtState(null);
     setReviewSavedFlash(false);
+    // Note: we keep `reviewAnnotations` so closing the modal doesn't
+    // discard the on-board annotation overlay (the user may want to
+    // step through the kifu while reading the comment per move).
   }
 
   function cancelReview() {
@@ -1144,11 +1267,15 @@ export default function App() {
     setReviewLoading(false);
   }
 
-  /** Persist the streamed review together with the current kifu so the
-   *  user can revisit it from the Kifu Library later. Auto-generates a
-   *  short name (e.g. "Ch.5 vs 響") so the user doesn't have to type. */
+  /** Persist the structured (or legacy text) review together with the
+   *  current kifu so the user can revisit it from the Kifu Library
+   *  later. Auto-generates a short name (e.g. "第5章 vs 響") so the
+   *  user doesn't have to type. */
   function saveReviewWithKifu() {
-    if (!reviewText.trim() || kifu.length === 0) return;
+    const haveAnnotations = reviewAnnotations !== null;
+    const haveLegacyText = reviewText.trim().length > 0;
+    if (!haveAnnotations && !haveLegacyText) return;
+    if (kifu.length === 0) return;
     const ts = new Date();
     const stamp = `${ts.getMonth() + 1}/${ts.getDate()} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
     // Use the just-defeated opponent (snapshot), not the auto-bumped
@@ -1181,23 +1308,30 @@ export default function App() {
       storyProgress,
       counts: { black: counts.black, white: counts.white },
       result,
-      review: reviewText,
+      review: haveLegacyText ? reviewText : undefined,
+      reviewAnnotations: reviewAnnotations ?? undefined,
     }).then(() => {
       setReviewSavedFlash(true);
       window.setTimeout(() => setReviewSavedFlash(false), 2000);
     });
   }
 
-  /** Open the review modal in read-only mode showing a previously saved
-   *  review string. */
-  function viewSavedReview(text: string, savedAt: number) {
+  /** Open the review modal in read-only mode for a previously saved
+   *  review (either the structured annotations payload or the legacy
+   *  text string — passing both is allowed). */
+  function viewSavedReview(payload: {
+    annotations?: ReviewAnnotations;
+    text?: string;
+    savedAt: number;
+  }) {
     reviewHandleRef.current?.abort();
     reviewHandleRef.current = null;
     setReviewError(null);
     setReviewLoading(false);
-    setReviewText(text);
+    setReviewAnnotations(payload.annotations ?? null);
+    setReviewText(payload.text ?? '');
     setReviewReadOnly(true);
-    setReviewSavedAtState(savedAt);
+    setReviewSavedAtState(payload.savedAt);
     setReviewSavedFlash(false);
     setKifuOpen(false);
     setReviewOpen(true);
@@ -1579,6 +1713,16 @@ export default function App() {
                             displayLastMove.col === c;
                           const flipTo = flipping[moveKey(r, c)];
                           const isHint = hintMove !== null && hintMove.row === r && hintMove.col === c;
+                          // If the current cursor's move has a Claude
+                          // annotation, replace the default red last-move
+                          // ring with a quality-colored glow so the user
+                          // sees at a glance whether this move was good or
+                          // a mistake.
+                          const cellAnnotation =
+                            isLast && currentAnnotation ? currentAnnotation : null;
+                          const qStyle = cellAnnotation
+                            ? QUALITY_STYLES[cellAnnotation.quality]
+                            : null;
                           return (
                             <div
                               key={`${r}-${c}`}
@@ -1586,6 +1730,7 @@ export default function App() {
                               className={`cell flex items-center justify-center ${
                                 isValid ? 'valid' : ''
                               } ${isStar ? 'star-dot' : ''}`}
+                              style={qStyle ? { boxShadow: qStyle.glow } : undefined}
                             >
                               {cell !== EMPTY && (
                                 <div
@@ -1598,7 +1743,7 @@ export default function App() {
                                 />
                               )}
                               {cell === EMPTY && isValid && <div className="move-hint" />}
-                              {isLast && <div className="last-move-ring" />}
+                              {isLast && !cellAnnotation && <div className="last-move-ring" />}
                               {isHint && <div className="hint-marker" />}
                             </div>
                           );
@@ -1710,7 +1855,11 @@ export default function App() {
                   {loadedSlotReview && (
                     <button
                       onClick={() =>
-                        viewSavedReview(loadedSlotReview.text, loadedSlotReview.savedAt)
+                        viewSavedReview({
+                          annotations: loadedSlotReview.annotations,
+                          text: loadedSlotReview.text,
+                          savedAt: loadedSlotReview.savedAt,
+                        })
                       }
                       className={iconBtn}
                       title={t.reviewViewSaved}
@@ -1738,6 +1887,27 @@ export default function App() {
                     <X size={16} strokeWidth={1.5} />
                   </button>
                 </div>
+              </div>
+            );
+          })()}
+
+          {/* Per-move annotation comment. Shown directly under the replay
+              strip when the cursor is parked on an annotated move. The
+              quality badge reuses the same colors as the on-board ring
+              so the user can correlate at a glance. */}
+          {loadedKifuView && currentAnnotation && (() => {
+            const q = currentAnnotation.quality;
+            const style = QUALITY_STYLES[q];
+            return (
+              <div className="mt-2 px-3 py-2.5 rounded-sm border border-amber-200/20 bg-zinc-950/60 flex items-start gap-2">
+                <span
+                  className={`shrink-0 latin-display text-[10px] tracking-[0.2em] uppercase border px-2 py-0.5 rounded-sm ${style.badge}`}
+                >
+                  {qualityLabel(q, t)}
+                </span>
+                <p className="jp-display text-amber-100/90 text-xs md:text-sm leading-relaxed">
+                  {currentAnnotation.comment}
+                </p>
               </div>
             );
           })()}
@@ -2270,17 +2440,21 @@ export default function App() {
                                 {slot.result === BLACK && <> · {t.blackWinShort}</>}
                                 {slot.result === WHITE && <> · {t.whiteWinShort}</>}
                                 {slot.result === EMPTY && <> · {t.drawShort}</>}
-                                {slot.review && (
+                                {(slot.review || slot.reviewAnnotations) && (
                                   <span className="ml-1 text-amber-200/85">
                                     · 📝 {t.reviewSavedIndicator}
                                   </span>
                                 )}
                               </div>
                             </div>
-                            {slot.review && (
+                            {(slot.review || slot.reviewAnnotations) && (
                               <button
                                 onClick={() =>
-                                  viewSavedReview(slot.review ?? '', slot.timestamp ?? 0)
+                                  viewSavedReview({
+                                    annotations: slot.reviewAnnotations,
+                                    text: slot.review,
+                                    savedAt: slot.timestamp ?? 0,
+                                  })
                                 }
                                 className="btn text-xs px-2 py-1.5"
                                 title={t.reviewViewSaved}
@@ -2336,11 +2510,85 @@ export default function App() {
                     <p className="jp-display text-red-300/90 text-sm leading-relaxed mb-3">
                       {t.reviewError(reviewError)}
                     </p>
-                  ) : reviewText.length === 0 && reviewLoading ? (
+                  ) : reviewLoading && !reviewAnnotations ? (
                     <p className="jp-display italic text-amber-200/65 text-sm">
                       {t.reviewLoading}
                     </p>
-                  ) : (
+                  ) : reviewAnnotations ? (
+                    /* Structured (new) review view */
+                    <div className="space-y-4">
+                      <section>
+                        <h3 className="jp-display text-amber-100 text-base font-bold tracking-wider mb-1.5 pb-1 border-b border-amber-200/15">
+                          {t.reviewSummaryHeading}
+                        </h3>
+                        <p className="jp-display text-amber-100/90 text-sm leading-relaxed">
+                          {reviewAnnotations.summary}
+                        </p>
+                      </section>
+                      <section>
+                        <h3 className="jp-display text-amber-100 text-base font-bold tracking-wider mb-1.5 pb-1 border-b border-amber-200/15">
+                          {t.reviewImprovementsHeading}
+                        </h3>
+                        <p className="jp-display text-amber-100/90 text-sm leading-relaxed">
+                          {reviewAnnotations.improvements}
+                        </p>
+                      </section>
+                      <section>
+                        <h3 className="jp-display text-amber-100 text-base font-bold tracking-wider mb-2 pb-1 border-b border-amber-200/15">
+                          {t.reviewMovesHeading}
+                        </h3>
+                        {reviewAnnotations.annotations.length === 0 ? (
+                          <p className="jp-display italic text-amber-200/65 text-sm">
+                            {t.reviewNoAnnotations}
+                          </p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {[...reviewAnnotations.annotations]
+                              .sort((a, b) => a.moveIndex - b.moveIndex)
+                              .map((a) => {
+                                const move = kifu[a.moveIndex];
+                                if (!move) return null;
+                                const notation = moveToNotation(move).toUpperCase();
+                                const side: 'B' | 'W' = move.color === BLACK ? 'B' : 'W';
+                                const qStyle = QUALITY_STYLES[a.quality];
+                                const canJump = loadedKifuView;
+                                return (
+                                  <li
+                                    key={a.moveIndex}
+                                    className={`flex items-start gap-2 px-2 py-2 rounded-sm border border-amber-200/15 bg-amber-200/[0.02] ${
+                                      canJump
+                                        ? 'cursor-pointer hover:bg-amber-200/[0.06] hover:border-amber-200/35'
+                                        : ''
+                                    }`}
+                                    onClick={() => {
+                                      if (!canJump) return;
+                                      setReplayCursor(a.moveIndex + 1);
+                                      setReviewOpen(false);
+                                    }}
+                                  >
+                                    <span
+                                      className={`shrink-0 latin-display text-[10px] tracking-[0.2em] uppercase border px-2 py-0.5 rounded-sm ${qStyle.badge}`}
+                                    >
+                                      {qualityLabel(a.quality, t)}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider mb-0.5">
+                                        {t.reviewMoveLabel(a.moveIndex + 1, notation, side)}
+                                      </div>
+                                      <p className="jp-display text-amber-100/90 text-xs leading-relaxed">
+                                        {a.comment}
+                                      </p>
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                          </ul>
+                        )}
+                      </section>
+                    </div>
+                  ) : reviewText.length > 0 ? (
+                    /* Legacy plain-text review view (saved before
+                       structured tool-use, kept for backward compat) */
                     <div className="jp-display text-amber-100/90 text-sm leading-relaxed">
                       {reviewText.split('\n').map((line, i) => {
                         if (line.startsWith('## ')) {
@@ -2369,11 +2617,8 @@ export default function App() {
                           </p>
                         );
                       })}
-                      {reviewLoading && reviewText.length > 0 && (
-                        <span className="inline-block w-2 h-4 bg-amber-200/60 ml-1 animate-pulse align-middle" />
-                      )}
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-200/15">
@@ -2399,7 +2644,7 @@ export default function App() {
                     )}
                     {!reviewReadOnly &&
                       !reviewLoading &&
-                      reviewText.trim().length > 0 &&
+                      (reviewAnnotations !== null || reviewText.trim().length > 0) &&
                       !reviewError && (
                         <button
                           onClick={saveReviewWithKifu}
@@ -2410,7 +2655,7 @@ export default function App() {
                       )}
                     {!reviewReadOnly &&
                       !reviewLoading &&
-                      (reviewError || reviewText.length > 0) && (
+                      (reviewError || reviewAnnotations !== null || reviewText.length > 0) && (
                         <button onClick={startReview} className="btn text-xs px-3 py-1.5">
                           {t.reviewRegenerate}
                         </button>

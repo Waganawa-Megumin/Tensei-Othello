@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-02 by `claude/othello-game-sHVBZ`
+Last updated: 2026-05-02 by `claude/othello-game-sHVBZ` (v0.18.0)
 
 ---
 
@@ -44,8 +44,14 @@ Last updated: 2026-05-02 by `claude/othello-game-sHVBZ`
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
-- [x] **棋譜リプレイ UI を盤面下にインライン化 + アイコン化** — completed:
+- [x] **構造化レビュー（盤面アノテーション + コメント）** — completed:
       2026-05-02 — by: `claude/othello-game-sHVBZ` — commit: (next push) —
+      Claude tool-use で per-move quality + comment を取得、リプレイ中の
+      盤面に色付きグロー、現在手のコメントをストリップ下に表示、レビュー
+      モーダルは summary + improvements + クリックジャンプ可能な注釈
+      リスト構成。`v0.18.0`
+- [x] **棋譜リプレイ UI を盤面下にインライン化 + アイコン化** — completed:
+      2026-05-02 — by: `claude/othello-game-sHVBZ` — commit: `cb160b8` —
       盤面に被らず、ボタンは全部アイコンのみ。`v0.17.1`
 - [x] **棋譜リプレイビューワー（Track B）** — completed: 2026-05-02 — by:
       `claude/othello-game-sHVBZ` — commit: `34eec4f` — ⏮◀▶⏭ + 手数カウンタ

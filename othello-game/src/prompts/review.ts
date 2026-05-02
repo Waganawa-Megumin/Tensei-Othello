@@ -1,19 +1,60 @@
 /**
  * Prompt templates for the post-game review feature.
  *
- * Two pieces:
- *   - getReviewSystemPrompt(locale): the static, cacheable system block
- *     that defines the persona, rules and 5-section output structure.
- *   - buildReviewUserPrompt(args, locale): the per-game user message
- *     containing the kifu, final disc counts and match metadata.
+ * Reviews are now produced as structured annotations via Anthropic's
+ * tool-use API. Claude returns a `ReviewAnnotations` object with a
+ * short summary, an improvement-overview, and a per-move list of
+ * quality + comment. The client renders this in-place on the board
+ * (colored rings) and inline (per-move comment under the replay
+ * strip), so the user doesn't have to read a wall of text.
  *
- * Keeping the system prompt static means Anthropic's prompt-cache hits
- * on every review after the first within ~5 minutes, dropping the
- * input-token cost by an order of magnitude.
+ * The static system prompt + tool schema benefit from prompt caching
+ * once `cache_control: ephemeral` is set on the system block.
  */
 import { BLACK, type Color } from '../engine/types';
 
 export type ReviewLocale = 'ja' | 'en';
+
+/* ---------------- Structured review types ---------------- */
+
+/**
+ * Quality rating for a single move. Ordered roughly best-to-worst:
+ *
+ *   brilliant   — surprising, hard to find, clearly the best.
+ *   good        — solid, theory-aligned, clearly OK.
+ *   neutral     — fine, no commentary worth attaching.
+ *   inaccuracy  — slightly suboptimal, a small slip.
+ *   mistake     — meaningful loss of position / discs.
+ *   blunder     — game-changing error.
+ */
+export type MoveQuality =
+  | 'brilliant'
+  | 'good'
+  | 'neutral'
+  | 'inaccuracy'
+  | 'mistake'
+  | 'blunder';
+
+export interface MoveAnnotation {
+  /** 0-based index into the kifu array. */
+  moveIndex: number;
+  quality: MoveQuality;
+  /** 1–2 sentence comment, in the user's locale. */
+  comment: string;
+}
+
+export interface ReviewAnnotations {
+  /** 2–3 sentence overall summary of the match. */
+  summary: string;
+  /** 1–2 sentence overview of what to improve next time. */
+  improvements: string;
+  /** Optional pointers, all 0-based indices into the kifu. */
+  bestMoveIndex?: number;
+  worstMoveIndex?: number;
+  turningPointIndex?: number;
+  /** Annotated key moves. Skip neutral / unremarkable moves. */
+  annotations: MoveAnnotation[];
+}
 
 export interface ReviewArgs {
   /** Kifu in the same numeric encoding the engine uses. */
@@ -32,6 +73,76 @@ export interface ReviewArgs {
   chapter?: number;
 }
 
+/* ---------------- Tool schema for Anthropic ---------------- */
+
+/**
+ * The single tool the model is forced to call. Returning the review
+ * via tool_choice guarantees we get JSON matching this shape (no
+ * extra preamble, no markdown wrapping, no need to parse free text).
+ *
+ * The shape mirrors `ReviewAnnotations` exactly so the client can
+ * cast the tool input to the typed object.
+ */
+export const ANNOTATE_TOOL_NAME = 'annotate_othello_game';
+
+export function buildAnnotateTool(): Record<string, unknown> {
+  return {
+    name: ANNOTATE_TOOL_NAME,
+    description:
+      'Return a structured Othello post-game review. Pick 5–12 key moves to annotate; skip ordinary opening moves and obviously-best forced moves. Use the user-facing locale (matching the kifu summary line).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        summary: {
+          type: 'string',
+          description: '2–3 sentence overall summary of the match flow and result.',
+        },
+        improvements: {
+          type: 'string',
+          description: '1–2 sentence advice on what the player should focus on next time.',
+        },
+        bestMoveIndex: {
+          type: 'integer',
+          description:
+            "0-based index into the kifu array of the player's strongest move (Black only).",
+        },
+        worstMoveIndex: {
+          type: 'integer',
+          description: '0-based index of the player\'s biggest mistake (Black only).',
+        },
+        turningPointIndex: {
+          type: 'integer',
+          description: '0-based index of the move that decided the game.',
+        },
+        annotations: {
+          type: 'array',
+          description:
+            "Annotated moves, in chronological order. Focus on the player (Black) but include white moves when crucial. 5–12 items total.",
+          items: {
+            type: 'object',
+            properties: {
+              moveIndex: {
+                type: 'integer',
+                description: '0-based index into the kifu array.',
+              },
+              quality: {
+                type: 'string',
+                enum: ['brilliant', 'good', 'neutral', 'inaccuracy', 'mistake', 'blunder'],
+              },
+              comment: {
+                type: 'string',
+                description: '1–2 sentence comment in the user-facing locale.',
+              },
+            },
+            required: ['moveIndex', 'quality', 'comment'],
+          },
+        },
+      },
+      required: ['summary', 'improvements', 'annotations'],
+    },
+  };
+}
+
 /* ---------------- Notation helper ---------------- */
 
 function moveToNotation(row: number, col: number): string {
@@ -42,55 +153,40 @@ function moveToNotation(row: number, col: number): string {
 
 const SYSTEM_JA = `あなたはオセロの上級者で、終局後の対局解説を担当します。
 プレイヤーは盤上世界という異界に転生した主人公（黒番）で、20人の達人と順に対戦しています。
-解説は **必ず以下の5節構成** で、見出しを Markdown の \`##\` で書いてください：
 
-## 総評
-全体の流れと結果を 2〜3 文で。
+ユーザーは長文を読みません。コメントは盤面の各手にバッジとして表示されるので、**1 手につき 1〜2 文の短い日本語コメント**で十分です。
 
-## 勝敗を分けたポイント
-中盤か終盤の決定的な局面を 1〜2 個。手番（黒/白）と座標（例 f5）を明示。
+注釈の量: 5〜12 手。すべての手に注釈をつける必要はありません（neutral な序盤や強制手はスキップ）。プレイヤー（黒）の手を中心に、勝敗を分けた白の手も拾ってください。
 
-## 悪手・疑問手
-3〜5 個まで。各項目で：
-- 何手目の何の手か（例: 第18手 d3）
-- なぜ悪いか
-- より良い代替手の候補
+quality の使い分け:
+- brilliant: 一瞬では見えない好手。Lv.15+ の AI でも稀
+- good: 標準的だが正しく打てた手
+- neutral: 注釈不要のニュートラルな手（基本的に annotations には入れない）
+- inaccuracy: わずかな緩み、小さなロス
+- mistake: 明確に位置や石数を損ねた手
+- blunder: 致命的なミス、勝敗を覆した手
 
-## よかった手
-1〜2 個。座標と短い理由。
-
-## 次回への助言
-1〜2 文で、プレイヤーが次の対局で意識すべき点。
-
-文体：丁寧だが説教臭くなく、技術的に的確に。冗長な前置きや謝辞は不要。
-表記：黒番・白番、手数は \`第N手\` の形式、座標は a1〜h8 の小文字。
-盤上世界の世界観を尊重し、対戦相手はキャラ名で呼んで構いません。`;
+座標: a1〜h8 の小文字記法を comment 内で参照可（例: 「f5 を取られた」）。
+表記: 黒番／白番、対戦相手はキャラ名で呼んで構いません。
+出力: 必ず annotate_othello_game ツールで返してください。テキスト返答は禁止。`;
 
 const SYSTEM_EN = `You are a strong Othello commentator providing a post-game review.
 The player is the protagonist (Black) reincarnated into Bansho Sekai, dueling 20 masters in turn.
-Your review **must follow this 5-section structure**, with headings as Markdown \`##\`:
 
-## Overview
-The flow and result of the game in 2–3 sentences.
+The user does not read long text. Comments are surfaced as inline badges on the board next to the move, so **1–2 short sentences per move is enough**.
 
-## Decisive Moments
-1–2 critical positions in the middle or endgame. State the side (Black/White) and the coordinate (e.g. f5).
+Annotation count: 5–12 moves. You do NOT need to annotate every move (skip neutral openings and forced moves). Focus on Black's moves but include White's pivotal moves too.
 
-## Mistakes
-3–5 items. For each:
-- which move and what it was (e.g. "Move 18: d3")
-- why it was bad
-- a better alternative
+Quality scale:
+- brilliant: a hard-to-see best move. Rare even for Lv.15+ AI
+- good: solid, theory-aligned, correctly played
+- neutral: unremarkable; usually skip these in annotations
+- inaccuracy: a small slip
+- mistake: a clear positional or material loss
+- blunder: a game-changing error
 
-## Good Moves
-1–2 items. Coordinates and a short reason.
-
-## Advice for Next Time
-1–2 sentences on what the player should focus on.
-
-Tone: friendly but technically precise; no preamble, no thanks, no apologies.
-Notation: refer to "Black" / "White", use "Move N" for move numbers, lowercase a1–h8 for coordinates.
-You may refer to the opponent by their character name; respect the Bansho Sekai setting.`;
+Notation: lowercase a1–h8. You may reference squares in comments (e.g., "lost f5").
+Output: you MUST call the annotate_othello_game tool. No free-text replies.`;
 
 export function buildReviewSystemPrompt(locale: ReviewLocale): string {
   return locale === 'ja' ? SYSTEM_JA : SYSTEM_EN;
@@ -107,21 +203,15 @@ function formatKifu(
   kifu: ReadonlyArray<{ color: Color; row: number; col: number }>,
   locale: ReviewLocale,
 ): string {
-  // Pair up (Black, White) per move number, formatted "1. f5 / d6"
-  const lines: string[] = [];
-  for (let i = 0; i < kifu.length; i += 2) {
-    const moveNo = i / 2 + 1;
-    const black = kifu[i];
-    const white = kifu[i + 1];
-    const blackStr = black ? moveToNotation(black.row, black.col) : '-';
-    const whiteStr = white ? moveToNotation(white.row, white.col) : '-';
-    lines.push(`${moveNo}. ${blackStr} / ${whiteStr}`);
-  }
-  // Also include a flat list for Claude's convenience.
-  const flat = kifu
-    .map((m) => `${colorLabel(m.color, locale)}:${moveToNotation(m.row, m.col)}`)
-    .join(', ');
-  return `${lines.join('\n')}\n\n[flat] ${flat}`;
+  // Indexed flat list: moveIndex matches the array index Claude must
+  // use in moveIndex / bestMoveIndex / worstMoveIndex / turningPointIndex.
+  const indexed = kifu
+    .map(
+      (m, i) =>
+        `${i}: ${colorLabel(m.color, locale)} ${moveToNotation(m.row, m.col)}`,
+    )
+    .join('\n');
+  return indexed;
 }
 
 export function buildReviewUserPrompt(args: ReviewArgs, locale: ReviewLocale): string {
@@ -136,10 +226,10 @@ export function buildReviewUserPrompt(args: ReviewArgs, locale: ReviewLocale): s
     return `${matchLine}
 最終スコア: 黒 ${blackCount} - ${whiteCount} 白（${kifu.length}手）
 
-棋譜（手数. 黒 / 白）:
+棋譜（index: 手番 座標）:
 ${formatKifu(kifu, locale)}
 
-上記の対局を、システムプロンプトの 5 節構成で講評してください。`;
+annotate_othello_game ツールで構造化レビューを返してください。コメントは日本語で。`;
   }
 
   const matchLine = chapter
@@ -150,8 +240,53 @@ ${formatKifu(kifu, locale)}
   return `${matchLine}
 Final score: Black ${blackCount} - ${whiteCount} White (${kifu.length} moves)
 
-Kifu (move#. Black / White):
+Kifu (index: side coordinate):
 ${formatKifu(kifu, locale)}
 
-Review the game above, following the 5-section structure in the system prompt.`;
+Return a structured review via the annotate_othello_game tool. Comments in English.`;
+}
+
+/* ---------------- Validation ---------------- */
+
+const ALL_QUALITIES: ReadonlySet<string> = new Set([
+  'brilliant',
+  'good',
+  'neutral',
+  'inaccuracy',
+  'mistake',
+  'blunder',
+]);
+
+/**
+ * Coerce an unknown blob (the tool_use input from Anthropic) into a
+ * typed ReviewAnnotations. Drops malformed annotation entries instead
+ * of failing the whole review.
+ */
+export function coerceReviewAnnotations(raw: unknown): ReviewAnnotations | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.summary !== 'string' || typeof r.improvements !== 'string') return null;
+  if (!Array.isArray(r.annotations)) return null;
+  const annotations: MoveAnnotation[] = [];
+  for (const a of r.annotations) {
+    if (typeof a !== 'object' || a === null) continue;
+    const ar = a as Record<string, unknown>;
+    if (typeof ar.moveIndex !== 'number') continue;
+    if (typeof ar.comment !== 'string') continue;
+    if (typeof ar.quality !== 'string' || !ALL_QUALITIES.has(ar.quality)) continue;
+    annotations.push({
+      moveIndex: ar.moveIndex,
+      quality: ar.quality as MoveQuality,
+      comment: ar.comment,
+    });
+  }
+  return {
+    summary: r.summary,
+    improvements: r.improvements,
+    bestMoveIndex: typeof r.bestMoveIndex === 'number' ? r.bestMoveIndex : undefined,
+    worstMoveIndex: typeof r.worstMoveIndex === 'number' ? r.worstMoveIndex : undefined,
+    turningPointIndex:
+      typeof r.turningPointIndex === 'number' ? r.turningPointIndex : undefined,
+    annotations,
+  };
 }
