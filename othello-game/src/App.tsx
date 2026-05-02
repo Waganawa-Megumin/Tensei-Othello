@@ -47,6 +47,8 @@ import {
   type MoveRecord,
   type SavedSlot,
 } from './storage/saveGame';
+import { useLocale } from './i18n/useLocale';
+import type { Messages } from './i18n/messages';
 
 /* ============================================================
    Static data
@@ -149,13 +151,13 @@ const STORY_CHAPTERS: ReadonlyArray<string> = [
    Helpers
    ============================================================ */
 
-function getLevelLabel(level: number): string {
-  if (level <= 4) return '入門';
-  if (level <= 8) return '初級';
-  if (level <= 12) return '中級';
-  if (level <= 16) return '上級';
-  if (level <= 18) return '高段者';
-  return '達人';
+function getLevelLabel(level: number, t: Messages): string {
+  if (level <= 4) return t.levelEntry;
+  if (level <= 8) return t.levelBeginner;
+  if (level <= 12) return t.levelMid;
+  if (level <= 16) return t.levelHigh;
+  if (level <= 18) return t.levelExpert;
+  return t.levelMaster;
 }
 
 function levelColor(level: number): string {
@@ -168,10 +170,6 @@ function levelColor(level: number): string {
 
 function colorChar(c: Color): 'B' | 'W' {
   return c === BLACK ? 'B' : 'W';
-}
-
-function colorLabel(c: Color): string {
-  return c === BLACK ? '黒' : '白';
 }
 
 function moveToNotation(m: Move): string {
@@ -354,9 +352,10 @@ function PlayerPanel({
 interface LevelSelectorProps {
   level: number;
   setLevel: (n: number) => void;
+  t: Messages;
 }
 
-function LevelSelector({ level, setLevel }: LevelSelectorProps) {
+function LevelSelector({ level, setLevel, t }: LevelSelectorProps) {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-2">
@@ -368,7 +367,7 @@ function LevelSelector({ level, setLevel }: LevelSelectorProps) {
             {level}
           </div>
           <div className="jp-display text-amber-100/70 text-sm tracking-wider">
-            {getLevelLabel(level)}
+            {getLevelLabel(level, t)}
           </div>
         </div>
       </div>
@@ -389,9 +388,9 @@ function LevelSelector({ level, setLevel }: LevelSelectorProps) {
         })}
       </div>
       <div className="flex justify-between latin-display italic text-amber-200/30 text-[10px] mt-1.5 px-1">
-        <span>1 入門</span>
-        <span>10 中級</span>
-        <span>20 達人</span>
+        <span>{t.levelLow}</span>
+        <span>{t.levelMidLabel}</span>
+        <span>{t.levelMaxLabel}</span>
       </div>
     </div>
   );
@@ -433,6 +432,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const ai = useAiWorker();
+  const { locale, setLocale, t } = useLocale();
 
   const validMoves = useMemo(() => getValidMoves(board, currentColor), [board, currentColor]);
   const validMoveMap = useMemo(() => {
@@ -957,20 +957,20 @@ export default function App() {
         <div className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
           {/* Top icon toolbar */}
           <div className="grid grid-cols-6 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
-            <ToolbarBtn icon={Menu} label="メニュー" onClick={() => setSettingsOpen(true)} />
+            <ToolbarBtn icon={Menu} label={t.toolbarMenu} onClick={() => setSettingsOpen(true)} />
             <ToolbarBtn
               icon={Lightbulb}
-              label="ヒント"
+              label={t.toolbarHint}
               onClick={toggleHint}
               active={hintMove !== null}
               disabled={!canHint && hintMove === null}
             />
-            <ToolbarBtn icon={Undo2} label="待った" onClick={undo} disabled={!canUndo} />
-            <ToolbarBtn icon={Info} label="対局情報" onClick={() => setInfoOpen(true)} />
-            <ToolbarBtn icon={RotateCcw} label="新規対局" onClick={reset} />
+            <ToolbarBtn icon={Undo2} label={t.toolbarUndo} onClick={undo} disabled={!canUndo} />
+            <ToolbarBtn icon={Info} label={t.toolbarInfo} onClick={() => setInfoOpen(true)} />
+            <ToolbarBtn icon={RotateCcw} label={t.toolbarReset} onClick={reset} />
             <ToolbarBtn
               icon={FolderOpen}
-              label="棋譜"
+              label={t.toolbarKifu}
               onClick={() => {
                 loadSavedSlots();
                 setKifuOpen(true);
@@ -1103,19 +1103,19 @@ export default function App() {
               />
             </div>
             <div className="flex justify-between mt-1.5 latin-display italic text-amber-200/40 text-xs tracking-wider">
-              <span>{counts.black} 黒</span>
-              <span>白 {counts.white}</span>
+              <span>{counts.black} {t.black}</span>
+              <span>{t.white} {counts.white}</span>
             </div>
           </div>
 
           <div className="text-center mt-6 latin-display italic text-amber-200/30 text-xs tracking-[0.3em] uppercase">
             {gameMode === 'human'
-              ? 'Two players · 二人対戦'
+              ? t.footerHuman
               : aiMode === 'story'
                 ? storyProgress >= 20
-                  ? `ストーリー完結 · vs ${COMPUTERS[computerChar].name}`
-                  : `第${storyProgress + 1}章 · vs ${COMPUTERS[computerChar].name}`
-                : `vs ${COMPUTERS[computerChar].name} · Lv.${level} ${getLevelLabel(level)}`}
+                  ? t.footerStoryComplete(COMPUTERS[computerChar].name)
+                  : t.footerChapter(storyProgress + 1, COMPUTERS[computerChar].name)
+                : t.footerFree(COMPUTERS[computerChar].name, level, getLevelLabel(level, t))}
           </div>
 
           {/* Pass message */}
@@ -1123,7 +1123,7 @@ export default function App() {
             <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-30 px-4">
               <div className="bg-black/75 backdrop-blur-sm border border-amber-200/30 px-7 py-4 rounded-sm">
                 <p className="jp-display text-amber-100 text-lg md:text-xl tracking-wider text-center">
-                  {colorLabel(passInfo)}は打てる場所がありません — パス
+                  {t.passMessage(passInfo === BLACK ? t.black : t.white)}
                 </p>
               </div>
             </div>
@@ -1145,25 +1145,25 @@ export default function App() {
                 <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full text-center rounded-sm">
                   <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3">
                     {justCompletedStory
-                      ? '— Story Complete —'
+                      ? t.storyComplete
                       : isStoryMode
-                        ? `— Chapter ${playedChapter} —`
-                        : '— Final Result —'}
+                        ? t.chapterN(playedChapter)
+                        : t.finalResult}
                   </div>
                   <h2 className="jp-display text-4xl md:text-5xl text-amber-100 font-bold mb-6 tracking-[0.15em]">
                     {justCompletedStory
-                      ? 'エンディング'
+                      ? t.storyEnding
                       : isStoryMode
                         ? winner === BLACK
-                          ? '勝利'
+                          ? t.storyVictory
                           : winner === EMPTY
-                            ? '引き分け'
-                            : '敗北'
+                            ? t.storyDraw
+                            : t.storyDefeat
                         : winner === EMPTY
-                          ? '引き分け'
+                          ? t.resultDraw
                           : winner === BLACK
-                            ? '黒の勝ち'
-                            : '白の勝ち'}
+                            ? t.resultBlackWin
+                            : t.resultWhiteWin}
                   </h2>
 
                   {justCompletedStory && (
@@ -1173,12 +1173,12 @@ export default function App() {
                   )}
                   {showNextChapter && nextOpp && (
                     <p className="jp-display text-amber-100/80 text-sm leading-relaxed mb-5">
-                      次の対戦相手は <span className="text-amber-100">『{nextOpp.name}』</span>
+                      {t.nextOpponentIs(nextOpp.name)}
                     </p>
                   )}
                   {isStoryMode && winner !== BLACK && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-5">
-                      まだ届かぬか…もう一度挑むがよい
+                      {t.storyEncouragement}
                     </p>
                   )}
 
@@ -1241,15 +1241,15 @@ export default function App() {
                   <div className="flex justify-center gap-2 mt-4">
                     {justCompletedStory ? (
                       <button onClick={resetStoryProgress} className="btn">
-                        もう一度ストーリーを
+                        {t.retryStory}
                       </button>
                     ) : showNextChapter ? (
                       <button onClick={reset} className="btn btn-active">
-                        次の章へ →
+                        {t.nextChapter}
                       </button>
                     ) : (
                       <button onClick={reset} className="btn">
-                        もう一度
+                        {t.oneMore}
                       </button>
                     )}
                   </div>
@@ -1265,36 +1265,36 @@ export default function App() {
                 <div className="flex items-center justify-between mb-5">
                   <div>
                     <div className="latin-display italic ornament text-[10px] uppercase mb-1">
-                      — Match Info —
+                      — {t.matchInfo} —
                     </div>
                     <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">
-                      対局情報
+                      {t.matchInfo}
                     </h2>
                   </div>
                   <button onClick={() => setInfoOpen(false)} className="btn">
-                    閉じる
+                    {t.close}
                   </button>
                 </div>
 
                 <div className="mb-4 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                   <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
-                    Mode
+                    {t.mode}
                   </div>
                   <div className="jp-display text-amber-100/90 text-sm">
                     {gameMode === 'human'
-                      ? '二人対戦'
+                      ? t.modeHuman
                       : aiMode === 'story'
                         ? storyProgress >= 20
-                          ? 'ストーリー · 完結'
-                          : `ストーリー · 第${storyProgress + 1}章`
-                        : `フリー · Lv.${level} ${getLevelLabel(level)}`}
+                          ? t.modeStoryComplete
+                          : t.modeStoryProgress(storyProgress + 1)
+                        : t.modeFreeLevel(level, getLevelLabel(level, t))}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
-                      Black 黒
+                      {t.black}
                     </div>
                     <div className="flex items-center gap-2">
                       <AvatarBadge
@@ -1315,7 +1315,7 @@ export default function App() {
                   </div>
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-1">
-                      White 白
+                      {t.white}
                     </div>
                     <div className="flex items-center gap-2">
                       <AvatarBadge
@@ -1339,7 +1339,7 @@ export default function App() {
                 <div className="grid grid-cols-3 gap-3 mb-4 text-center">
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
-                      Move
+                      {t.statMove}
                     </div>
                     <div className="latin-display tabular-nums text-amber-100 text-xl">
                       {kifu.length}
@@ -1347,7 +1347,7 @@ export default function App() {
                   </div>
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
-                      Empty
+                      {t.statEmpty}
                     </div>
                     <div className="latin-display tabular-nums text-amber-100 text-xl">
                       {64 - counts.black - counts.white}
@@ -1355,21 +1355,21 @@ export default function App() {
                   </div>
                   <div className="px-2 py-2 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                     <div className="latin-display italic text-amber-200/45 text-[10px] tracking-wider uppercase">
-                      Turn
+                      {t.statTurn}
                     </div>
                     <div className="jp-display text-amber-100 text-base mt-1">
-                      {colorLabel(currentColor)}
+                      {currentColor === BLACK ? t.black : t.white}
                     </div>
                   </div>
                 </div>
 
                 <div className="mb-2">
                   <div className="latin-display italic text-amber-200/45 text-[10px] tracking-[0.25em] uppercase mb-2">
-                    Kifu — 棋譜
+                    {t.kifuHeading}
                   </div>
                   {kifu.length === 0 ? (
                     <p className="jp-display italic text-amber-200/40 text-xs">
-                      まだ手が指されていません
+                      {t.noMovesYet}
                     </p>
                   ) : (
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 max-h-48 scroll-y overflow-y-auto pr-1 border border-amber-200/10 rounded-sm p-2 bg-zinc-950/50">
@@ -1404,41 +1404,40 @@ export default function App() {
                 <div className="flex items-center justify-between mb-5">
                   <div>
                     <div className="latin-display italic ornament text-[10px] uppercase mb-1">
-                      — Kifu Library —
+                      — {t.kifuLibrary} —
                     </div>
                     <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">
-                      棋譜・保存と読込
+                      {t.kifuLibrary}
                     </h2>
                   </div>
                   <button onClick={() => setKifuOpen(false)} className="btn">
-                    閉じる
+                    {t.close}
                   </button>
                 </div>
 
                 <section className="mb-6">
                   <h3 className="jp-display text-amber-100/90 text-sm tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    現在の対局を保存
-                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
-                      — Save
-                    </span>
+                    {t.saveCurrent}
                   </h3>
                   <div className="px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm mb-3 text-xs jp-display text-amber-100/80 leading-relaxed">
                     {kifu.length === 0
-                      ? '※ まだ手が指されていません。1手以上指してから保存できます。'
-                      : `${kifu.length}手・${
+                      ? t.saveHintEmpty
+                      : t.saveHintInfo(
+                          kifu.length,
                           gameMode === 'human'
-                            ? '二人対戦'
+                            ? t.modeHuman
                             : aiMode === 'story'
-                              ? `第${Math.min(storyProgress + 1, 20)}章 vs ${COMPUTERS[computerChar].name}`
-                              : `vs ${COMPUTERS[computerChar].name} Lv.${level}`
-                        }`}
+                              ? t.modeStoryProgress(Math.min(storyProgress + 1, 20)) +
+                                ` vs ${COMPUTERS[computerChar].name}`
+                              : `vs ${COMPUTERS[computerChar].name} Lv.${level}`,
+                        )}
                   </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={kifuName}
                       onChange={(e: ChangeEvent<HTMLInputElement>) => setKifuName(e.target.value)}
-                      placeholder="棋譜の名前（例：vs 朝日 大逆転）"
+                      placeholder={t.inputPlaceholder}
                       maxLength={40}
                       className="jp-display flex-1 px-3 py-2 bg-zinc-950/70 border border-amber-200/20 rounded-sm text-amber-100 text-sm placeholder:text-amber-200/30 focus:border-amber-200/60 focus:outline-none"
                     />
@@ -1447,21 +1446,18 @@ export default function App() {
                       disabled={!kifuName.trim() || kifu.length === 0}
                       className="btn"
                     >
-                      保存
+                      {t.saveButton}
                     </button>
                   </div>
                 </section>
 
                 <section>
                   <h3 className="jp-display text-amber-100/90 text-sm tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    保存済みの棋譜
-                    <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
-                      — Saved games
-                    </span>
+                    {t.savedGames}
                   </h3>
                   {savedSlots.length === 0 ? (
                     <p className="jp-display italic text-amber-200/40 text-sm py-3">
-                      保存された棋譜はまだありません
+                      {t.noSavedGames}
                     </p>
                   ) : (
                     <div className="space-y-2 max-h-72 scroll-y overflow-y-auto pr-1">
@@ -1494,22 +1490,22 @@ export default function App() {
                                     · vs {opp.name} Lv.{slot.level}
                                   </>
                                 )}
-                                {slot.result === BLACK && <> · 黒勝</>}
-                                {slot.result === WHITE && <> · 白勝</>}
-                                {slot.result === EMPTY && <> · 引分</>}
+                                {slot.result === BLACK && <> · {t.blackWinShort}</>}
+                                {slot.result === WHITE && <> · {t.whiteWinShort}</>}
+                                {slot.result === EMPTY && <> · {t.drawShort}</>}
                               </div>
                             </div>
                             <button
                               onClick={() => loadKifuMoves(slot.kifu ?? [])}
                               className="btn text-xs px-3 py-1.5"
-                              title="読込"
+                              title={t.loadButton}
                             >
-                              読込
+                              {t.loadButton}
                             </button>
                             <button
                               onClick={() => deleteSlot(slot.key)}
                               className="btn text-xs px-2 py-1.5"
-                              title="削除"
+                              title={t.delete}
                             >
                               <Trash2 size={14} strokeWidth={1.5} />
                             </button>
@@ -1530,22 +1526,43 @@ export default function App() {
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <div className="latin-display italic ornament text-[10px] uppercase mb-1">
-                      — Setup —
+                      — {t.setup} —
                     </div>
                     <h2 className="jp-display text-amber-100 text-2xl md:text-3xl font-bold tracking-[0.15em]">
-                      設定
+                      {t.setup}
                     </h2>
                   </div>
                   <button onClick={() => setSettingsOpen(false)} className="btn">
-                    閉じる
+                    {t.close}
                   </button>
                 </div>
 
+                {/* Language toggle */}
+                <section className="mb-6">
+                  <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                    {t.language}
+                  </h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setLocale('ja')}
+                      className={`btn flex-1 ${locale === 'ja' ? 'btn-active' : ''}`}
+                    >
+                      日本語
+                    </button>
+                    <button
+                      onClick={() => setLocale('en')}
+                      className={`btn flex-1 ${locale === 'en' ? 'btn-active' : ''}`}
+                    >
+                      English
+                    </button>
+                  </div>
+                </section>
+
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    主人公
+                    {t.protagonist}
                     <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
-                      — Choose your protagonist
+                      — {t.protagonistSubtitle}
                     </span>
                   </h3>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
@@ -1588,9 +1605,9 @@ export default function App() {
 
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    対戦相手
+                    {t.opponent}
                     <span className="latin-display italic text-amber-200/40 text-xs ml-2 normal-case tracking-wider">
-                      — Opponent
+                      — {t.opponentSubtitle}
                     </span>
                   </h3>
 
@@ -1599,13 +1616,13 @@ export default function App() {
                       onClick={() => setGameMode('ai')}
                       className={`btn flex-1 ${gameMode === 'ai' ? 'btn-active' : ''}`}
                     >
-                      AIと対戦
+                      {t.vsAi}
                     </button>
                     <button
                       onClick={() => setGameMode('human')}
                       className={`btn flex-1 ${gameMode === 'human' ? 'btn-active' : ''}`}
                     >
-                      二人対戦
+                      {t.vsHuman}
                     </button>
                   </div>
 
@@ -1616,13 +1633,13 @@ export default function App() {
                           onClick={() => setAiMode('story')}
                           className={`btn flex-1 ${aiMode === 'story' ? 'btn-active' : ''}`}
                         >
-                          ストーリー
+                          {t.storyMode}
                         </button>
                         <button
                           onClick={() => setAiMode('free')}
                           className={`btn flex-1 ${aiMode === 'free' ? 'btn-active' : ''}`}
                         >
-                          フリー
+                          {t.freeMode}
                         </button>
                       </div>
 
@@ -1636,7 +1653,7 @@ export default function App() {
                             <div>
                               <div className="flex items-center justify-between mb-2">
                                 <span className="latin-display italic text-amber-200/50 text-xs tracking-[0.25em] uppercase">
-                                  Progress
+                                  {t.progress}
                                 </span>
                                 <span className="latin-display text-amber-100 text-base tabular-nums">
                                   {storyProgress} / 20
@@ -1674,10 +1691,10 @@ export default function App() {
                                   />
                                   <div className="min-w-0">
                                     <div className="jp-display text-amber-100 text-base md:text-lg truncate">
-                                      第{targetLevel}章 — {opp.name}
+                                      {t.footerChapter(targetLevel, opp.name)}
                                     </div>
                                     <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">
-                                      Lv.{opp.level} {getLevelLabel(opp.level)}
+                                      Lv.{opp.level} {getLevelLabel(opp.level, t)}
                                     </div>
                                   </div>
                                 </div>
@@ -1691,10 +1708,10 @@ export default function App() {
                             ) : (
                               <div className="border border-amber-400/50 bg-amber-300/[0.06] rounded-sm p-4 text-center">
                                 <div className="latin-display italic ornament text-[10px] uppercase mb-3">
-                                  — Story Complete —
+                                  — {t.storyComplete.replace(/—/g, '').trim()} —
                                 </div>
                                 <div className="jp-display text-amber-100 text-xl md:text-2xl mb-3 tracking-wider">
-                                  エンディング
+                                  {t.storyEnding}
                                 </div>
                                 <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
                                   {STORY_ENDING}
@@ -1704,7 +1721,7 @@ export default function App() {
 
                             {storyProgress > 0 && (
                               <button onClick={resetStoryProgress} className="btn text-xs">
-                                ストーリーを最初から
+                                {t.retryStoryFromStart}
                               </button>
                             )}
                           </div>
@@ -1715,7 +1732,7 @@ export default function App() {
                         <>
                           <div className="mb-5">
                             <div className="latin-display italic text-amber-200/45 text-xs tracking-[0.25em] uppercase mb-2">
-                              Character — 二十人の対戦相手
+                              {t.characterGridLabel}
                             </div>
                             <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
                               {COMPUTERS.map((c, i) => (
@@ -1760,11 +1777,9 @@ export default function App() {
                           </div>
 
                           <div>
-                            <LevelSelector level={level} setLevel={setLevel} />
+                            <LevelSelector level={level} setLevel={setLevel} t={t} />
                             <p className="latin-display italic text-amber-200/35 text-[11px] mt-3 leading-relaxed">
-                              Lv.1–5 random / greedy ・ Lv.6–9 positional ・ Lv.10–14 1–2-ply search
-                              ・ Lv.15–17 3-ply ・ Lv.18–20 4-ply minimax with mobility & disc
-                              parity.
+                              {t.aiLevelExplain}
                             </p>
                           </div>
                         </>
@@ -1775,7 +1790,7 @@ export default function App() {
                   {gameMode === 'human' && (
                     <div>
                       <div className="latin-display italic text-amber-200/45 text-xs tracking-[0.25em] uppercase mb-2">
-                        Player 2 protagonist
+                        {t.player2Protagonist}
                       </div>
                       <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
                         {AVATARS.map((a, i) => (
@@ -1811,7 +1826,7 @@ export default function App() {
                       </div>
                       {p1Avatar === p2Avatar && (
                         <p className="jp-display text-amber-200/40 text-xs mt-2 italic">
-                          ※あなたと同じ名は選べません
+                          {t.cannotChooseSelf}
                         </p>
                       )}
                     </div>
@@ -1826,10 +1841,10 @@ export default function App() {
                     }}
                     className="btn"
                   >
-                    新しい対局を開始
+                    {t.startNewGame}
                   </button>
                   <button onClick={() => setSettingsOpen(false)} className="btn btn-active">
-                    この設定で続ける
+                    {t.keepSettings}
                   </button>
                 </div>
               </div>
