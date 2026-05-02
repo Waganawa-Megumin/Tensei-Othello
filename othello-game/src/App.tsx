@@ -41,10 +41,8 @@ import {
 import { useAiWorker } from './hooks/useAiWorker';
 import {
   deleteSlot as storageDeleteSlot,
-  getStoryProgress,
   listSlots,
   saveSlot as storageSaveSlot,
-  setStoryProgress as storageSetStoryProgress,
   type AiMode,
   type GameMode,
   type MoveRecord,
@@ -53,7 +51,18 @@ import {
 import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
 import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
+import { SlotPicker } from './components/SlotPicker';
 import { streamReview, type StreamMessageHandle } from './services/claude';
+import {
+  defaultSlot,
+  getSlots,
+  getActiveSlotId,
+  setActiveSlotId,
+  resetSlot as resetStoredSlot,
+  recordSlotResult,
+  recordFreeResult,
+  type SaveSlot,
+} from './storage/saveSlots';
 
 type Screen = 'title' | 'game';
 
@@ -284,6 +293,8 @@ interface PlayerPanelProps {
   quote?: string;
   level?: number;
   thinking?: boolean;
+  /** Remaining lives (story mode, Black side only). Hidden when undefined. */
+  lives?: number;
 }
 
 function PlayerPanel({
@@ -297,6 +308,7 @@ function PlayerPanel({
   quote,
   level,
   thinking,
+  lives,
 }: PlayerPanelProps) {
   return (
     <div
@@ -315,6 +327,17 @@ function PlayerPanel({
             {level !== undefined && (
               <span className="latin-display italic text-amber-200/50 text-[11px] md:text-xs tracking-wider flex-shrink-0">
                 Lv.{level}
+              </span>
+            )}
+            {lives !== undefined && (
+              <span
+                className={`latin-display tabular-nums text-[11px] md:text-xs tracking-wider flex-shrink-0 ${
+                  lives === 0 ? 'text-red-300/95' : 'text-amber-200/85'
+                }`}
+                title={`Lives: ${lives}`}
+                aria-label={`Lives: ${lives}`}
+              >
+                ♥ {lives}
               </span>
             )}
           </div>
@@ -443,8 +466,34 @@ export default function App() {
   const [computerChar, setComputerChar] = useState(0);
   const [level, setLevel] = useState(1);
   const [aiMode, setAiMode] = useState<AiMode>('story');
-  const [storyProgress, setStoryProgress] = useState(0);
-  const [storyJustAdvanced, setStoryJustAdvanced] = useState(false);
+  // Save-slot state (story mode). Slots[] is the canonical store; the
+  // legacy `storyProgress` and `lives` values are derived from the
+  // active slot below.
+  const [slots, setSlots] = useState<SaveSlot[]>(() =>
+    Array.from({ length: 10 }, (_, i) => defaultSlot(i + 1)),
+  );
+  const [activeSlotId, setActiveSlotIdState] = useState<number | null>(null);
+  const [slotPickerOpen, setSlotPickerOpen] = useState(false);
+  /** Set once per gameOver to prevent double-recording stats. */
+  const [resultRecorded, setResultRecorded] = useState(false);
+  /** Last recorded result, used by the gameOver modal to know whether
+   *  to show "Next chapter" vs "Try again". Set synchronously when
+   *  gameOver fires; persists until the next reset. */
+  const [lastResult, setLastResult] = useState<
+    'win' | 'loss' | 'draw' | 'resign' | null
+  >(null);
+  /** Snapshot of the opponent at the start of the current game. Used by
+   *  the gameOver modal so the avatars/score area shows who was just
+   *  played, not who's queued up next. (When storyProgress advances on
+   *  a win, computerChar follows immediately, so we can't read it
+   *  directly any more.) */
+  const [opponentSnapshot, setOpponentSnapshot] = useState<{
+    kanji: string;
+    name: string;
+    image: string;
+    level: number;
+    quote: string;
+  } | null>(null);
 
   // Kifu and modals
   const [kifu, setKifu] = useState<MoveRecord[]>([]);
@@ -463,6 +512,12 @@ export default function App() {
   const [reviewText, setReviewText] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  /** True when the review modal is showing a previously saved review
+   *  (read-only). Hides Cancel/Regenerate/Save buttons. */
+  const [reviewReadOnly, setReviewReadOnly] = useState(false);
+  /** Saved-at timestamp shown in the read-only review view. */
+  const [reviewSavedAt, setReviewSavedAtState] = useState<number | null>(null);
+  const [reviewSavedFlash, setReviewSavedFlash] = useState(false);
   const reviewHandleRef = useRef<StreamMessageHandle | null>(null);
 
   const ai = useAiWorker();
@@ -491,6 +546,13 @@ export default function App() {
     [locale],
   );
 
+  const activeSlot = useMemo(
+    () => (activeSlotId ? slots.find((s) => s.id === activeSlotId) ?? null : null),
+    [slots, activeSlotId],
+  );
+  const storyProgress = activeSlot?.storyProgress ?? 0;
+  const lives = activeSlot?.lives ?? 0;
+
   const validMoves = useMemo(() => getValidMoves(board, currentColor), [board, currentColor]);
   const validMoveMap = useMemo(() => {
     const m = new Map<string, ValidMove>();
@@ -509,11 +571,13 @@ export default function App() {
 
   /* ----- Effects ----- */
 
-  // Load persisted story progress on mount
+  // Load persisted save slots + active slot id on mount.
   useEffect(() => {
     let cancelled = false;
-    getStoryProgress().then((p) => {
-      if (!cancelled) setStoryProgress(p);
+    Promise.all([getSlots(), getActiveSlotId()]).then(([loaded, id]) => {
+      if (cancelled) return;
+      setSlots(loaded);
+      setActiveSlotIdState(id);
     });
     return () => {
       cancelled = true;
@@ -585,22 +649,61 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo]);
 
-  // Advance story progress on player win in story mode
+  // Record the result once gameOver fires. Story matches update the
+  // active slot (advancing progress on a win, deducting a life on a
+  // loss). Free matches feed the global free-stats bucket. Two-player
+  // matches are not recorded.
   useEffect(() => {
-    if (
-      gameOver &&
-      !storyJustAdvanced &&
-      aiMode === 'story' &&
-      gameMode === 'ai' &&
-      storyProgress < 20 &&
-      counts.black > counts.white
-    ) {
-      const newP = storyProgress + 1;
-      setStoryProgress(newP);
-      void storageSetStoryProgress(newP);
-      setStoryJustAdvanced(true);
+    if (!gameOver || resultRecorded) return;
+    if (gameMode !== 'ai') {
+      // Two-player: nothing to record, but mark as handled to keep the
+      // gate logic simple.
+      setResultRecorded(true);
+      return;
     }
-  }, [gameOver, aiMode, gameMode, storyProgress, storyJustAdvanced, counts.black, counts.white]);
+    // Determine the result from the human's (Black's) perspective.
+    let result: 'win' | 'loss' | 'draw' | 'resign';
+    if (resigned !== null) {
+      // Always counted as resign (the resigner is always Black in AI mode).
+      result = 'resign';
+    } else if (counts.black > counts.white) {
+      result = 'win';
+    } else if (counts.black < counts.white) {
+      result = 'loss';
+    } else {
+      result = 'draw';
+    }
+    setLastResult(result);
+    const opponentLevel = COMPUTERS[computerChar].level;
+    const isStory = aiMode === 'story';
+    if (isStory && activeSlotId !== null) {
+      void recordSlotResult({
+        slotId: activeSlotId,
+        result,
+        opponentLevel,
+        isStory: true,
+      }).then(setSlots);
+    } else if (!isStory) {
+      void recordFreeResult({ result, opponentLevel });
+    }
+    setResultRecorded(true);
+  }, [
+    gameOver,
+    resultRecorded,
+    aiMode,
+    gameMode,
+    counts.black,
+    counts.white,
+    resigned,
+    activeSlotId,
+    computerChar,
+  ]);
+
+  // Whenever a fresh game starts (kifu cleared, board reset) clear the
+  // recorded-result gate so the next gameOver records again.
+  useEffect(() => {
+    if (kifu.length === 0 && !gameOver) setResultRecorded(false);
+  }, [kifu.length, gameOver]);
 
   // Cancel hint when turn changes
   useEffect(() => {
@@ -616,6 +719,8 @@ export default function App() {
       if (reviewOpen) {
         reviewHandleRef.current?.abort();
         setReviewOpen(false);
+      } else if (slotPickerOpen) {
+        setSlotPickerOpen(false);
       } else if (settingsOpen) {
         setSettingsOpen(false);
       } else if (kifuOpen) {
@@ -629,7 +734,7 @@ export default function App() {
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [settingsOpen, kifuOpen, infoOpen, screen, reviewOpen]);
+  }, [settingsOpen, kifuOpen, infoOpen, screen, reviewOpen, slotPickerOpen]);
 
   // Push a history entry whenever a new layer opens, so the back button
   // has something to pop. We compare against the previous depth to avoid
@@ -641,12 +746,13 @@ export default function App() {
       (settingsOpen ? 1 : 0) +
       (kifuOpen ? 1 : 0) +
       (infoOpen ? 1 : 0) +
-      (reviewOpen ? 1 : 0);
+      (reviewOpen ? 1 : 0) +
+      (slotPickerOpen ? 1 : 0);
     if (depth > layerDepthRef.current) {
       window.history.pushState({ depth }, '');
     }
     layerDepthRef.current = depth;
-  }, [screen, settingsOpen, kifuOpen, infoOpen, reviewOpen]);
+  }, [screen, settingsOpen, kifuOpen, infoOpen, reviewOpen, slotPickerOpen]);
 
   /* ----- Actions ----- */
 
@@ -694,11 +800,31 @@ export default function App() {
     setAiThinking(false);
     setHistory([]);
     setHintMove(null);
-    setStoryJustAdvanced(false);
+    setLastResult(null);
     setKifu([]);
     setResigned(null);
     ai.cancel();
   }
+
+  // Snapshot the current opponent while the game is in progress; once
+  // gameOver fires we stop following computerChar so the gameOver modal
+  // keeps showing the just-defeated opponent (storyProgress advancing
+  // re-points computerChar to the *next* chapter, otherwise).
+  useEffect(() => {
+    if (gameOver) return;
+    if (gameMode !== 'ai') {
+      setOpponentSnapshot(null);
+      return;
+    }
+    const c = COMPUTERS[computerChar];
+    setOpponentSnapshot({
+      kanji: c.kanji,
+      name: c.name,
+      image: c.image,
+      level: c.level,
+      quote: c.quote,
+    });
+  }, [gameOver, gameMode, computerChar, COMPUTERS]);
 
   /**
    * Resignation. The current side forfeits; the opponent is recorded as
@@ -723,6 +849,12 @@ export default function App() {
     if (selection.mode === 'human') {
       setGameMode('human');
     } else {
+      // Story mode requires an active slot; otherwise open the picker
+      // and let the user pick before entering the game.
+      if (selection.sub === 'story' && activeSlotId === null) {
+        setSlotPickerOpen(true);
+        return;
+      }
       setGameMode('ai');
       setAiMode(selection.sub);
     }
@@ -730,10 +862,23 @@ export default function App() {
     setScreen('game');
   }
 
-  function resetStoryProgress() {
-    setStoryProgress(0);
-    setStoryJustAdvanced(false);
-    void storageSetStoryProgress(0);
+  /** Pick (or switch) the active save slot, then jump straight into
+   *  story mode with that slot. */
+  function selectSlot(id: number) {
+    setActiveSlotIdState(id);
+    void setActiveSlotId(id);
+    setSlotPickerOpen(false);
+    setGameMode('ai');
+    setAiMode('story');
+    reset();
+    setScreen('game');
+  }
+
+  /** Wipes the active slot back to defaults (keeps name + avatar). */
+  async function resetStoryProgress() {
+    if (activeSlotId === null) return;
+    const next = await resetStoredSlot(activeSlotId);
+    setSlots(next);
     reset();
   }
 
@@ -818,7 +963,7 @@ export default function App() {
     setHintMove(null);
     setPassInfo(null);
     setFlipping({});
-    setStoryJustAdvanced(false);
+    setLastResult(null);
     setResigned(null);
     setKifuOpen(false);
     ai.cancel();
@@ -852,20 +997,32 @@ export default function App() {
     setReviewText('');
     setReviewLoading(true);
     setReviewOpen(true);
+    setReviewReadOnly(false);
+    setReviewSavedAtState(null);
+    setReviewSavedFlash(false);
 
-    const oppLevel = gameMode === 'ai' ? COMPUTERS[computerChar].level : undefined;
+    // Reviewing the *played* opponent: pull from the snapshot (not the
+    // possibly-already-bumped computerChar). Falls back to current for
+    // free / two-player matches.
+    const oppLevel =
+      gameMode === 'ai'
+        ? (opponentSnapshot?.level ?? COMPUTERS[computerChar].level)
+        : undefined;
+    const oppName =
+      gameMode === 'ai'
+        ? (opponentSnapshot?.name ?? COMPUTERS[computerChar].name)
+        : AVATARS[p2Avatar].name;
     const args = {
       kifu,
       blackCount: counts.black,
       whiteCount: counts.white,
       blackName: AVATARS[p1Avatar].name,
-      whiteName:
-        gameMode === 'ai' ? COMPUTERS[computerChar].name : AVATARS[p2Avatar].name,
+      whiteName: oppName,
       level: oppLevel,
       levelLabel: oppLevel !== undefined ? getLevelLabel(oppLevel, t) : undefined,
       chapter:
-        aiMode === 'story' && gameMode === 'ai'
-          ? Math.min(storyProgress + 1, 20)
+        aiMode === 'story' && gameMode === 'ai' && oppLevel !== undefined
+          ? oppLevel
           : undefined,
     };
 
@@ -884,12 +1041,74 @@ export default function App() {
     reviewHandleRef.current = null;
     setReviewOpen(false);
     setReviewLoading(false);
+    setReviewReadOnly(false);
+    setReviewSavedAtState(null);
+    setReviewSavedFlash(false);
   }
 
   function cancelReview() {
     reviewHandleRef.current?.abort();
     reviewHandleRef.current = null;
     setReviewLoading(false);
+  }
+
+  /** Persist the streamed review together with the current kifu so the
+   *  user can revisit it from the Kifu Library later. Auto-generates a
+   *  short name (e.g. "Ch.5 vs 響") so the user doesn't have to type. */
+  function saveReviewWithKifu() {
+    if (!reviewText.trim() || kifu.length === 0) return;
+    const ts = new Date();
+    const stamp = `${ts.getMonth() + 1}/${ts.getDate()} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
+    // Use the just-defeated opponent (snapshot), not the auto-bumped
+    // current opponent. Falls back to COMPUTERS[computerChar] for
+    // free / two-player matches where the snapshot was never set.
+    const oppName = opponentSnapshot?.name ?? COMPUTERS[computerChar].name;
+    const oppLevel = opponentSnapshot?.level ?? COMPUTERS[computerChar].level;
+    const oppIdx = COMPUTERS.findIndex((c) => c.level === oppLevel);
+    const isStory = aiMode === 'story' && gameMode === 'ai';
+    const baseName = isStory
+      ? `第${oppLevel}章 vs ${oppName}`
+      : gameMode === 'ai'
+        ? `vs ${oppName} Lv.${oppLevel}`
+        : `${AVATARS[p1Avatar].name} vs ${AVATARS[p2Avatar].name}`;
+    const name = `${baseName} (${stamp})`;
+    const result: Color | typeof EMPTY | null = gameOver
+      ? counts.black > counts.white
+        ? BLACK
+        : counts.black < counts.white
+          ? WHITE
+          : EMPTY
+      : null;
+    void storageSaveSlot({
+      name,
+      gameMode,
+      aiMode,
+      computerChar: oppIdx >= 0 ? oppIdx : computerChar,
+      level: oppLevel,
+      kifu,
+      storyProgress,
+      counts: { black: counts.black, white: counts.white },
+      result,
+      review: reviewText,
+    }).then(() => {
+      setReviewSavedFlash(true);
+      window.setTimeout(() => setReviewSavedFlash(false), 2000);
+    });
+  }
+
+  /** Open the review modal in read-only mode showing a previously saved
+   *  review string. */
+  function viewSavedReview(text: string, savedAt: number) {
+    reviewHandleRef.current?.abort();
+    reviewHandleRef.current = null;
+    setReviewError(null);
+    setReviewLoading(false);
+    setReviewText(text);
+    setReviewReadOnly(true);
+    setReviewSavedAtState(savedAt);
+    setReviewSavedFlash(false);
+    setKifuOpen(false);
+    setReviewOpen(true);
   }
 
   // Abort any pending review stream when the component unmounts.
@@ -1148,6 +1367,16 @@ export default function App() {
           t={t}
           locale={locale}
           onLocaleChange={setLocale}
+          activeSlot={
+            activeSlot
+              ? {
+                  name: activeSlot.name,
+                  lives: activeSlot.lives,
+                  storyProgress: activeSlot.storyProgress,
+                }
+              : null
+          }
+          onSwitchSlot={() => setSlotPickerOpen(true)}
         />
       )}
 
@@ -1196,6 +1425,11 @@ export default function App() {
                 image={blackInfo.image}
                 name={blackInfo.name}
                 quote={blackInfo.quote}
+                lives={
+                  gameMode === 'ai' && aiMode === 'story' && activeSlot
+                    ? lives
+                    : undefined
+                }
               />
             </div>
 
@@ -1338,13 +1572,79 @@ export default function App() {
           {/* Game over modal */}
           {gameOver && !settingsOpen && (() => {
             const isStoryMode = aiMode === 'story' && gameMode === 'ai';
-            const justAdvanced = isStoryMode && storyJustAdvanced;
+            const justAdvanced = isStoryMode && lastResult === 'win';
             const justCompletedStory = justAdvanced && storyProgress >= 20;
             const showNextChapter = justAdvanced && storyProgress < 20;
             const nextOpp = showNextChapter
               ? COMPUTERS.find((c) => c.level === storyProgress + 1)
               : null;
             const playedChapter = justAdvanced ? storyProgress : storyProgress + 1;
+            const isGameOverScreen =
+              isStoryMode &&
+              activeSlot !== null &&
+              lives === 0 &&
+              (lastResult === 'loss' || lastResult === 'resign');
+
+            if (isGameOverScreen) {
+              return (
+                <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">
+                  <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full text-center rounded-sm">
+                    <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-red-300/80">
+                      — {t.gameOverScreenLabel} —
+                    </div>
+                    <h2
+                      className="jp-display text-4xl md:text-5xl font-bold mb-6 tracking-[0.18em] text-red-200/95"
+                      style={{ textShadow: '0 0 18px rgba(220, 80, 80, 0.35)' }}
+                    >
+                      {t.gameOverScreenTitle}
+                    </h2>
+
+                    <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line">
+                      {t.gameOverScreenProse}
+                    </p>
+
+                    <div className="flex items-center justify-center gap-2 mb-5 latin-display italic text-red-300/85 text-xs tracking-wider">
+                      <span>{t.livesLabel}:</span>
+                      <span className="text-red-200/95 tabular-nums text-lg">♥ 0</span>
+                    </div>
+
+                    {gameMode === 'ai' && kifu.length > 0 && (
+                      <div className="flex justify-center mt-3 mb-3">
+                        <button onClick={startReview} className="btn">
+                          {t.reviewMatchButton}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-2 mt-4">
+                      <button
+                        onClick={() => void resetStoryProgress()}
+                        className="btn btn-active"
+                      >
+                        {t.gameOverResetSave}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSlotPickerOpen(true);
+                        }}
+                        className="btn"
+                      >
+                        {t.slotSwitch}
+                      </button>
+                      <button onClick={reset} className="btn">
+                        {t.gameOverTryAgainNoLives}
+                      </button>
+                      <button
+                        onClick={() => setScreen('title')}
+                        className="btn"
+                      >
+                        {t.gameOverBackToTitle}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">
@@ -1377,18 +1677,14 @@ export default function App() {
                       {t.storyEndingProse}
                     </p>
                   )}
-                  {showNextChapter && nextOpp && (
-                    <p className="jp-display text-amber-100/80 text-sm leading-relaxed mb-5">
-                      {t.nextOpponentIs(nextOpp.name)}
-                    </p>
-                  )}
                   {isStoryMode && winner !== BLACK && (
-                    <p className="jp-display text-amber-200/60 text-sm italic mb-5">
+                    <p className="jp-display text-amber-200/60 text-sm italic mb-3">
                       {t.storyEncouragement}
                     </p>
                   )}
 
-                  <div className="flex justify-center items-center gap-6 md:gap-8 my-6">
+                  {/* You vs the opponent that was just played + final score. */}
+                  <div className="flex justify-center items-center gap-6 md:gap-8 my-5">
                     <div className="flex flex-col items-center gap-2">
                       <AvatarBadge
                         kanji={blackInfo.kanji}
@@ -1405,32 +1701,101 @@ export default function App() {
                             'inset -2px -2px 4px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)',
                         }}
                       />
+                      <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
+                        {blackInfo.name}
+                      </div>
                       <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
                         {counts.black}
                       </div>
                     </div>
                     <div className="latin-display italic text-amber-200/65 text-xl">vs</div>
                     <div className="flex flex-col items-center gap-2">
-                      <AvatarBadge
-                        kanji={whiteInfo.kanji}
-                        idx={whiteInfo.idx}
-                        image={whiteInfo.image}
-                        size="md"
-                      />
-                      <div
-                        className="w-10 h-10 rounded-full"
-                        style={{
-                          background:
-                            'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
-                          boxShadow:
-                            'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)',
-                        }}
-                      />
-                      <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
-                        {counts.white}
-                      </div>
+                      {(() => {
+                        // For AI matches use the opponent snapshot (the
+                        // character that was actually just played); for
+                        // human matches stick with whiteInfo (P2 avatar).
+                        const opp =
+                          gameMode === 'ai' && opponentSnapshot
+                            ? {
+                                kanji: opponentSnapshot.kanji,
+                                idx: 100 + opponentSnapshot.level,
+                                image: opponentSnapshot.image,
+                                name: opponentSnapshot.name,
+                              }
+                            : {
+                                kanji: whiteInfo.kanji,
+                                idx: whiteInfo.idx,
+                                image: whiteInfo.image,
+                                name: whiteInfo.name,
+                              };
+                        return (
+                          <>
+                            <AvatarBadge
+                              kanji={opp.kanji}
+                              idx={opp.idx}
+                              image={opp.image}
+                              size="md"
+                            />
+                            <div
+                              className="w-10 h-10 rounded-full"
+                              style={{
+                                background:
+                                  'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
+                                boxShadow:
+                                  'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)',
+                              }}
+                            />
+                            <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
+                              {opp.name}
+                            </div>
+                            <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
+                              {counts.white}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
+
+                  {isStoryMode && activeSlot && (
+                    <div className="flex items-center justify-center gap-2 mb-3 latin-display italic text-amber-200/65 text-xs tracking-wider">
+                      <span>{t.livesLabel}:</span>
+                      <span className="text-amber-100/95 tabular-nums text-base">
+                        ♥ {lives}
+                      </span>
+                      {lives === 0 && (
+                        <span className="jp-display text-amber-200/55 text-[10px] ml-2">
+                          {t.livesGameOverWarning}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Next-chapter preview block — shown after the score so the
+                       just-defeated opponent isn't visually replaced. */}
+                  {showNextChapter && nextOpp && (
+                    <div className="mt-3 mb-3 px-3 py-3 bg-amber-200/[0.06] border border-amber-200/25 rounded-sm">
+                      <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.25em] uppercase mb-2">
+                        Next Chapter ▸
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <AvatarBadge
+                          kanji={nextOpp.kanji}
+                          idx={100 + nextOpp.level}
+                          image={nextOpp.image}
+                          size="sm"
+                        />
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="jp-display text-amber-100/95 text-sm truncate">
+                            {t.nextOpponentIs(nextOpp.name)}
+                          </div>
+                          <div className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
+                            Lv.{nextOpp.level} {getLevelLabel(nextOpp.level, t)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {!isStoryMode && gameMode === 'ai' && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-2">
@@ -1707,8 +2072,25 @@ export default function App() {
                                 {slot.result === BLACK && <> · {t.blackWinShort}</>}
                                 {slot.result === WHITE && <> · {t.whiteWinShort}</>}
                                 {slot.result === EMPTY && <> · {t.drawShort}</>}
+                                {slot.review && (
+                                  <span className="ml-1 text-amber-200/85">
+                                    · 📝 {t.reviewSavedIndicator}
+                                  </span>
+                                )}
                               </div>
                             </div>
+                            {slot.review && (
+                              <button
+                                onClick={() =>
+                                  viewSavedReview(slot.review ?? '', slot.timestamp ?? 0)
+                                }
+                                className="btn text-xs px-2 py-1.5"
+                                title={t.reviewViewSaved}
+                                aria-label={t.reviewViewSaved}
+                              >
+                                📝
+                              </button>
+                            )}
                             <button
                               onClick={() => loadKifuMoves(slot.kifu ?? [])}
                               className="btn text-xs px-3 py-1.5"
@@ -1797,20 +2179,44 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-amber-200/15">
-                  <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
-                    {t.reviewByClaude}
+                  <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider truncate">
+                    {reviewReadOnly && reviewSavedAt !== null
+                      ? t.reviewSavedAt(
+                          new Date(reviewSavedAt).toLocaleString(
+                            locale === 'ja' ? 'ja-JP' : 'en-US',
+                          ),
+                        )
+                      : t.reviewByClaude}
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    {reviewSavedFlash && (
+                      <span className="jp-display text-amber-200/85 text-[11px] tracking-wider">
+                        ✓ {t.reviewSaved}
+                      </span>
+                    )}
                     {reviewLoading && (
                       <button onClick={cancelReview} className="btn text-xs px-3 py-1.5">
                         {t.reviewCancel}
                       </button>
                     )}
-                    {!reviewLoading && (reviewError || reviewText.length > 0) && (
-                      <button onClick={startReview} className="btn text-xs px-3 py-1.5">
-                        {t.reviewRegenerate}
-                      </button>
-                    )}
+                    {!reviewReadOnly &&
+                      !reviewLoading &&
+                      reviewText.trim().length > 0 &&
+                      !reviewError && (
+                        <button
+                          onClick={saveReviewWithKifu}
+                          className="btn btn-active text-xs px-3 py-1.5"
+                        >
+                          {t.reviewSave}
+                        </button>
+                      )}
+                    {!reviewReadOnly &&
+                      !reviewLoading &&
+                      (reviewError || reviewText.length > 0) && (
+                        <button onClick={startReview} className="btn text-xs px-3 py-1.5">
+                          {t.reviewRegenerate}
+                        </button>
+                      )}
                   </div>
                 </div>
               </div>
@@ -1855,6 +2261,49 @@ export default function App() {
                     </button>
                   </div>
                 </section>
+
+                {/* Save slot — story mode only */}
+                {gameMode === 'ai' && aiMode === 'story' && (
+                  <section className="mb-6">
+                    <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                      {t.slotPickerTitle}
+                      <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                        — {t.slotPickerSubtitle}
+                      </span>
+                    </h3>
+                    {activeSlot ? (
+                      <div className="px-3 py-2.5 bg-amber-200/[0.04] border border-amber-200/20 rounded-sm flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="jp-display text-amber-100/95 text-sm truncate">
+                            {activeSlot.name}
+                          </div>
+                          <div className="jp-display text-amber-200/65 text-[11px] mt-0.5">
+                            {t.slotProgress(activeSlot.storyProgress)} ・ ♥ {activeSlot.lives}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setSettingsOpen(false);
+                            setSlotPickerOpen(true);
+                          }}
+                          className="btn text-xs px-3 py-1.5"
+                        >
+                          {t.slotSwitch}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setSettingsOpen(false);
+                          setSlotPickerOpen(true);
+                        }}
+                        className="btn w-full"
+                      >
+                        {t.slotChooseFirst}
+                      </button>
+                    )}
+                  </section>
+                )}
 
                 <section className="mb-7">
                   <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
@@ -2195,6 +2644,16 @@ export default function App() {
         </div>
       </div>
       )}
+
+      <SlotPicker
+        open={slotPickerOpen}
+        slots={slots}
+        activeSlotId={activeSlotId}
+        onSelect={selectSlot}
+        onClose={() => setSlotPickerOpen(false)}
+        onSlotsChanged={setSlots}
+        t={t}
+      />
     </>
   );
 }

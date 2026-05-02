@@ -43,6 +43,8 @@ interface PersistedSlotV1 {
   storyProgress: number;
   counts: { black: number; white: number };
   result: Color | typeof EmptyT | null;
+  /** Optional Claude review text saved with the kifu. */
+  review?: string;
 }
 
 export type PersistedSlot = PersistedSlotV1;
@@ -175,5 +177,6 @@ function migrateSlot(raw: unknown): PersistedSlot | null {
       raw.result === 1 || raw.result === -1 || raw.result === 0 || raw.result === null
         ? (raw.result as PersistedSlot['result'])
         : null,
+    review: typeof raw.review === 'string' ? raw.review : undefined,
   };
 }

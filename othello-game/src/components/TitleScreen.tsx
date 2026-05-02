@@ -13,6 +13,11 @@ interface TitleScreenProps {
   t: Messages;
   locale: Locale;
   onLocaleChange: (locale: Locale) => void;
+  /** Active save slot (if any). Shown on the Story card so the user
+   *  knows which save resumes when they tap. */
+  activeSlot: { name: string; lives: number; storyProgress: number } | null;
+  /** Opens the slot picker so the user can switch save. */
+  onSwitchSlot: () => void;
 }
 
 export function TitleScreen({
@@ -22,6 +27,8 @@ export function TitleScreen({
   t,
   locale,
   onLocaleChange,
+  activeSlot,
+  onSwitchSlot,
 }: TitleScreenProps) {
   const hasProgress = storyProgress > 0 && storyProgress < 20;
   const completed = storyProgress >= 20;
@@ -100,6 +107,31 @@ export function TitleScreen({
           <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4">
             {t.titleStoryDesc}
           </p>
+          {activeSlot && (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSwitchSlot();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onSwitchSlot();
+                }
+              }}
+              className="mb-3 px-2.5 py-2 bg-amber-200/[0.05] border border-amber-200/20 rounded-sm flex items-center justify-between gap-2 hover:bg-amber-200/[0.08]"
+            >
+              <span className="jp-display text-amber-100/90 text-xs truncate">
+                {t.slotInUseFooter(activeSlot.name, activeSlot.lives)}
+              </span>
+              <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">
+                {t.slotSwitch} ▸
+              </span>
+            </div>
+          )}
           {hasProgress && (
             <div className="mt-auto pt-3 border-t border-amber-200/15">
               <div className="flex items-center justify-between mb-1.5">
