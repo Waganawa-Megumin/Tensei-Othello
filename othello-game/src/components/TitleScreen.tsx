@@ -4,7 +4,7 @@ import type { Locale, Messages } from '../i18n/messages';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.19.1 · gameover-jumps-to-replay';
+const BUILD_TAG = 'v0.20.0 · chapter-browser';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

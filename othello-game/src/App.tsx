@@ -629,6 +629,14 @@ export default function App() {
    */
   const currentSlotKeyRef = useRef<string | null>(null);
 
+  /**
+   * Chapter being viewed inside the Settings → Story panel. Lets the
+   * user browse past chapters they've already cleared without disturbing
+   * `storyProgress`. Reset to the current frontier whenever the
+   * settings modal opens so they always start "where they are".
+   */
+  const [chapterCursor, setChapterCursor] = useState(1);
+
   // UI state
   const [hintMove, setHintMove] = useState<Move | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -984,6 +992,16 @@ export default function App() {
     setHintMove(null);
   }, [currentColor]);
 
+  // Park the chapter cursor on the player's current frontier whenever
+  // the settings modal opens so they always land on "where they are"
+  // before deciding to browse backward.
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const max = Math.min(Math.max(storyProgress + 1, 1), 20);
+    setChapterCursor(max);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settingsOpen]);
+
   // Android / browser back button: close the topmost layer instead of
   // exiting the PWA. Each "layer" pushes a history entry so popstate
   // brings us back one step. Order of priority: review -> modal ->
@@ -1299,6 +1317,25 @@ export default function App() {
   function selectCharacter(idx: number) {
     setComputerChar(idx);
     setLevel(COMPUTERS[idx].level);
+  }
+
+  /**
+   * Launch a match for a specific story chapter from the Settings
+   * panel's chapter browser. When the chapter is the current frontier
+   * the match runs as story mode (a win advances `storyProgress`);
+   * for already-cleared chapters it runs as a free match against the
+   * same opponent so the player's progress stays put.
+   */
+  function startStoryChapter(level: number, isFrontier: boolean) {
+    const idx = COMPUTERS.findIndex((c) => c.level === level);
+    if (idx < 0) return;
+    setComputerChar(idx);
+    setLevel(level);
+    setGameMode('ai');
+    setAiMode(isFrontier ? 'story' : 'free');
+    setSettingsOpen(false);
+    reset();
+    setScreen('game');
   }
 
   /* ----- Post-game review ----- */
@@ -2991,9 +3028,22 @@ export default function App() {
 
                       {aiMode === 'story' && (() => {
                         const isComplete = storyProgress >= 20;
-                        const targetLevel = isComplete ? 20 : storyProgress + 1;
-                        const oppIdx = COMPUTERS.findIndex((c) => c.level === targetLevel);
+                        const maxCursor = Math.min(
+                          Math.max(storyProgress + 1, 1),
+                          20,
+                        );
+                        const cursor = Math.min(
+                          Math.max(chapterCursor, 1),
+                          maxCursor,
+                        );
+                        const targetLevel = cursor;
+                        const oppIdx = COMPUTERS.findIndex(
+                          (c) => c.level === targetLevel,
+                        );
                         const opp = COMPUTERS[oppIdx];
+                        const isFrontier = !isComplete && cursor === storyProgress + 1;
+                        const isPast = cursor <= storyProgress;
+                        const showEnding = isComplete && cursor === 20;
                         return (
                           <div className="space-y-4 mb-2">
                             <div>
@@ -3011,48 +3061,100 @@ export default function App() {
                                     key={i}
                                     className={`flex-1 h-1.5 rounded-full transition-colors ${
                                       i < storyProgress ? 'bg-amber-400/90' : 'bg-zinc-800/60'
-                                    }`}
+                                    } ${i + 1 === cursor ? 'ring-1 ring-amber-200/80' : ''}`}
                                   />
                                 ))}
                               </div>
                             </div>
 
-                            {storyProgress === 0 && (
+                            {/* Chapter navigation row. Lets the player step
+                                through cleared chapters without disturbing
+                                the saved progress. */}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() =>
+                                  setChapterCursor((c) => Math.max(1, c - 1))
+                                }
+                                disabled={cursor <= 1}
+                                className="btn text-xs px-3 py-1.5"
+                                title={t.chapterNavPrev}
+                              >
+                                ◀ {t.chapterNavPrev}
+                              </button>
+                              <div className="flex-1 text-center latin-display italic text-amber-200/70 text-xs tracking-wider">
+                                {t.chapterCounter(cursor, maxCursor)}
+                                {isFrontier && (
+                                  <span className="text-amber-200/55 ml-1">
+                                    {t.chapterCurrentBadge}
+                                  </span>
+                                )}
+                                {isPast && (
+                                  <span className="text-emerald-300/70 ml-1">
+                                    {t.chapterClearedBadge}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={() =>
+                                  setChapterCursor((c) =>
+                                    Math.min(maxCursor, c + 1),
+                                  )
+                                }
+                                disabled={cursor >= maxCursor}
+                                className="btn text-xs px-3 py-1.5"
+                                title={t.chapterNavNext}
+                              >
+                                {t.chapterNavNext} ▶
+                              </button>
+                            </div>
+
+                            {cursor !== maxCursor && (
+                              <div className="flex justify-center">
+                                <button
+                                  onClick={() => setChapterCursor(maxCursor)}
+                                  className="btn text-xs"
+                                >
+                                  {t.chapterNavLatest}
+                                </button>
+                              </div>
+                            )}
+
+                            {storyProgress === 0 && cursor === 1 && (
                               <p className="jp-display italic text-amber-200/55 text-xs md:text-sm leading-relaxed whitespace-pre-line">
                                 {t.storyIntro}
                               </p>
                             )}
 
-                            {!isComplete ? (
-                              <div className="border border-amber-200/30 bg-amber-200/[0.04] rounded-sm p-4">
-                                <div className="latin-display italic ornament text-[10px] uppercase mb-2">
-                                  — Chapter {targetLevel} —
-                                </div>
-                                <ChapterArt src={opp.chapterArt} alt={opp.name} />
-                                <div className="flex items-center gap-3 mb-3">
-                                  <AvatarBadge
-                                    kanji={opp.kanji}
-                                    idx={oppIdx + 100}
-                                    image={opp.image}
-                                    size="md"
-                                  />
-                                  <div className="min-w-0">
-                                    <div className="jp-display text-amber-100 text-base md:text-lg truncate">
-                                      {t.footerChapter(targetLevel, opp.name)}
-                                    </div>
-                                    <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">
-                                      Lv.{opp.level} {getLevelLabel(opp.level, t)}
-                                    </div>
+                            <div className="border border-amber-200/30 bg-amber-200/[0.04] rounded-sm p-4">
+                              <div className="latin-display italic ornament text-[10px] uppercase mb-2">
+                                — Chapter {targetLevel} —
+                              </div>
+                              <ChapterArt src={opp.chapterArt} alt={opp.name} />
+                              <div className="flex items-center gap-3 mb-3">
+                                <AvatarBadge
+                                  kanji={opp.kanji}
+                                  idx={oppIdx + 100}
+                                  image={opp.image}
+                                  size="md"
+                                />
+                                <div className="min-w-0">
+                                  <div className="jp-display text-amber-100 text-base md:text-lg truncate">
+                                    {t.footerChapter(targetLevel, opp.name)}
+                                  </div>
+                                  <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">
+                                    Lv.{opp.level} {getLevelLabel(opp.level, t)}
                                   </div>
                                 </div>
-                                <p className="jp-display text-amber-100/80 text-sm leading-relaxed">
-                                  {t.storyChapters[storyProgress]}
-                                </p>
-                                <p className="jp-display italic text-amber-200/55 text-xs mt-2">
-                                  「{opp.quote}」
-                                </p>
                               </div>
-                            ) : (
+                              <p className="jp-display text-amber-100/80 text-sm leading-relaxed">
+                                {t.storyChapters[cursor - 1]}
+                              </p>
+                              <p className="jp-display italic text-amber-200/55 text-xs mt-2">
+                                「{opp.quote}」
+                              </p>
+                            </div>
+
+                            {showEnding && (
                               <div className="border border-amber-400/50 bg-amber-300/[0.06] rounded-sm p-4 text-center">
                                 <div className="latin-display italic ornament text-[10px] uppercase mb-3">
                                   — {t.storyComplete.replace(/—/g, '').trim()} —
@@ -3066,10 +3168,26 @@ export default function App() {
                               </div>
                             )}
 
+                            <button
+                              onClick={() =>
+                                startStoryChapter(cursor, isFrontier)
+                              }
+                              className={`btn w-full ${isFrontier ? 'btn-active' : ''}`}
+                            >
+                              {isFrontier
+                                ? t.chapterPlayCurrent
+                                : t.chapterPlayReplay}
+                            </button>
+
                             {storyProgress > 0 && (
-                              <button onClick={resetStoryProgress} className="btn text-xs">
-                                {t.retryStoryFromStart}
-                              </button>
+                              <div className="flex justify-end">
+                                <button
+                                  onClick={resetStoryProgress}
+                                  className="btn text-xs opacity-70"
+                                >
+                                  {t.retryStoryFromStart}
+                                </button>
+                              </div>
                             )}
                           </div>
                         );

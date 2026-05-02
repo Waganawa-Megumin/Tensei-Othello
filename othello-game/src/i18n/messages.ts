@@ -63,6 +63,16 @@ export interface Messages {
   storyEncouragement: string;
   nextOpponentIs: (name: string) => string;
 
+  // Settings -> Story chapter browser
+  chapterNavPrev: string;
+  chapterNavNext: string;
+  chapterNavLatest: string;
+  chapterPlayCurrent: string;
+  chapterPlayReplay: string;
+  chapterCurrentBadge: string;
+  chapterClearedBadge: string;
+  chapterCounter: (n: number, max: number) => string;
+
   // Match info modal
   matchInfo: string;
   mode: string;
@@ -271,6 +281,15 @@ export const ja: Messages = {
   retryStoryFromStart: 'ストーリーを最初から',
   storyEncouragement: 'まだ届かぬか…もう一度挑むがよい',
   nextOpponentIs: (name) => `次の対戦相手は 『${name}』`,
+
+  chapterNavPrev: '前章',
+  chapterNavNext: '次章',
+  chapterNavLatest: '最新の章へ',
+  chapterPlayCurrent: 'この章で対局を始める',
+  chapterPlayReplay: 'この章を復習対局',
+  chapterCurrentBadge: '（現在）',
+  chapterClearedBadge: '（クリア済）',
+  chapterCounter: (n, max) => `第${n}章 / 第${max}章`,
 
   matchInfo: '対局情報',
   mode: 'Mode',
@@ -499,6 +518,15 @@ export const en: Messages = {
   retryStoryFromStart: 'Restart the story',
   storyEncouragement: 'Not yet — try again.',
   nextOpponentIs: (name) => `Next opponent: ${name}`,
+
+  chapterNavPrev: 'Prev',
+  chapterNavNext: 'Next',
+  chapterNavLatest: 'Jump to latest',
+  chapterPlayCurrent: 'Start this chapter',
+  chapterPlayReplay: 'Replay this chapter',
+  chapterCurrentBadge: '(current)',
+  chapterClearedBadge: '(cleared)',
+  chapterCounter: (n, max) => `Chapter ${n} / ${max}`,
 
   matchInfo: 'Match Info',
   mode: 'Mode',

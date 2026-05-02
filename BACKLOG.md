@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.19.1)
+Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.0)
 
 ---
 
@@ -44,6 +44,14 @@ Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.19.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **設定画面に章ブラウザー（過去の章を進捗を変えずに閲覧・復習）**
+      — completed: 2026-05-02 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — `chapterCursor` を導入。設定モーダル開封時に
+      `storyProgress + 1`（クリア済みの最大章）に park。◀/▶ ナビゲーシ
+      ョンで過去章を閲覧可能。「最新の章へ」で frontier に戻る。クリア
+      済み章は free モードで対局し進捗不変、frontier 章は従来通り story
+      モード。「ストーリーを最初から」は破壊的アクションとして小さく右
+      下に格下げ。`v0.20.0`
 - [x] **GameOver の「対戦棋譜を読み込む」を 1-click 化** — completed:
       2026-05-02 — by: `claude/othello-ui-autosave-bPnmY` — commit:
       (next push) — `loadCurrentMatchKifu` 追加。`currentSlotKeyRef` から
