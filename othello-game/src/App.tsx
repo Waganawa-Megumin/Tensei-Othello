@@ -589,8 +589,12 @@ export default function App() {
     };
   }, []);
 
-  // Sync opponent character/level to story progress when in story mode
+  // Sync opponent character/level to story progress when in story mode.
+  // Skip while a saved kifu is being viewed — otherwise the opponent we
+  // restored from the slot gets immediately overwritten with the user's
+  // current chapter's opponent.
   useEffect(() => {
+    if (loadedKifuView) return;
     if (aiMode === 'story' && gameMode === 'ai') {
       const targetLevel = Math.min(Math.max(storyProgress + 1, 1), 20);
       const idx = COMPUTERS.findIndex((c) => c.level === targetLevel);
@@ -599,7 +603,7 @@ export default function App() {
         setLevel(targetLevel);
       }
     }
-  }, [aiMode, storyProgress, gameMode]);
+  }, [aiMode, storyProgress, gameMode, loadedKifuView]);
 
   // Auto-pass — passInfo intentionally NOT in deps: including it would
   // trigger the cleanup function on every state change and clear our own
@@ -958,7 +962,8 @@ export default function App() {
     void storageDeleteSlot(key).then(loadSavedSlots);
   }
 
-  function loadKifuMoves(savedKifu: MoveRecord[]) {
+  function loadKifuMoves(slot: SavedSlot) {
+    const savedKifu = slot.kifu ?? [];
     let b = createInitialBoard();
     for (const m of savedKifu) {
       const next = applyMove(b, m.row, m.col, m.color);
@@ -978,6 +983,19 @@ export default function App() {
     setResigned(null);
     setKifuOpen(false);
     ai.cancel();
+    // Restore the match context the kifu was saved in so the player
+    // panels show the actual opponent (and level badge) rather than
+    // whatever chapter the user is currently up to.
+    if (
+      typeof slot.computerChar === 'number' &&
+      slot.computerChar >= 0 &&
+      slot.computerChar < COMPUTERS.length
+    ) {
+      setComputerChar(slot.computerChar);
+    }
+    if (typeof slot.level === 'number' && slot.level >= 1 && slot.level <= 20) {
+      setLevel(slot.level);
+    }
     setLoadedKifuView(true);
     setResultRecorded(true);
   }
@@ -1850,6 +1868,27 @@ export default function App() {
             );
           })()}
 
+          {/* Loaded-kifu review banner. Replaces the gameOver modal
+              while a saved kifu is being inspected so the user can:
+              - read the kifu log via Info
+              - generate / view a Claude review
+              - close the view to start a fresh game */}
+          {loadedKifuView && !infoOpen && !kifuOpen && !reviewOpen && !settingsOpen && (
+            <div className="fixed left-1/2 -translate-x-1/2 bottom-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-sm border border-amber-200/30 bg-zinc-950/85 backdrop-blur-sm shadow-lg">
+              <span className="latin-display italic text-amber-200/70 text-[11px] tracking-[0.25em] uppercase pr-1">
+                {t.kifuViewingLabel}
+              </span>
+              {gameMode === 'ai' && kifu.length > 0 && (
+                <button onClick={startReview} className="btn text-xs px-3 py-1.5">
+                  {t.reviewMatchButton}
+                </button>
+              )}
+              <button onClick={reset} className="btn text-xs px-3 py-1.5">
+                {t.kifuViewingClose}
+              </button>
+            </div>
+          )}
+
           {/* Match info modal */}
           {infoOpen && (
             <div className="modal-bg fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-2 md:p-6">
@@ -2105,7 +2144,7 @@ export default function App() {
                               </button>
                             )}
                             <button
-                              onClick={() => loadKifuMoves(slot.kifu ?? [])}
+                              onClick={() => loadKifuMoves(slot)}
                               className="btn text-xs px-3 py-1.5"
                               title={t.loadButton}
                             >

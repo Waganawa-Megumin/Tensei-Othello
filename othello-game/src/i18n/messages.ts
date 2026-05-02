@@ -159,6 +159,10 @@ export interface Messages {
   reviewSavedAt: (timestamp: string) => string;
   reviewSavedIndicator: string;
 
+  // Loaded-kifu review-mode overlay
+  kifuViewingLabel: string;
+  kifuViewingClose: string;
+
   // Save slots (story mode)
   slotPickerTitle: string;
   slotPickerSubtitle: string;
@@ -359,6 +363,9 @@ export const ja: Messages = {
   reviewSavedAt: (timestamp) => `保存日時：${timestamp}`,
   reviewSavedIndicator: 'レビューあり',
 
+  kifuViewingLabel: '棋譜を閲覧中',
+  kifuViewingClose: '閲覧を終了',
+
   slotPickerTitle: 'セーブを選ぶ',
   slotPickerSubtitle: 'Choose a save',
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
@@ -558,6 +565,9 @@ your journey on the board reaches its close.`,
   reviewViewSaved: 'View review',
   reviewSavedAt: (timestamp) => `Saved at: ${timestamp}`,
   reviewSavedIndicator: 'review attached',
+
+  kifuViewingLabel: 'Viewing kifu',
+  kifuViewingClose: 'Close',
 
   slotPickerTitle: 'Choose a Save',
   slotPickerSubtitle: 'Save Slots',

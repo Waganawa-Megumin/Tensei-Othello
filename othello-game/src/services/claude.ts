@@ -110,34 +110,41 @@ function streamMessage(
       const decoder = new TextDecoder();
       let buffer = '';
 
+      const handleSseLine = (raw: string) => {
+        const line = raw.trim();
+        if (!line.startsWith('data:')) return;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') return;
+        try {
+          const event = JSON.parse(payload) as {
+            type?: string;
+            delta?: { type?: string; text?: string };
+          };
+          if (
+            event.type === 'content_block_delta' &&
+            event.delta?.type === 'text_delta' &&
+            typeof event.delta.text === 'string'
+          ) {
+            callbacks.onText(event.delta.text);
+          }
+        } catch {
+          /* ignore unparseable SSE chunk */
+        }
+      };
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
-        for (const raw of lines) {
-          const line = raw.trim();
-          if (!line.startsWith('data:')) continue;
-          const payload = line.slice(5).trim();
-          if (!payload || payload === '[DONE]') continue;
-          try {
-            const event = JSON.parse(payload) as {
-              type?: string;
-              delta?: { type?: string; text?: string };
-            };
-            if (
-              event.type === 'content_block_delta' &&
-              event.delta?.type === 'text_delta' &&
-              typeof event.delta.text === 'string'
-            ) {
-              callbacks.onText(event.delta.text);
-            }
-          } catch {
-            /* ignore unparseable SSE chunk */
-          }
-        }
+        for (const raw of lines) handleSseLine(raw);
       }
+      // Flush any final partial line that didn't end with '\n'. Without
+      // this, the last text_delta in a stream that closes mid-line is
+      // lost — which manifests as a review that gets cut off near the
+      // end.
+      if (buffer.length > 0) handleSseLine(buffer);
       callbacks.onDone();
     } catch (err) {
       if (controller.signal.aborted) return;
@@ -160,9 +167,12 @@ export function streamReview(
   return streamMessage(
     {
       // Sonnet 4.6 strikes the right balance between coherence over a
-      // 60-move game and per-call cost (~$0.02 per review).
+      // 60-move game and per-call cost (~$0.02 per review). 3000 tokens
+      // gives the review enough headroom to cover opening / midgame /
+      // endgame plus key turning points without truncating; reviews
+      // usually land around 1.5–2.5k tokens.
       model: 'claude-sonnet-4-6',
-      max_tokens: 1500,
+      max_tokens: 3000,
       system: [
         {
           type: 'text',
