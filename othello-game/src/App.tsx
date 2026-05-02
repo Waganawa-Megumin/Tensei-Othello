@@ -835,12 +835,8 @@ export default function App() {
         }
 
         .board-felt {
-          background:
-            radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.10), transparent 55%),
-            radial-gradient(ellipse at 70% 85%, rgba(0,0,0,0.12), transparent 60%),
-            linear-gradient(135deg, #2f7a5e 0%, #1d5240 100%);
+          background: #267a5e;
           box-shadow:
-            inset 0 0 24px rgba(0,0,0,0.20),
             0 14px 28px -10px rgba(0,0,0,0.55),
             0 0 0 6px #2a1f14,
             0 0 0 7px #c9a961,
