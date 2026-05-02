@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.19.0)
+Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.19.1)
 
 ---
 
@@ -44,9 +44,14 @@ Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.19.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **GameOver の「対戦棋譜を読み込む」を 1-click 化** — completed:
+      2026-05-02 — by: `claude/othello-ui-autosave-bPnmY` — commit:
+      (next push) — `loadCurrentMatchKifu` 追加。`currentSlotKeyRef` から
+      自動保存スロットを直接ロードしてリプレイ画面へ飛ぶ。kifu ライブラ
+      リを経由しない。`v0.19.1`
 - [x] **棋譜・レビュー自動保存 + 注釈ハイライト強化 + GameOver から棋譜
       ライブラリへ** — completed: 2026-05-02 — by:
-      `claude/othello-ui-autosave-bPnmY` — commit: (next push) — 対局終了
+      `claude/othello-ui-autosave-bPnmY` — commit: `7aefc4c` — 対局終了
       時に棋譜を自動保存し、レビュー生成完了時にも同じスロットへ自動で
       `reviewAnnotations` を patch（`updateSlot` 追加）。kifu モーダルから
       手動保存フォームを撤去、レビューモーダルから「保存」ボタンも撤去。

@@ -1266,6 +1266,23 @@ export default function App() {
     }
   }
 
+  /** GameOver "対戦棋譜を読み込む" shortcut: jump straight into the
+   *  loaded-kifu replay view for the match that just ended (i.e. the
+   *  slot the auto-save effect recorded), skipping the library modal.
+   *  Falls back to opening the library if the auto-save key isn't set
+   *  yet or the slot has gone missing. */
+  async function loadCurrentMatchKifu() {
+    const key = currentSlotKeyRef.current;
+    const slots = await listSlots();
+    setSavedSlots(slots);
+    const slot = key ? slots.find((s) => s.key === key) ?? null : null;
+    if (slot) {
+      loadKifuMoves(slot);
+    } else {
+      setKifuOpen(true);
+    }
+  }
+
   /* ----- Hint ----- */
 
   function toggleHint() {
@@ -2122,10 +2139,7 @@ export default function App() {
                           {t.reviewMatchButton}
                         </button>
                         <button
-                          onClick={() => {
-                            loadSavedSlots();
-                            setKifuOpen(true);
-                          }}
+                          onClick={() => void loadCurrentMatchKifu()}
                           className="btn"
                         >
                           {t.gameOverViewKifu}
@@ -2332,10 +2346,7 @@ export default function App() {
                         {t.reviewMatchButton}
                       </button>
                       <button
-                        onClick={() => {
-                          loadSavedSlots();
-                          setKifuOpen(true);
-                        }}
+                        onClick={() => void loadCurrentMatchKifu()}
                         className="btn"
                       >
                         {t.gameOverViewKifu}
