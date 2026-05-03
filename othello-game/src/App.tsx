@@ -2513,39 +2513,44 @@ export default function App() {
           align-items: center;
           justify-content: center;
           border: 4px solid #c9a961;
-          box-shadow:
-            0 12px 26px rgba(0, 0, 0, 0.55),
-            0 0 32px rgba(201, 169, 97, 0.28);
+          /* Matte finish: just a soft offset drop shadow for depth,
+             no amber rim glow. Keeps the disc reading flat. */
+          box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
           transition: background-color 280ms cubic-bezier(0.4, 0, 0.6, 1);
           animation: coin-2d-pop-in 0.3s ease-out;
         }
+        /* Matte black face — neutral charcoal, not glossy ink. */
         .coin-2d-b {
-          background: #1a1a1a;
+          background: #1f1d18;
         }
+        /* Matte cream face — warm, low luminance, no sheen. */
         .coin-2d-w {
-          /* Warm cream rather than pure white — same readable
-             "white side" identity but ~40% lower luminance so the
-             flips don't strobe against the dark backdrop. */
-          background: #e8d8a8;
+          background: #d6c79a;
         }
-        /* The pip is a small accent dot in the centre of each face
-           so the two sides feel like distinct designs, not just
-           recolours of the same blank disc. Pip also cross-fades
-           on flip so it follows the disc smoothly. */
+        /* Pip is gold on both faces (matches the rim) so the rim and
+           centre form a single visual family. The contrast that
+           identifies the side comes from the disc background, not
+           the pip colour. */
         .coin-2d-pip {
-          width: 24px;
-          height: 24px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
-          transition: background-color 280ms cubic-bezier(0.4, 0, 0.6, 1),
-                      box-shadow 280ms cubic-bezier(0.4, 0, 0.6, 1);
+          background: #c9a961;
+          transition: opacity 280ms cubic-bezier(0.4, 0, 0.6, 1);
         }
         .coin-2d-b .coin-2d-pip {
-          background: #c9a961;
-          box-shadow: 0 0 10px rgba(201, 169, 97, 0.4);
+          /* Slightly brighter pip on the dark face so it reads
+             without resorting to a glow. */
+          background: #d8b96d;
+          opacity: 1;
         }
         .coin-2d-w .coin-2d-pip {
-          background: #3a2d1c;
-          box-shadow: 0 0 0 1px rgba(58, 45, 28, 0.4);
+          /* On the cream face the rim-tone pip would visually
+             merge — drop it a half-step to a deeper gold so it
+             still reads as a centre point, while staying in the
+             same gold family as the rim. */
+          background: #b08a3f;
+          opacity: 1;
         }
         @keyframes coin-2d-pop-in {
           from { transform: scale(0.55); opacity: 0; }

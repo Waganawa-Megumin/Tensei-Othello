@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.2)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.3)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.2)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイントス：マット仕上げ＋金縁・中央 pip を金系で統一** —
+      completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — 白面の中央 pip が深焦茶 (#3a2d1c) で
+      浮いているとの指摘。両面とも pip を金系に統一（黒面 #d8b96d、
+      白面 #b08a3f、いずれも縁の #c9a961 と同色族）して鑑のように
+      まとまるように。さらに mat 化として、`box-shadow` の amber 外周
+      glow と pip の glow を完全削除し、ドロップシャドウ 1 本だけに。
+      背景色も艶を抜いて `#1f1d18` / `#d6c79a` に微調整。`v0.25.3`
 - [x] **コイントスのチカチカ感を緩和（コントラスト・速度両方下げ）**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — v0.25.1 の純白 #fefdf6 ↔ 漆黒 #050505
