@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.1)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.2)
 
 ---
 
@@ -66,6 +66,15 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイントスのチカチカ感を緩和（コントラスト・速度両方下げ）**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — v0.25.1 の純白 #fefdf6 ↔ 漆黒 #050505
+      の高速反転（11 回 / 1.8 秒 ≈ 6Hz）が眩しすぎて目に刺さるとの
+      指摘。3 軸で対処: (1) 色のコントラスト緩和 — 黒 #1a1a1a +
+      白 #e8d8a8（暖色クリーム、輝度大幅減）、(2) transition を
+      60ms → 280ms に延長して flip 間隔より長くし常に中間階調で
+      クロスフェード、(3) flip 回数 11 → 7 回に削減。Pip も同じ
+      280ms transition。眩しい点滅から穏やかな脈動に。`v0.25.2`
 - [x] **コイントスを 3D → 2D 色トグル方式に作り直し（白黒判別問題の
       根本解決）** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —

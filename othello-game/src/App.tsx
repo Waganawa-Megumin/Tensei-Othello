@@ -755,10 +755,13 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
     setPhase('spin');
     setFace('B');
     const timers: number[] = [];
-    // Cumulative timestamps for each flip — accelerate then ease out
-    // so the last few flips read clearly. Final flip at 1800ms locks
-    // onto the actual result.
-    const flipMoments = [120, 240, 360, 480, 620, 770, 940, 1130, 1340, 1570, 1800];
+    // Cumulative timestamps for each flip. Fewer than the previous
+    // pass (7 instead of 11) and spread further apart so the
+    // 280ms cross-fade transition has time to dominate — the eye
+    // perceives a continuous warm oscillation instead of high-
+    // contrast strobing. Final flip at 2000ms locks onto the
+    // actual result.
+    const flipMoments = [240, 480, 740, 1020, 1320, 1640, 2000];
     flipMoments.forEach((ms, i) => {
       // First flip lands on white (result === BLACK or not), then
       // toggles every step. The penultimate one is the opposite of
@@ -776,9 +779,9 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
     timers.push(
       window.setTimeout(() => {
         if (!cancelled) setPhase('reveal');
-      }, 2000),
+      }, 2200),
     );
-    timers.push(window.setTimeout(onComplete, 3500));
+    timers.push(window.setTimeout(onComplete, 3700));
     return () => {
       cancelled = true;
       timers.forEach((t) => window.clearTimeout(t));
@@ -2488,16 +2491,19 @@ export default function App() {
         }
 
         /* Coin toss used by <FirstPlayerRoll> to decide first/second.
-           Deliberately *not* a 3D coin — past attempts at preserve-3d
-           + backface-visibility + Y-rotation reliably broke on parts
-           of mobile Chrome (the white face never appeared). Now it's
-           a single 2D disc whose class swaps between coin-2d-b /
+           A single 2D disc whose class swaps between coin-2d-b /
            coin-2d-w via React state on a setTimeout schedule. The
-           class-driven background colour change is the most reliable
+           class-driven background-color change is the most reliable
            CSS update there is, so what JS thinks the face is == what
-           the browser actually paints. The illusion of "spinning"
-           comes from the rapid colour flips themselves plus a brief
-           scaleX squeeze on every change. */
+           the browser actually paints (no preserve-3d / backface-
+           visibility quirks).
+           The 280ms cross-fade transition is intentionally longer
+           than the 240ms minimum gap between flips, so the disc
+           never reaches a fully-saturated black or white during the
+           toss — the eye sees a smooth warm oscillation instead of
+           high-contrast strobing. The endpoint colours themselves
+           are also softened (charcoal, not pure black; warm cream,
+           not pure white) to keep luminance change gentle. */
         .coin-2d {
           width: 132px;
           height: 132px;
@@ -2508,38 +2514,38 @@ export default function App() {
           justify-content: center;
           border: 4px solid #c9a961;
           box-shadow:
-            0 14px 30px rgba(0, 0, 0, 0.7),
-            0 0 42px rgba(201, 169, 97, 0.3);
-          /* The transition acts on every class swap, so each flip
-             reads as a quick scaleX squeeze + colour change. */
-          transition: background-color 60ms linear, transform 90ms ease;
-          animation: coin-2d-pop-in 0.28s ease-out;
+            0 12px 26px rgba(0, 0, 0, 0.55),
+            0 0 32px rgba(201, 169, 97, 0.28);
+          transition: background-color 280ms cubic-bezier(0.4, 0, 0.6, 1);
+          animation: coin-2d-pop-in 0.3s ease-out;
         }
         .coin-2d-b {
-          background: #050505;
-          transform: scaleX(1);
+          background: #1a1a1a;
         }
         .coin-2d-w {
-          background: #fefdf6;
-          transform: scaleX(1);
+          /* Warm cream rather than pure white — same readable
+             "white side" identity but ~40% lower luminance so the
+             flips don't strobe against the dark backdrop. */
+          background: #e8d8a8;
         }
         /* The pip is a small accent dot in the centre of each face
-           so the two sides feel like distinct "designs", not just
-           recolours of the same blank disc. */
+           so the two sides feel like distinct designs, not just
+           recolours of the same blank disc. Pip also cross-fades
+           on flip so it follows the disc smoothly. */
         .coin-2d-pip {
           width: 24px;
           height: 24px;
           border-radius: 50%;
-          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+          transition: background-color 280ms cubic-bezier(0.4, 0, 0.6, 1),
+                      box-shadow 280ms cubic-bezier(0.4, 0, 0.6, 1);
         }
         .coin-2d-b .coin-2d-pip {
           background: #c9a961;
-          box-shadow: 0 0 0 1px rgba(201, 169, 97, 0.45),
-                      0 0 12px rgba(201, 169, 97, 0.55);
+          box-shadow: 0 0 10px rgba(201, 169, 97, 0.4);
         }
         .coin-2d-w .coin-2d-pip {
-          background: #2a1f14;
-          box-shadow: 0 0 0 1px rgba(42, 31, 20, 0.6);
+          background: #3a2d1c;
+          box-shadow: 0 0 0 1px rgba(58, 45, 28, 0.4);
         }
         @keyframes coin-2d-pop-in {
           from { transform: scale(0.55); opacity: 0; }
