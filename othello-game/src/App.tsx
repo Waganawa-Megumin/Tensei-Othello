@@ -2242,7 +2242,7 @@ export default function App() {
         }
         @keyframes panel-breathing {
           0%, 100% { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0); }
-          50%      { box-shadow: 0 0 22px 2px rgba(252, 211, 77, 0.32); }
+          50%      { box-shadow: 0 0 12px 0 rgba(252, 211, 77, 0.32); }
         }
 
         /* Brush-stroke decorative divider. Inline-SVG <BrushDivider>
@@ -2436,7 +2436,7 @@ export default function App() {
           </div>
 
           {/* Score panels + board */}
-          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 landscape:gap-4 items-center">
+          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 items-center">
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}

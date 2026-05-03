@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.3)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.4)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.3)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **プレイヤーパネル枠と盤面外枠の重なり修正** — completed:
+      2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` — commit:
+      (next push) — portrait モバイルでパネル下端と盤面外枠（13px の
+      多層 box-shadow リング）が `gap-3` 12px しかなく、active パネル
+      の breathing グロー (`0 0 22px 2px`) が外側 24px 広がって視覚的に
+      衝突。グリッド gap を `gap-3` → `gap-5` (12→20px) に拡大、
+      breathing keyframe のグロー半径を 22px+spread 2px → 12px+spread 0px
+      に縮小して、リングどうしの呼吸スペースを確保。`v0.23.4`
 - [x] **`<BrushDivider>` と `<SumiThinking>` も inline SVG 化（mask-image
       経由の描画失敗を一掃）** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) — 桜と
