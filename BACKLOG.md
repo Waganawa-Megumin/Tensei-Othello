@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.3)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.4)
 
 ---
 
@@ -66,6 +66,29 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.3)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **横向き UX の追い込み: 文字を読めるサイズに・矩形グロー漏れを止める・
+      盤面と進捗バーの隙間** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      v0.27.3 で「アバターの円が光らずに、消えたはずの区画の四角が
+      光る」「文字が小さくて暗い」「盤面と下の比率インジケータが
+      被ってる」3 件のフィードバック対応。
+      (1) `.player-panel-active` の box-shadow パルスが Tailwind の
+      `[animation:none]` 同等 specificity で打ち消せていなかった →
+      `<style>` ブロックに `@media (max-width: 1023.98px) and
+      (orientation: landscape)` で `animation: none !important;
+      box-shadow: none !important` を仕込んで確実に抑止。
+      (2) アバターのアクティブリングが矩形に見えていた → ラッパー
+      `<div>` を `inline-flex` でアバター実寸に縮め、`.avatar-active-ring`
+      に `border-radius: 9999px` を明示してグローを正円に。グロー強度
+      も 14px / 0.42 → 18px 4px / 0.55 に上げて視認性アップ。
+      (3) 横向きパネル内の文字サイズと色を底上げ:
+      名前 `text-base → text-lg`、Lv/♥ `text-[10px] amber/55 → text-xs
+      amber/85`、引用 `text-[10px] → text-xs`、駒数 `text-2xl → text-4xl`、
+      アバター隣の石マーカー `w-4 → w-5`。FirstPlayerRoll の「握り石」
+      ラベルも `text-[10px] amber/70 → text-sm amber-100/90`、結果文の
+      色を `#f5e8c8 / #ebe2cc → #fff5d6 / #f5ebd0` で明るく。
+      (4) `max-lg:landscape:mt-2 → mt-4` で盤面と進捗バーの間に余裕。
+      `v0.27.4`
 - [x] **横向きパネルの金枠を撤去・左右の余白を埋める** — completed:
       2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` — commit:
       (next push) — v0.27.2 では `[140px auto 140px] + justify-center`

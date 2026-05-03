@@ -794,7 +794,7 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm first-player-roll">
       <div className="text-center px-6">
-        <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-amber-200/70">
+        <div className="latin-display italic ornament text-sm md:text-base uppercase mb-3 text-amber-100/90 tracking-[0.2em]">
           — {t.firstPlayerRollLabel} —
         </div>
         <div className={`coin-2d coin-2d-${face === 'B' ? 'b' : 'w'} mx-auto mb-5`}>
@@ -804,14 +804,14 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
           className={`jp-display tracking-[0.18em] text-2xl md:text-3xl font-bold transition-opacity duration-500 ${
             phase === 'reveal' ? 'opacity-100' : 'opacity-0'
           }`}
-          style={{ color: isFirst ? '#f5e8c8' : '#ebe2cc' }}
+          style={{ color: isFirst ? '#fff5d6' : '#f5ebd0' }}
         >
           {isFirst
             ? t.firstPlayerRollFirst(playerName)
             : t.firstPlayerRollSecond(playerName)}
         </div>
         <p
-          className={`jp-display italic text-amber-200/65 text-xs md:text-sm mt-3 transition-opacity duration-500 ${
+          className={`jp-display italic text-amber-100/90 text-sm md:text-base mt-3 transition-opacity duration-500 ${
             phase === 'reveal' ? 'opacity-100' : 'opacity-0'
           }`}
         >
@@ -927,26 +927,28 @@ function PlayerPanel({
         {/* Avatar is the focal point — go large in landscape phones,
             and when this side has the turn we ring the circle in gold
             (the panel itself has no border in landscape, so the ring
-            is the active indicator). */}
-        <div className={isActive ? 'avatar-active-ring rounded-full' : ''}>
+            is the active indicator). The wrapper is inline-flex so it
+            shrinks to the avatar's circle — otherwise box-shadow would
+            paint a wide rectangle around the column. */}
+        <div className={`inline-flex ${isActive ? 'avatar-active-ring' : ''}`}>
           <AvatarBadge kanji={kanji} idx={idx} image={image} size="lg" selected={isActive} />
         </div>
-        <div className="flex flex-col items-center gap-1 min-w-0 max-w-full">
-          <span className="jp-display text-amber-100/95 text-base font-medium truncate max-w-full inline-flex items-center gap-1">
+        <div className="flex flex-col items-center gap-1.5 min-w-0 max-w-full">
+          <span className="jp-display text-amber-100 text-lg font-medium truncate max-w-full inline-flex items-center gap-1.5">
             {name}
             {thinking && <SumiThinking />}
           </span>
           {(level !== undefined || lives !== undefined) && (
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex items-baseline gap-2">
               {level !== undefined && (
-                <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
+                <span className="latin-display italic text-amber-200/85 text-xs tracking-wider">
                   Lv.{level}
                 </span>
               )}
               {lives !== undefined && (
                 <span
-                  className={`latin-display tabular-nums text-[10px] tracking-wider ${
-                    lives === 0 ? 'text-red-300/95' : 'text-amber-200/85'
+                  className={`latin-display tabular-nums text-xs tracking-wider ${
+                    lives === 0 ? 'text-red-300' : 'text-amber-100/95'
                   }`}
                   title={`Lives: ${lives}`}
                   aria-label={`Lives: ${lives}`}
@@ -957,14 +959,14 @@ function PlayerPanel({
             </div>
           )}
           {quote && !compact && (
-            <span className="jp-display text-amber-200/65 text-[10px] italic truncate max-w-full block">
+            <span className="jp-display text-amber-100/85 text-xs italic truncate max-w-full block">
               「{quote}」
             </span>
           )}
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-4 h-4 rounded-full" style={stoneStyle} />
-          <div className="latin-display text-2xl text-amber-100 tabular-nums font-medium leading-none">
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="w-5 h-5 rounded-full" style={stoneStyle} />
+          <div className="latin-display text-4xl text-amber-100 tabular-nums font-medium leading-none">
             {count}
           </div>
         </div>
@@ -2559,10 +2561,25 @@ export default function App() {
            circle so the breathing glow doesn't read as a frame. */
         .avatar-active-ring {
           animation: avatar-breathing 2.4s ease-in-out infinite;
+          border-radius: 9999px;
         }
         @keyframes avatar-breathing {
           0%, 100% { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0); }
-          50%      { box-shadow: 0 0 14px 2px rgba(252, 211, 77, 0.42); }
+          50%      { box-shadow: 0 0 18px 4px rgba(252, 211, 77, 0.55); }
+        }
+
+        /* Force-suppress the rectangular panel breathing glow in
+           landscape phone — Tailwind's [animation:none] arbitrary
+           class ties on specificity with .player-panel-active, and
+           since this <style> block is injected by React after
+           Tailwind's stylesheet, .player-panel-active was winning
+           the cascade and the rectangle kept pulsing through the
+           "removed" border. Media query gives us a clean override. */
+        @media (max-width: 1023.98px) and (orientation: landscape) {
+          .player-panel-active {
+            animation: none !important;
+            box-shadow: none !important;
+          }
         }
 
         /* Coin toss used by <FirstPlayerRoll> to decide first/second.
@@ -3011,7 +3028,7 @@ export default function App() {
           </div>
 
           {/* Progress bar */}
-          <div className={`max-w-xl mx-auto ${loadedKifuView ? 'mt-3' : 'mt-7 max-lg:landscape:mt-2'}`}>
+          <div className={`max-w-xl mx-auto ${loadedKifuView ? 'mt-3' : 'mt-7 max-lg:landscape:mt-4'}`}>
             {/* `key={kifu.length}` forces a re-mount on every move so the
                  progress-flash animation replays — the player gets a
                  brief gold halo confirming the bar just moved. */}
