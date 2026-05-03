@@ -906,14 +906,14 @@ function PlayerPanel({
         };
   return (
     <div
-      className={`relative border rounded-sm transition-all ${
+      className={`relative border rounded-sm transition-all max-lg:landscape:border-0 max-lg:landscape:rounded-none ${
         isActive
-          ? 'border-amber-200/60 bg-amber-200/[0.04] player-panel-active'
+          ? 'border-amber-200/60 bg-amber-200/[0.04] player-panel-active max-lg:landscape:bg-transparent max-lg:landscape:[animation:none]'
           : 'border-amber-200/15'
       } ${
         compact
           ? 'px-4 md:px-5 py-1.5 md:py-2'
-          : 'px-4 md:px-5 py-3 md:py-3.5 max-lg:landscape:p-2'
+          : 'px-4 md:px-5 py-3 md:py-3.5 max-lg:landscape:px-1 max-lg:landscape:py-2'
       }`}
     >
       {/* ──────────────────────────────────────────────────────────
@@ -924,8 +924,13 @@ function PlayerPanel({
           rather than centering and leaving space empty.
           ────────────────────────────────────────────────────────── */}
       <div className="hidden max-lg:landscape:flex flex-col items-center text-center gap-2 h-full justify-between py-2">
-        {/* Avatar is the focal point — go large in landscape phones. */}
-        <AvatarBadge kanji={kanji} idx={idx} image={image} size="lg" />
+        {/* Avatar is the focal point — go large in landscape phones,
+            and when this side has the turn we ring the circle in gold
+            (the panel itself has no border in landscape, so the ring
+            is the active indicator). */}
+        <div className={isActive ? 'avatar-active-ring rounded-full' : ''}>
+          <AvatarBadge kanji={kanji} idx={idx} image={image} size="lg" selected={isActive} />
+        </div>
         <div className="flex flex-col items-center gap-1 min-w-0 max-w-full">
           <span className="jp-display text-amber-100/95 text-base font-medium truncate max-w-full inline-flex items-center gap-1">
             {name}
@@ -1007,7 +1012,7 @@ function PlayerPanel({
         </div>
       </div>
       {isActive && (
-        <div className="absolute -bottom-px left-4 right-4 h-px bg-gradient-to-r from-transparent via-amber-200/70 to-transparent" />
+        <div className="absolute -bottom-px left-4 right-4 h-px bg-gradient-to-r from-transparent via-amber-200/70 to-transparent max-lg:landscape:hidden" />
       )}
     </div>
   );
@@ -2548,6 +2553,18 @@ export default function App() {
           50%      { box-shadow: 0 0 12px 0 rgba(252, 211, 77, 0.32); }
         }
 
+        /* Landscape uses a circular halo around the avatar instead of
+           a rectangular border around the whole panel — the user asked
+           us to drop "rectangle thinking" in landscape. The shape is a
+           circle so the breathing glow doesn't read as a frame. */
+        .avatar-active-ring {
+          animation: avatar-breathing 2.4s ease-in-out infinite;
+        }
+        @keyframes avatar-breathing {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0); }
+          50%      { box-shadow: 0 0 14px 2px rgba(252, 211, 77, 0.42); }
+        }
+
         /* Coin toss used by <FirstPlayerRoll> to decide first/second.
            A single 2D disc whose class swaps between coin-2d-b /
            coin-2d-w via React state on a setTimeout schedule. The
@@ -2825,7 +2842,7 @@ export default function App() {
           </div>
 
           {/* Score panels + board */}
-          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] max-lg:landscape:grid-cols-[140px_auto_140px] max-lg:landscape:justify-center gap-5 md:gap-6 landscape:gap-4 max-lg:landscape:gap-5 items-center max-lg:landscape:items-stretch">
+          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 max-lg:landscape:gap-6 items-center max-lg:landscape:items-stretch">
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}

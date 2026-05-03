@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.2)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.3)
 
 ---
 
@@ -66,6 +66,17 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.2)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **横向きパネルの金枠を撤去・左右の余白を埋める** — completed:
+      2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` — commit:
+      (next push) — v0.27.2 では `[140px auto 140px] + justify-center`
+      にしたため、パネル幅が固定で左右に大きな余白が残っていた。
+      `landscape:[1fr_auto_1fr]` のフォールバックに任せて両側パネルを
+      横幅いっぱいまで広げる。同時に「金の枠と長方形」の囲みを landscape
+      では撤去（`max-lg:landscape:border-0` + `bg-transparent` + 呼吸
+      アニメ無効化 + bottom underline 非表示）。手番インジケータは円形に
+      改め、アクティブ側のアバターを 2px ゴールドリング＋柔らかい
+      `box-shadow` 呼吸グローで示す（円形なのでパネル全体を矩形で囲わない）。
+      `v0.27.3`
 - [x] **横向きの盤面 overflow 修正＋パネルと盤面の隙間確保** —
       completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — 95vmin (374px) は URL bar 込みの実効
