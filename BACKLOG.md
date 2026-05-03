@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.1)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.2)
 
 ---
 
@@ -66,6 +66,16 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **桜紙吹雪が描画されない不具合を inline SVG 化で修正**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — `<ChapterClearConfetti>` の petal を CSS
+      `mask-image` 経由から inline `<svg>` 描画に変更。mask-image は
+      モバイル Safari の旧版で silent fail することがあり、`fill=
+      "currentColor"` のインライン SVG なら JS の color style がそのまま
+      ストロークに反映される。視認性も底上げ: 36 → 48 枚、サイズ 18px
+      → 18-30px ランダム、drop-shadow を追加。petal-{1,2,3}.svg の
+      パスデータは PETAL_PATHS const に内包したので素材ファイルへの
+      ランタイム依存はなし（仕様書通りに納品されたパスを保持）。`v0.23.2`
 - [x] **リプレイ strip の視認性復帰（wagara が透けて見えていた）**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — v0.23.0 で stage-bg に和柄 watermark を

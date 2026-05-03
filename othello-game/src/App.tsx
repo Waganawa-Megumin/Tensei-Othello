@@ -560,12 +560,19 @@ interface PlayerPanelProps {
 
 /**
  * Sakura-petal celebration overlay. Mounted while a chapter clear is
- * being shown so 36 petals drift down past the GameOver modal in
- * staggered, randomized arcs. CSS handles the falling motion and
- * lateral sway so the component itself just emits the array of div
- * placeholders. When `petal-{1,2,3}.svg` assets arrive, swap the
- * `.petal::before` background to `url(/ornaments/petal-N.svg)`.
+ * being shown so ~48 petals drift down past the GameOver modal in
+ * staggered, randomized arcs. The petal silhouette is rendered as
+ * inline SVG (with `fill="currentColor"`) so the inline `color`
+ * style fully drives the tint without depending on CSS `mask-image`
+ * — the latter has known rendering quirks on older Safari versions
+ * and can silently fail to load through the build's asset pipeline.
  */
+const PETAL_PATHS: Record<1 | 2 | 3, string> = {
+  1: 'M50 91C31 75 18 57 22 39c3-14 15-25 29-29l7 16 11-13c13 8 19 24 13 39-6 16-19 28-32 39z',
+  2: 'M63 88C43 79 25 63 22 43c-2-15 7-29 22-36l6 17 13-13c13 6 20 19 18 33-2 21-14 35-18 44z',
+  3: 'M35 89C24 70 24 49 36 32c8-12 19-18 32-20l-2 18 15-8c7 14 4 31-7 43-14 15-35 15-39 24z',
+};
+
 function ChapterClearConfetti({ active }: { active: boolean }) {
   const petals = useMemo(() => {
     if (!active) return [] as ReadonlyArray<{
@@ -576,18 +583,20 @@ function ChapterClearConfetti({ active }: { active: boolean }) {
       rotation: number;
       drift: number;
       tone: string;
+      size: number;
       variant: 1 | 2 | 3;
     }>;
-    const tones = ['#fbbcd0', '#fde9f3', '#f9c8d8', '#f5e8c8'];
+    const tones = ['#fbbcd0', '#fde9f3', '#f9c8d8', '#f5b9cc', '#f5e8c8'];
     const variants: Array<1 | 2 | 3> = [1, 2, 3];
-    return Array.from({ length: 36 }, (_, i) => ({
+    return Array.from({ length: 48 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
-      delay: Math.random() * 0.9,
-      duration: 2.4 + Math.random() * 2.2,
+      delay: Math.random() * 1.2,
+      duration: 2.6 + Math.random() * 2.6,
       rotation: Math.random() * 360,
-      drift: 18 + Math.random() * 24,
+      drift: 22 + Math.random() * 30,
       tone: tones[Math.floor(Math.random() * tones.length)],
+      size: 18 + Math.random() * 12,
       variant: variants[Math.floor(Math.random() * variants.length)],
     }));
   }, [active]);
@@ -595,20 +604,25 @@ function ChapterClearConfetti({ active }: { active: boolean }) {
   return (
     <div className="fixed inset-0 pointer-events-none z-[45] overflow-hidden" aria-hidden="true">
       {petals.map((p) => (
-        <span
+        <svg
           key={p.id}
-          className={`petal petal-v${p.variant}`}
+          className="petal-svg"
+          viewBox="0 0 100 100"
+          width={p.size}
+          height={p.size}
           style={
             {
               left: `${p.left}%`,
               color: p.tone,
               animationDelay: `${p.delay}s`,
-              animationDuration: `${p.duration}s, ${p.duration * 0.6}s`,
+              animationDuration: `${p.duration}s, ${p.duration * 0.55}s`,
               transform: `rotate(${p.rotation}deg)`,
               '--petal-drift': `${p.drift}px`,
             } as CSSProperties
           }
-        />
+        >
+          <path d={PETAL_PATHS[p.variant]} fill="currentColor" />
+        </svg>
       ))}
     </div>
   );
@@ -2200,44 +2214,25 @@ export default function App() {
         }
 
         /* Sakura petal celebration. Two animations run together:
-           petal-fall drops the element from above the viewport to
-           below it, while petal-sway rocks the inline margin to
-           imitate wind drift. Shape comes from petal-{1,2,3}.svg via
-           CSS mask; the inline color from JS becomes the petal tint
-           through background-color: currentColor. */
-        .petal {
+           petal-fall drops the SVG from above the viewport to
+           below it, while petal-sway rocks the horizontal position to
+           imitate wind drift. Petal shapes are inline SVG with
+           fill="currentColor" so the JS-assigned color drives the
+           tint directly — no mask-image, no asset-pipeline reliance,
+           consistent across browsers. */
+        .petal-svg {
           --petal-drift: 22px;
           position: absolute;
-          top: -24px;
-          width: 18px;
-          height: 18px;
-          background-color: currentColor;
-          -webkit-mask-position: center;
-                  mask-position: center;
-          -webkit-mask-repeat: no-repeat;
-                  mask-repeat: no-repeat;
-          -webkit-mask-size: contain;
-                  mask-size: contain;
-          opacity: 0.92;
+          top: -32px;
+          opacity: 0.95;
           will-change: transform, top;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
           animation:
             petal-fall linear forwards,
             petal-sway ease-in-out infinite alternate;
         }
-        .petal-v1 {
-          -webkit-mask-image: url('/ornaments/petal-1.svg');
-                  mask-image: url('/ornaments/petal-1.svg');
-        }
-        .petal-v2 {
-          -webkit-mask-image: url('/ornaments/petal-2.svg');
-                  mask-image: url('/ornaments/petal-2.svg');
-        }
-        .petal-v3 {
-          -webkit-mask-image: url('/ornaments/petal-3.svg');
-                  mask-image: url('/ornaments/petal-3.svg');
-        }
         @keyframes petal-fall {
-          0%   { top: -32px; }
+          0%   { top: -40px; }
           100% { top: 110vh; }
         }
         @keyframes petal-sway {
