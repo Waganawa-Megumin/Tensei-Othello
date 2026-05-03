@@ -724,15 +724,20 @@ interface FirstPlayerRollProps {
 }
 
 function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
-  // Phase 1 (0-1.0s): coin spinning, no label yet.
-  // Phase 2 (1.0-2.0s): coin landed, label visible.
-  // After 2.0s: dismiss.
+  // Timing schedule (total 3.5s, designed for legibility):
+  //   0–200ms : coin scales in from 0.55 → 1.0 with a small overshoot
+  //   200–2000ms : 3 visible turns, ease-out cubic so the last ~25%
+  //              clearly decelerates and the landing face is readable
+  //              (rotates a half-turn farther for the white outcome
+  //              so it stops on the right face — see --coin-final)
+  //   2000–3500ms : reveal text fades in and the coin holds steady
+  //   3500ms : dismiss
   const [phase, setPhase] = useState<'spin' | 'reveal'>('spin');
   useEffect(() => {
     if (!active) return;
     setPhase('spin');
-    const reveal = window.setTimeout(() => setPhase('reveal'), 1000);
-    const finish = window.setTimeout(onComplete, 2000);
+    const reveal = window.setTimeout(() => setPhase('reveal'), 2000);
+    const finish = window.setTimeout(onComplete, 3500);
     return () => {
       window.clearTimeout(reveal);
       window.clearTimeout(finish);
@@ -740,13 +745,20 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
   }, [active, onComplete]);
   if (!active || result === null) return null;
   const isFirst = result === BLACK;
+  // Final rotation lines up with the chosen face: 1080° (3 turns)
+  // shows the front (black) face; 1260° (3.5 turns) shows the back
+  // (white) face. Without this the coin would always settle on black.
+  const finalRotation = isFirst ? '1080deg' : '1260deg';
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm first-player-roll">
       <div className="text-center px-6">
         <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-amber-200/70">
           — {t.firstPlayerRollLabel} —
         </div>
-        <div className="coin-flip mx-auto mb-5">
+        <div
+          className="coin-flip mx-auto mb-5"
+          style={{ ['--coin-final' as 'color']: finalRotation } as CSSProperties}
+        >
           <div className="coin-face coin-face-black" />
           <div className="coin-face coin-face-white" />
         </div>
@@ -2399,21 +2411,25 @@ export default function App() {
         /* Coin toss used by <FirstPlayerRoll> to decide first/second.
            A 3D disc spinning on the Y-axis with a black face and a
            white face, both rendered as radial gradients (matches the
-           in-board piece styling). 1080deg of rotation in 1s settles
-           with both faces having flashed past the camera so the spin
-           reads clearly. The reveal text below tells the player which
-           side they took. */
+           in-board piece styling). 2.0s of rotation with strong ease-
+           out so the final 25% visibly decelerates and the player can
+           read which face landed up. The total rotation is set per
+           result via --coin-final (1080deg = lands on black,
+           1260deg = lands on white) so the result is honest, not just
+           visual. */
         .coin-flip {
-          width: 96px;
-          height: 96px;
+          width: 110px;
+          height: 110px;
           position: relative;
           transform-style: preserve-3d;
-          animation: coin-spin 1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+          --coin-final: 1080deg;
+          animation: coin-spin 2s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
         }
         @keyframes coin-spin {
-          0%   { transform: rotateY(0deg)    rotateX(-6deg) scale(0.85); }
-          60%  { transform: rotateY(900deg)  rotateX(-6deg) scale(1.05); }
-          100% { transform: rotateY(1080deg) rotateX(-6deg) scale(1); }
+          0%   { transform: rotateY(0deg) rotateX(-8deg) scale(0.55); opacity: 0; }
+          10%  { transform: rotateY(60deg) rotateX(-8deg) scale(1.05); opacity: 1; }
+          70%  { transform: rotateY(calc(var(--coin-final) - 240deg)) rotateX(-8deg) scale(1); opacity: 1; }
+          100% { transform: rotateY(var(--coin-final)) rotateX(-8deg) scale(1); opacity: 1; }
         }
         .coin-face {
           position: absolute;

@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.2)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.3)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.2)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイントスのモーション・時間調整＋着地面の正しさ修正** —
+      completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — 1080°/1秒 = 目で追えない速度だった上、
+      回転角が常に 1080° 固定で結果が白でも黒面で止まるバグあり。
+      回転を 2.0 秒・強 ease-out に延ばし、結果に応じて 1080°（黒）
+      or 1260°（白）まで回って正しい face で停止するように。0.2 秒
+      の scale-in 入場 + 結果表示時間も 1.5 秒に延長して合計 3.5 秒。
+      コイン径を 96px → 110px、最大ハイライトも強化。`v0.24.3`
 - [x] **握り石演出を撤回、白黒コイントス（CSS 3D）に戻す + 新素材
       依頼に差し替え** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
