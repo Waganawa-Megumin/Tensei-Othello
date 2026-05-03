@@ -86,6 +86,14 @@ export interface Messages {
   firstPlayerRollFirstHint: string;
   firstPlayerRollSecondHint: string;
 
+  // Settings → coin style
+  coinStyleLabel: string;
+  coinStyleSubtitle: string;
+  coinStyle2D: string;
+  coinStyle2DDesc: string;
+  coinStyleFantasy: string;
+  coinStyleFantasyDesc: string;
+
   // Match info modal
   matchInfo: string;
   mode: string;
@@ -337,6 +345,13 @@ export const ja: Messages = {
   firstPlayerRollSecond: (name) => `${name}：後攻（白）`,
   firstPlayerRollFirstHint: '黒石を握った。先に石を打つ',
   firstPlayerRollSecondHint: '白石を握った。相手の手を読んで応える',
+
+  coinStyleLabel: 'コイン演出',
+  coinStyleSubtitle: '先攻後攻を決める瞬間の見た目',
+  coinStyle2D: '標準（2D）',
+  coinStyle2DDesc: 'シンプルな白黒の円盤がくるりと回る',
+  coinStyleFantasy: 'ファンタジー',
+  coinStyleFantasyDesc: '銀縁に紋様、淡い魔法陣でゆっくり着地',
 
   matchInfo: '対局情報',
   mode: 'Mode',
@@ -608,6 +623,13 @@ export const en: Messages = {
   firstPlayerRollSecond: (name) => `${name}: Second (White)`,
   firstPlayerRollFirstHint: 'You drew Black — you move first.',
   firstPlayerRollSecondHint: 'You drew White — read your opponent and respond.',
+
+  coinStyleLabel: 'Coin animation',
+  coinStyleSubtitle: 'How the first/second toss looks',
+  coinStyle2D: 'Classic (2D)',
+  coinStyle2DDesc: 'A clean black/white disc that spins to a stop.',
+  coinStyleFantasy: 'Fantasy',
+  coinStyleFantasyDesc: 'Silver-rimmed engraved coin lands on a soft magic ring.',
 
   matchInfo: 'Match Info',
   mode: 'Mode',

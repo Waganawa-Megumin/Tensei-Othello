@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.4)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.28.0)
 
 ---
 
@@ -66,6 +66,21 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.4)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **先攻後攻コイン演出にファンタジー版のオプション追加** —
+      completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — ユーザー納品の銀縁紋様コイン素材 8 種＋
+      魔法陣を `public/assets/othello/turn-coin/` に配置し、設定モー
+      ダルから `2d`（既定 = 既存）と `fantasy`（新規）を切替えられる
+      ようにした。状態は `othello:coin_style` で localStorage 永続化。
+      `FirstPlayerRoll` を style 指定でディスパッチする薄いラッパに
+      変え、内部に `TwoDCoinRoll`（従来）と `FantasyCoinRoll`（新規）
+      を並置。Fantasy 側は 8 フレームの画像差し替えで疑似 3D フリップ
+      を作り、決定後に淡い魔法陣リングを呼吸させる。素材は元 1254×1254
+      RGB（透過なし、白背景）だったので Pillow で 4 辺からフラッド
+      フィルしてα抽出 → 2px ガウシアンで縁を羽化 → 512×512 にダウン
+      サンプル → optimised PNG に変換（合計 15 MiB → 2.2 MiB）。
+      i18n キー追加: `coinStyleLabel/Subtitle/2D/2DDesc/Fantasy/FantasyDesc`
+      （ja/en 両方）。`v0.28.0`
 - [x] **横向き UX の追い込み: 文字を読めるサイズに・矩形グロー漏れを止める・
       盤面と進捗バーの隙間** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —

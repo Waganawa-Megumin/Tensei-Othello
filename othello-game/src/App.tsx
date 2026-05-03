@@ -725,16 +725,52 @@ function BrushDivider({
  * back oddly. A nicer hand-painted coin asset is queued in
  * docs/ui_motion_assets.md (依頼 #7) and will swap into the .coin-face
  * background-image when delivered.
+ *
+ * Two visual styles are available, switched by the `style` prop and
+ * surfaced as a setting:
+ *   - '2d':      the original 2-tone CSS disc (default)
+ *   - 'fantasy': image-driven flip using the user-supplied PNGs in
+ *                /assets/othello/turn-coin/ — silver-rimmed engraved
+ *                coins with a soft magic ring under them
  */
+export type CoinStyle = '2d' | 'fantasy';
+
+const COIN_STYLE_KEY = 'othello:coin_style';
+
+function loadCoinStyle(): CoinStyle {
+  try {
+    const v = window.localStorage.getItem(COIN_STYLE_KEY);
+    if (v === '2d' || v === 'fantasy') return v;
+  } catch {
+    /* ignore */
+  }
+  return '2d';
+}
+
+function saveCoinStyle(style: CoinStyle): void {
+  try {
+    window.localStorage.setItem(COIN_STYLE_KEY, style);
+  } catch {
+    /* ignore */
+  }
+}
+
 interface FirstPlayerRollProps {
   active: boolean;
   result: Color | null;
   playerName: string;
   onComplete: () => void;
   t: Messages;
+  /** Visual style. Default is the existing 2D disc. */
+  style?: CoinStyle;
 }
 
-function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
+function FirstPlayerRoll(props: FirstPlayerRollProps) {
+  if (props.style === 'fantasy') return <FantasyCoinRoll {...props} />;
+  return <TwoDCoinRoll {...props} />;
+}
+
+function TwoDCoinRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
   // Two state machines: which face is currently visible (B/W flips
   // back-and-forth during the toss), and whether the reveal text is
   // shown. Both are driven by setTimeouts because every prior
@@ -799,6 +835,113 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
         </div>
         <div className={`coin-2d coin-2d-${face === 'B' ? 'b' : 'w'} mx-auto mb-5`}>
           <span className="coin-2d-pip" />
+        </div>
+        <div
+          className={`jp-display tracking-[0.18em] text-2xl md:text-3xl font-bold transition-opacity duration-500 ${
+            phase === 'reveal' ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ color: isFirst ? '#fff5d6' : '#f5ebd0' }}
+        >
+          {isFirst
+            ? t.firstPlayerRollFirst(playerName)
+            : t.firstPlayerRollSecond(playerName)}
+        </div>
+        <p
+          className={`jp-display italic text-amber-100/90 text-sm md:text-base mt-3 transition-opacity duration-500 ${
+            phase === 'reveal' ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          {isFirst ? t.firstPlayerRollFirstHint : t.firstPlayerRollSecondHint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Fantasy variant of the coin toss: silver-rimmed engraved coins on a
+ * dim violet magic ring, image-swapped at staggered intervals so it
+ * reads as a slow tumble rather than a strobe. Falls back gracefully
+ * if a PNG fails to load (the surrounding ornament + result text still
+ * communicate the outcome).
+ *
+ * Schedule (total 3.7s, matches the 2D variant so callers don't need
+ * to special-case timing): 8 frames over 1.8s with light easing, then
+ * lock onto the result face, then 1.5s reveal hold.
+ */
+const FANTASY_ASSET_BASE = `${import.meta.env.BASE_URL}assets/othello/turn-coin/`;
+
+const FANTASY_FRAME_SEQUENCE = [
+  'turn-coin-black-front.png',
+  'turn-coin-black-tilt.png',
+  'turn-coin-edge.png',
+  'turn-coin-white-tilt.png',
+  'turn-coin-white-front.png',
+  'turn-coin-white-tilt-2.png',
+  'turn-coin-edge.png',
+  'turn-coin-black-tilt-2.png',
+];
+
+function FantasyCoinRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
+  const [phase, setPhase] = useState<'spin' | 'reveal'>('spin');
+  const [frameIdx, setFrameIdx] = useState(0);
+
+  useEffect(() => {
+    if (!active || result === null) return;
+    let cancelled = false;
+    setPhase('spin');
+    setFrameIdx(0);
+    const timers: number[] = [];
+    // Frame swap moments — accelerate then decelerate to mimic an
+    // actual flipping coin. Total spin time is ~1.8s.
+    const swapMoments = [120, 280, 460, 660, 880, 1140, 1440, 1800];
+    swapMoments.forEach((ms, i) => {
+      timers.push(
+        window.setTimeout(() => {
+          if (!cancelled) setFrameIdx(i + 1);
+        }, ms),
+      );
+    });
+    timers.push(
+      window.setTimeout(() => {
+        if (!cancelled) setPhase('reveal');
+      }, 2000),
+    );
+    timers.push(window.setTimeout(onComplete, 3700));
+    return () => {
+      cancelled = true;
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+  }, [active, result, onComplete]);
+
+  if (!active || result === null) return null;
+  const isFirst = result === BLACK;
+  const spinningFrame =
+    FANTASY_FRAME_SEQUENCE[frameIdx % FANTASY_FRAME_SEQUENCE.length];
+  const settledFrame =
+    isFirst ? 'turn-coin-black-result.png' : 'turn-coin-white-result.png';
+  const frame = phase === 'reveal' ? settledFrame : spinningFrame;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm first-player-roll">
+      <div className="text-center px-6">
+        <div className="latin-display italic ornament text-sm md:text-base uppercase mb-3 text-amber-100/90 tracking-[0.2em]">
+          — {t.firstPlayerRollLabel} —
+        </div>
+        <div className="fantasy-coin-stage mx-auto mb-5">
+          <img
+            src={`${FANTASY_ASSET_BASE}turn-coin-magic-ring.png`}
+            alt=""
+            className={`fantasy-coin-ring ${phase === 'reveal' ? 'is-settled' : 'is-spinning'}`}
+            draggable={false}
+            aria-hidden="true"
+          />
+          <img
+            src={`${FANTASY_ASSET_BASE}${frame}`}
+            alt=""
+            className={`fantasy-coin-face ${phase}`}
+            draggable={false}
+          />
         </div>
         <div
           className={`jp-display tracking-[0.18em] text-2xl md:text-3xl font-bold transition-opacity duration-500 ${
@@ -1125,6 +1268,15 @@ export default function App() {
    * side `playerColor` was just set to.
    */
   const [firstPlayerRoll, setFirstPlayerRoll] = useState<{ result: Color } | null>(null);
+
+  // Coin-toss visual style. Default is the simple 2D disc; users can
+  // opt into the image-based fantasy variant from Settings. Persisted
+  // to localStorage so the choice survives reloads.
+  const [coinStyle, setCoinStyleState] = useState<CoinStyle>(loadCoinStyle);
+  const setCoinStyle = useCallback((style: CoinStyle) => {
+    setCoinStyleState(style);
+    saveCoinStyle(style);
+  }, []);
 
   // Settings state
   const [gameMode, setGameMode] = useState<GameMode>('ai');
@@ -2659,6 +2811,84 @@ export default function App() {
           to   { opacity: 1; }
         }
 
+        /* Fantasy coin variant. The stage is a square that holds an
+           overlay magic ring (z=1) under the coin face (z=2). The ring
+           breathes softly while the coin spins, then bursts on settle.
+           Sized to fit comfortably on a phone in either orientation —
+           caps at 280px on tall viewports and shrinks to 56vmin on the
+           narrow side so it never crowds the side margins. */
+        .fantasy-coin-stage {
+          position: relative;
+          width: min(56vmin, 280px);
+          aspect-ratio: 1 / 1;
+          display: grid;
+          place-items: center;
+        }
+        .fantasy-coin-ring {
+          position: absolute;
+          inset: -8%;
+          width: 116%;
+          height: 116%;
+          object-fit: contain;
+          pointer-events: none;
+          opacity: 0;
+          transform: scale(0.85);
+          transition: opacity 0.45s ease, transform 0.65s ease;
+          filter: drop-shadow(0 0 18px rgba(170, 165, 235, 0.32));
+          z-index: 1;
+        }
+        .fantasy-coin-ring.is-spinning {
+          opacity: 0.65;
+          transform: scale(1);
+        }
+        .fantasy-coin-ring.is-settled {
+          opacity: 0.95;
+          transform: scale(1.06);
+          animation: fantasy-ring-pulse 1.6s ease-in-out infinite;
+        }
+        @keyframes fantasy-ring-pulse {
+          0%, 100% { opacity: 0.78; transform: scale(1.04); }
+          50%      { opacity: 1.00; transform: scale(1.10); }
+        }
+        .fantasy-coin-face {
+          position: relative;
+          z-index: 2;
+          width: 86%;
+          height: 86%;
+          object-fit: contain;
+          user-select: none;
+          pointer-events: none;
+          filter: drop-shadow(0 12px 22px rgba(20, 18, 32, 0.55));
+          animation: fantasy-coin-pop 0.32s ease-out;
+        }
+        .fantasy-coin-face.spin {
+          animation: fantasy-coin-pop 0.32s ease-out, fantasy-coin-tumble 1.9s ease-in-out;
+        }
+        .fantasy-coin-face.reveal {
+          animation: fantasy-coin-settle 0.55s cubic-bezier(0.2, 1.2, 0.3, 1);
+        }
+        @keyframes fantasy-coin-pop {
+          0%   { transform: scale(0.82); opacity: 0; }
+          100% { transform: scale(1);    opacity: 1; }
+        }
+        @keyframes fantasy-coin-tumble {
+          0%   { transform: translateY(0)   rotateZ(-3deg); }
+          50%  { transform: translateY(-6px) rotateZ(4deg); }
+          100% { transform: translateY(0)   rotateZ(0); }
+        }
+        @keyframes fantasy-coin-settle {
+          0%   { transform: translateY(-6px) scale(1.04); }
+          60%  { transform: translateY(2px)  scale(0.98); }
+          100% { transform: translateY(0)    scale(1); }
+        }
+        @media (orientation: landscape) and (max-height: 480px) {
+          /* On short landscape phones, shrink the stage so the result
+             text below it stays on screen. */
+          .fantasy-coin-stage {
+            width: min(36vh, 200px);
+          }
+        }
+
         /* Brush-stroke decorative divider. Inline-SVG <BrushDivider>
            strokes inherit color from this rule via currentColor, so
            a per-instance className like text-red-300/55 recolors
@@ -2826,6 +3056,7 @@ export default function App() {
           playerName={AVATARS[p1Avatar].name}
           onComplete={() => setFirstPlayerRoll(null)}
           t={t}
+          style={coinStyle}
         />
         <div className="relative max-w-5xl mx-auto px-4 py-6 max-lg:landscape:py-1 md:py-10">
           {/* Top icon toolbar */}
@@ -4153,6 +4384,41 @@ export default function App() {
                     >
                       English
                     </button>
+                  </div>
+                </section>
+
+                {/* Coin animation style — purely cosmetic, applies to
+                    the first/second toss overlay shown at game start. */}
+                <section className="mb-6">
+                  <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                    {t.coinStyleLabel}
+                    <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                      — {t.coinStyleSubtitle}
+                    </span>
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['2d', 'fantasy'] as const).map((style) => {
+                      const active = coinStyle === style;
+                      const label = style === '2d' ? t.coinStyle2D : t.coinStyleFantasy;
+                      const desc = style === '2d' ? t.coinStyle2DDesc : t.coinStyleFantasyDesc;
+                      return (
+                        <button
+                          key={style}
+                          onClick={() => setCoinStyle(style)}
+                          className={`text-left rounded-sm border py-2.5 px-3 transition-all ${
+                            active
+                              ? 'border-amber-200/70 bg-amber-200/[0.06] text-amber-100'
+                              : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02] text-amber-100/85'
+                          }`}
+                          aria-pressed={active}
+                        >
+                          <div className="jp-display text-sm tracking-wider">{label}</div>
+                          <div className="jp-display italic text-amber-200/70 text-[11px] mt-0.5 leading-snug">
+                            {desc}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </section>
 
