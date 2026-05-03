@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.2)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.22.0)
 
 ---
 
@@ -66,6 +66,17 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.2)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **モーション・エフェクト第 1 弾（挿絵待ちの間の UX 底上げ）**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — 7 件のコード演出: (1) スコア数字
+      ティッカー（`useAnimatedNumber` rAF interpolate）、(2) アクティブ
+      パネル呼吸グロー、(3) 着手セルの金色 ripple、(4) Sumi-e 風 3-dot
+      thinking インジケーター（`<SumiThinking>`）、(5) 章クリア桜
+      紙吹雪 36 枚（`<ChapterClearConfetti>`）、(6) modal-card 入場
+      `card-rise` + screen 遷移 `screen-fade`、(7) progress-bar の
+      change-flash。素材依頼仕様 5 件（divider / petal / favicon /
+      sumi brush / wagara tile）はプランファイルに記載済みで別 AI へ
+      発注予定。`v0.22.0`
 - [x] **リプレイ strip の jump-bad/good ボタンに色がつかない不具合修正**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — `.btn` クラスが inline `<style>` で `color`

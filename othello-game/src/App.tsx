@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
 } from 'react';
 import {
   AlertTriangle,
@@ -200,6 +201,42 @@ function colorChar(c: Color): 'B' | 'W' {
 
 function moveToNotation(m: Move): string {
   return `${String.fromCharCode(97 + m.col)}${m.row + 1}`;
+}
+
+/**
+ * Animate a number toward a target with an ease-out cubic over
+ * `durationMs`. Returns the in-flight integer so `<span>{value}</span>`
+ * counts up/down smoothly when the source changes (score flips,
+ * progress, etc.). Cleans up its rAF on unmount or when the target
+ * shifts mid-flight.
+ */
+function useAnimatedNumber(target: number, durationMs = 380): number {
+  const [display, setDisplay] = useState(target);
+  const fromRef = useRef(target);
+  const toRef = useRef(target);
+  const startRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (target === toRef.current) return;
+    fromRef.current = display;
+    toRef.current = target;
+    startRef.current = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - startRef.current) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      const v = Math.round(
+        fromRef.current + (toRef.current - fromRef.current) * eased,
+      );
+      setDisplay(v);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, durationMs]);
+
+  return display;
 }
 
 /* ---------------- Move-quality presentation ---------------- */
@@ -521,6 +558,77 @@ interface PlayerPanelProps {
   compact?: boolean;
 }
 
+/**
+ * Sakura-petal celebration overlay. Mounted while a chapter clear is
+ * being shown so 36 petals drift down past the GameOver modal in
+ * staggered, randomized arcs. CSS handles the falling motion and
+ * lateral sway so the component itself just emits the array of div
+ * placeholders. When `petal-{1,2,3}.svg` assets arrive, swap the
+ * `.petal::before` background to `url(/ornaments/petal-N.svg)`.
+ */
+function ChapterClearConfetti({ active }: { active: boolean }) {
+  const petals = useMemo(() => {
+    if (!active) return [] as ReadonlyArray<{
+      id: number;
+      left: number;
+      delay: number;
+      duration: number;
+      rotation: number;
+      drift: number;
+      tone: string;
+    }>;
+    const tones = ['#fbbcd0', '#fde9f3', '#f9c8d8', '#f5e8c8'];
+    return Array.from({ length: 36 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.9,
+      duration: 2.4 + Math.random() * 2.2,
+      rotation: Math.random() * 360,
+      drift: 18 + Math.random() * 24,
+      tone: tones[Math.floor(Math.random() * tones.length)],
+    }));
+  }, [active]);
+  if (!active) return null;
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[45] overflow-hidden" aria-hidden="true">
+      {petals.map((p) => (
+        <span
+          key={p.id}
+          className="petal"
+          style={
+            {
+              left: `${p.left}%`,
+              color: p.tone,
+              animationDelay: `${p.delay}s`,
+              animationDuration: `${p.duration}s, ${p.duration * 0.6}s`,
+              transform: `rotate(${p.rotation}deg)`,
+              '--petal-drift': `${p.drift}px`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Three-dot pulsing indicator used in place of the literal "…" while
+ * the AI is thinking. Drives a sumi-e-flavored cadence: each dot fades
+ * up and scales in turn, suggesting the brush dancing on the page.
+ * When the SVG brushstroke assets land we'll swap the inner spans for
+ * `<img src="/ornaments/sumi-thinking-{1..4}.svg">` cycled with the
+ * same timing.
+ */
+function SumiThinking() {
+  return (
+    <span className="sumi-thinking" aria-hidden="true">
+      <span />
+      <span />
+      <span />
+    </span>
+  );
+}
+
 function PlayerPanel({
   color,
   count,
@@ -540,7 +648,9 @@ function PlayerPanel({
       className={`relative px-4 md:px-5 border rounded-sm transition-all ${
         compact ? 'py-1.5 md:py-2' : 'py-3 md:py-3.5'
       } ${
-        isActive ? 'border-amber-200/60 bg-amber-200/[0.04]' : 'border-amber-200/15'
+        isActive
+          ? 'border-amber-200/60 bg-amber-200/[0.04] player-panel-active'
+          : 'border-amber-200/15'
       }`}
     >
       <div className="flex items-center gap-3 md:gap-4">
@@ -549,8 +659,8 @@ function PlayerPanel({
           <div className="flex items-baseline gap-2">
             <span className="jp-display text-amber-100/95 text-base md:text-lg truncate">
               {name}
-              {thinking ? '…' : ''}
             </span>
+            {thinking && <SumiThinking />}
             {level !== undefined && (
               <span className="latin-display italic text-amber-200/50 text-[11px] md:text-xs tracking-wider flex-shrink-0">
                 Lv.{level}
@@ -866,6 +976,13 @@ export default function App() {
     () => (displayBoard === board ? counts : countPieces(displayBoard)),
     [displayBoard, board, counts],
   );
+
+  // Score tickers — interpolate to the new disc counts so the panel and
+  // progress-bar labels visibly count up/down on every move (the
+  // captured stones flip into the score over the same ~0.4s window the
+  // CSS flip animation runs in, so they line up).
+  const animatedBlack = useAnimatedNumber(displayCounts.black);
+  const animatedWhite = useAnimatedNumber(displayCounts.white);
 
   const displayLastMove = useMemo<LastMove | null>(() => {
     if (!loadedKifuView || replayCursor === null) return lastMove;
@@ -1960,6 +2077,124 @@ export default function App() {
           50% { transform: scale(1.18); opacity: 1; }
         }
 
+        /* Outward ripple drawn on the just-placed cell. Goes through
+           one cycle then sticks at opacity 0 — the React re-mount via
+           key={kifu.length} replays it on the next move. */
+        .cell-ripple {
+          position: absolute; inset: 25%;
+          border: 2px solid rgba(201, 169, 97, 0.7);
+          border-radius: 50%;
+          animation: ripple-out 0.5s ease-out forwards;
+          pointer-events: none;
+        }
+        @keyframes ripple-out {
+          0%   { transform: scale(0.2); opacity: 0.85; }
+          100% { transform: scale(2.4); opacity: 0; }
+        }
+
+        /* Soft breathing glow around the active player's panel so the
+           current turn is unmistakable from across the board. The
+           color matches our amber accent so it reads as "lit by the
+           same lamp" as the felt highlight rather than warning red. */
+        .player-panel-active {
+          animation: panel-breathing 2.4s ease-in-out infinite;
+        }
+        @keyframes panel-breathing {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(252, 211, 77, 0); }
+          50%      { box-shadow: 0 0 22px 2px rgba(252, 211, 77, 0.32); }
+        }
+
+        /* Sumi-e flavored "thinking" indicator: three dots pulse in
+           sequence. Replaces the literal "…" the AI panel used to
+           show. The base background is amber so it sits naturally
+           beside Shippori Mincho display type. */
+        .sumi-thinking {
+          display: inline-flex;
+          gap: 5px;
+          align-items: center;
+          height: 1em;
+        }
+        .sumi-thinking > span {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: rgba(245, 232, 200, 0.85);
+          animation: sumi-pulse 1.4s ease-in-out infinite;
+        }
+        .sumi-thinking > span:nth-child(2) { animation-delay: 0.2s; }
+        .sumi-thinking > span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes sumi-pulse {
+          0%, 60%, 100% { opacity: 0.25; transform: scale(0.85); }
+          30%           { opacity: 1;    transform: scale(1.18); }
+        }
+
+        /* Sakura petal celebration. Two animations run together:
+           petal-fall drops the element from above the viewport to
+           below it, while petal-sway rocks the inline margin to
+           imitate wind drift. The placeholder shape is a 14x14
+           radial-gradient blossom; once petal-{1,2,3}.svg ship from
+           the asset request, swap the pseudo-element background to
+           the SVG. */
+        .petal {
+          --petal-drift: 22px;
+          position: absolute;
+          top: -24px;
+          width: 14px;
+          height: 14px;
+          background:
+            radial-gradient(ellipse at 50% 35%,
+              currentColor 0%,
+              currentColor 35%,
+              rgba(255, 255, 255, 0) 75%);
+          border-radius: 50% 0 50% 50%;
+          opacity: 0.95;
+          will-change: transform, top;
+          animation:
+            petal-fall linear forwards,
+            petal-sway ease-in-out infinite alternate;
+        }
+        @keyframes petal-fall {
+          0%   { top: -32px; }
+          100% { top: 110vh; }
+        }
+        @keyframes petal-sway {
+          from { margin-left: calc(var(--petal-drift) * -1); }
+          to   { margin-left: var(--petal-drift); }
+        }
+
+        /* Rising-card entrance for any modal that uses .modal-card.
+           Subtle 12px lift + 0.3s ease-out so opening modals doesn't
+           feel like a hard cut. */
+        .modal-card {
+          animation: card-rise 0.3s ease-out;
+        }
+        @keyframes card-rise {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Screen-level fade applied via key={screen} on the wrapper so
+           it remounts and replays. Kept short to not slow navigation. */
+        .screen-fade {
+          animation: screen-fade-in 0.35s ease-out;
+        }
+        @keyframes screen-fade-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Brief halo on the score progress bar when the kifu length
+           changes. Uses key={kifu.length} on the bar to remount and
+           replay this animation; pure cosmetic feedback for "your move
+           registered". */
+        .progress-flash {
+          animation: progress-flash 0.6s ease-out;
+        }
+        @keyframes progress-flash {
+          0%   { box-shadow: 0 0 0 0 rgba(245, 232, 200, 0); }
+          30%  { box-shadow: 0 0 12px 2px rgba(245, 232, 200, 0.5); }
+          100% { box-shadow: 0 0 0 0 rgba(245, 232, 200, 0); }
+        }
+
         .ornament {
           letter-spacing: 0.5em;
           color: rgba(201, 169, 97, 0.45);
@@ -2010,6 +2245,7 @@ export default function App() {
       `}</style>
 
       {screen === 'title' && (
+        <div key="title" className="screen-fade">
         <TitleScreen
           storyProgress={storyProgress}
           firstChapterName={COMPUTERS[0].name}
@@ -2028,10 +2264,11 @@ export default function App() {
           }
           onSwitchSlot={() => setSlotPickerOpen(true)}
         />
+        </div>
       )}
 
       {screen === 'game' && (
-      <div className="stage-bg min-h-screen w-full relative">
+      <div key="game" className="screen-fade stage-bg min-h-screen w-full relative">
         <div className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
           {/* Top icon toolbar */}
           <div className="grid grid-cols-8 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
@@ -2068,7 +2305,7 @@ export default function App() {
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}
-                count={displayCounts.black}
+                count={animatedBlack}
                 isActive={currentColor === BLACK && !gameOver && passInfo === null}
                 kanji={blackInfo.kanji}
                 idx={blackInfo.idx}
@@ -2167,6 +2404,14 @@ export default function App() {
                                   style={{ color: qStyle.ringColor }}
                                 />
                               )}
+                              {/* Brief outward gold ripple on every fresh
+                                  placement. `key={kifu.length}` forces a
+                                  re-mount so the 0.5s animation replays
+                                  on each new move; the loaded-kifu view
+                                  skips it (we want quiet stepping). */}
+                              {isLast && !loadedKifuView && (
+                                <div key={`ripple-${kifu.length}`} className="cell-ripple" />
+                              )}
                               {isLast && !cellAnnotation && (
                                 <div
                                   className={`last-move-ring${
@@ -2188,7 +2433,7 @@ export default function App() {
             <div className="md:order-3">
               <PlayerPanel
                 color={WHITE}
-                count={displayCounts.white}
+                count={animatedWhite}
                 isActive={currentColor === WHITE && !gameOver && passInfo === null}
                 kanji={whiteInfo.kanji}
                 idx={whiteInfo.idx}
@@ -2204,7 +2449,13 @@ export default function App() {
 
           {/* Progress bar */}
           <div className={`max-w-xl mx-auto ${loadedKifuView ? 'mt-3' : 'mt-7'}`}>
-            <div className="h-1.5 rounded-full overflow-hidden flex bg-amber-100/10 border border-amber-200/10">
+            {/* `key={kifu.length}` forces a re-mount on every move so the
+                 progress-flash animation replays — the player gets a
+                 brief gold halo confirming the bar just moved. */}
+            <div
+              key={kifu.length}
+              className="h-1.5 rounded-full overflow-hidden flex bg-amber-100/10 border border-amber-200/10 progress-flash"
+            >
               <div
                 className="transition-all duration-500 ease-out"
                 style={{
@@ -2221,8 +2472,8 @@ export default function App() {
               />
             </div>
             <div className="flex justify-between mt-1.5 latin-display italic text-amber-200/65 text-xs tracking-wider">
-              <span>{displayCounts.black} {t.black}</span>
-              <span>{t.white} {displayCounts.white}</span>
+              <span>{animatedBlack} {t.black}</span>
+              <span>{t.white} {animatedWhite}</span>
             </div>
           </div>
 
@@ -2513,6 +2764,10 @@ export default function App() {
 
             return (
               <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">
+                {/* Sakura confetti for any story-mode win (chapter clear
+                    OR full ending). Sits behind the modal card so the
+                    petals visibly drift past the score panel. */}
+                <ChapterClearConfetti active={justAdvanced} />
                 <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full text-center rounded-sm">
                   <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3">
                     {justCompletedStory
