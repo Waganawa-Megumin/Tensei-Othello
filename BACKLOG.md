@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.0)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.1)
 
 ---
 
@@ -66,6 +66,16 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **「握り石」演出を CSS コインフリップから inline SVG 4-frame
+      アニメに置き換え** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      ChatGPT 納品の `grip-{closed,opening,open-black,open-white}.svg`
+      を `public/ornaments/` に配置、これまでの方針通り inline SVG
+      で `<FirstPlayerRoll>` 内に取り込み（mask-image 経由を回避）。
+      0–500 ms: 握った拳 / 500–1000 ms: 拳が開きかけ・石の影が見える /
+      1000–2000 ms: 開いた手の上に黒石 or 白石、文言フェードイン。
+      `key={frame}` re-mount で各フレームに 0.32s の pop-in。
+      旧 `.coin-flip` / `.coin-face` CSS は削除。`v0.24.1`
 - [x] **先攻／後攻の選択 + 位置スワップ + 握り石コインフリップ演出**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — `playerColor` state を導入、人間が黒/白

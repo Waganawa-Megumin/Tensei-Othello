@@ -703,11 +703,12 @@ function BrushDivider({
 }
 
 /**
- * Coin-flip overlay shown at the start of a match whose first/second
- * assignment was randomized (story mode every chapter, free mode when
- * the player chose "ランダム"). Spins a stylized stone disc on the
- * Y-axis for ~1s, then settles on the chosen color and reveals
- * "あなた：先攻 (黒)" / "あなた：後攻 (白)" before auto-dismissing.
+ * "Grip the stone" overlay shown at the start of a match whose
+ * first/second assignment was randomized (story mode every chapter,
+ * free mode when the player chose "ランダム"). Cycles through 4 inline
+ * SVG frames (closed fist → fist opening → open palm with stone) over
+ * ~2s, then auto-dismisses. Frame paths are inlined so the animation
+ * never depends on /ornaments/grip-*.svg loading at runtime.
  */
 interface FirstPlayerRollProps {
   active: boolean;
@@ -717,18 +718,72 @@ interface FirstPlayerRollProps {
   t: Messages;
 }
 
+type GripFrame = 'closed' | 'opening' | 'open';
+
+function GripIcon({ frame, stone }: { frame: GripFrame; stone: Color }) {
+  // Inline SVG copies of public/ornaments/grip-*.svg. Stone fills are
+  // hardcoded to the canonical disc colors so the resolved side reads
+  // unambiguously regardless of CSS color inheritance.
+  const stoneFill = stone === BLACK ? '#0a0805' : '#ebe2cc';
+  if (frame === 'closed') {
+    return (
+      <svg viewBox="0 0 120 120" className="grip-svg">
+        <path
+          fill="currentColor"
+          d="M23 72c2-17 12-31 27-38 10-5 22-5 33 0 8 4 14 11 16 19 2 8 1 16-3 22-4 6-10 10-19 12-6 2-10 6-13 11l-4 8H42l2-10c1-6-1-10-5-13-6-4-11-9-14-16-1-4-2-8-2-12zm26-19c-4 2-8 6-10 10 6 0 11 1 16 4 5 3 10 4 16 4 5 0 10-1 15-4-3-4-6-7-11-9-9-4-18-5-26-1z"
+        />
+        <path
+          fill="currentColor"
+          d="M37 66c4-5 10-8 17-7 5 0 9 2 13 4 4 3 9 4 15 4 5 0 9-1 14-3-1 4-4 7-8 10-6 4-13 6-20 6-10 0-20-5-31-14z"
+        />
+      </svg>
+    );
+  }
+  if (frame === 'opening') {
+    return (
+      <svg viewBox="0 0 120 120" className="grip-svg">
+        <ellipse cx="64" cy="64" rx="13" ry="11" fill={stoneFill} />
+        <path
+          fill="currentColor"
+          d="M21 76c2-18 11-31 25-38 11-6 24-7 36-2 8 3 14 9 17 17 3 7 3 15 0 22-3 7-9 12-17 15-6 2-11 5-15 10l-5 6H45l3-9c2-5 0-9-4-12-7-4-13-9-18-17-3-5-5-9-5-14zm24-21c0 3 2 6 5 8 4 2 8 3 13 3 8 1 14 0 20-4 4-3 8-7 9-12-7 2-13 5-18 8-5 2-11 3-17 2-4 0-8-2-12-5z"
+        />
+        <path
+          fill="currentColor"
+          d="M38 55c3-1 7-1 11 0 5 1 9 3 14 4 6 1 11 0 16-2 5-2 9-5 14-9-1 6-4 11-8 15-6 5-14 8-22 8-11 0-19-5-25-16z"
+        />
+      </svg>
+    );
+  }
+  // open
+  return (
+    <svg viewBox="0 0 120 120" className="grip-svg">
+      <path
+        fill="currentColor"
+        d="M20 84c0-6 2-10 5-14 4-4 8-6 14-7l8-2-6-20c-1-4 1-8 5-9 4-1 7 1 8 5l7 21h4V29c0-4 3-7 7-7s7 3 7 7v28h4V34c0-4 3-7 7-7 3 0 6 3 6 7v25h4V41c0-4 3-7 7-7s6 3 6 7v22h3V50c0-4 3-7 7-7s6 3 6 7v21c0 8-2 15-7 22-5 8-13 12-24 12H44c-8 0-14-2-18-6-4-4-6-9-6-15z"
+      />
+      <ellipse cx="60" cy="77" rx="16" ry="13" fill={stoneFill} />
+    </svg>
+  );
+}
+
 function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
-  // Phase 1 (0-1.0s): coin spinning, no label yet.
-  // Phase 2 (1.0-2.0s): coin landed, label visible.
-  // After 2.0s: dismiss.
-  const [phase, setPhase] = useState<'spin' | 'reveal'>('spin');
+  // Frame schedule: closed (0–500ms) → opening (500–1000ms)
+  //              → open (1000–2000ms, with reveal text faded in)
+  const [frame, setFrame] = useState<GripFrame>('closed');
+  const [revealed, setRevealed] = useState(false);
   useEffect(() => {
     if (!active) return;
-    setPhase('spin');
-    const reveal = window.setTimeout(() => setPhase('reveal'), 1000);
+    setFrame('closed');
+    setRevealed(false);
+    const t1 = window.setTimeout(() => setFrame('opening'), 500);
+    const t2 = window.setTimeout(() => {
+      setFrame('open');
+      setRevealed(true);
+    }, 1000);
     const finish = window.setTimeout(onComplete, 2000);
     return () => {
-      window.clearTimeout(reveal);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
       window.clearTimeout(finish);
     };
   }, [active, onComplete]);
@@ -740,13 +795,15 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
         <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-amber-200/70">
           — {t.firstPlayerRollLabel} —
         </div>
-        <div className="coin-flip mx-auto mb-5">
-          <div className="coin-face coin-face-black" />
-          <div className="coin-face coin-face-white" />
+        <div
+          key={frame}
+          className="grip-stage mx-auto mb-5 text-amber-200/85"
+        >
+          <GripIcon frame={frame} stone={result} />
         </div>
         <div
           className={`jp-display tracking-[0.18em] text-2xl md:text-3xl font-bold transition-opacity duration-500 ${
-            phase === 'reveal' ? 'opacity-100' : 'opacity-0'
+            revealed ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ color: isFirst ? '#f5e8c8' : '#ebe2cc' }}
         >
@@ -756,7 +813,7 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
         </div>
         <p
           className={`jp-display italic text-amber-200/65 text-xs md:text-sm mt-3 transition-opacity duration-500 ${
-            phase === 'reveal' ? 'opacity-100' : 'opacity-0'
+            revealed ? 'opacity-100' : 'opacity-0'
           }`}
         >
           {isFirst ? t.firstPlayerRollFirstHint : t.firstPlayerRollSecondHint}
@@ -2390,43 +2447,26 @@ export default function App() {
           50%      { box-shadow: 0 0 12px 0 rgba(252, 211, 77, 0.32); }
         }
 
-        /* Coin flip used by <FirstPlayerRoll> to decide first/second.
-           A 3D card spinning on the Y-axis with a black face and a white
-           face. After 1s of spin we let the user see whichever side
-           landed via the stop-on-final-rotation trick (final rotation
-           land at multiples of 360deg so both faces are visible during
-           the spin). The reveal text below the coin tells them which
-           side they took. */
-        .coin-flip {
-          width: 84px;
-          height: 84px;
-          position: relative;
-          transform-style: preserve-3d;
-          animation: coin-spin 1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+        /* "Grip the stone" overlay used by <FirstPlayerRoll>. The
+           inline SVG hand cycles through closed → opening → open via
+           React state; this CSS just sizes the stage and gives each
+           frame a soft pop-in via key={frame} re-mount. */
+        .grip-stage {
+          width: 132px;
+          height: 132px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: grip-frame-in 0.32s cubic-bezier(0.2, 0.8, 0.3, 1);
         }
-        @keyframes coin-spin {
-          0%   { transform: rotateY(0deg)    rotateX(-8deg) scale(0.85); }
-          60%  { transform: rotateY(900deg)  rotateX(-8deg) scale(1.05); }
-          100% { transform: rotateY(1080deg) rotateX(-8deg) scale(1); }
+        .grip-svg {
+          width: 100%;
+          height: 100%;
+          filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
         }
-        .coin-face {
-          position: absolute;
-          inset: 0;
-          border-radius: 50%;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          box-shadow:
-            inset -3px -3px 8px rgba(0, 0, 0, 0.45),
-            inset 3px 3px 10px rgba(255, 255, 255, 0.18),
-            0 8px 18px rgba(0, 0, 0, 0.55),
-            0 0 28px rgba(201, 169, 97, 0.25);
-        }
-        .coin-face-black {
-          background: radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000);
-        }
-        .coin-face-white {
-          transform: rotateY(180deg);
-          background: radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c);
+        @keyframes grip-frame-in {
+          from { transform: scale(0.86); opacity: 0; }
+          to   { transform: scale(1);    opacity: 1; }
         }
         .first-player-roll {
           animation: roll-fade-in 0.25s ease-out;
