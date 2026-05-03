@@ -745,20 +745,19 @@ function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPla
   }, [active, onComplete]);
   if (!active || result === null) return null;
   const isFirst = result === BLACK;
-  // Final rotation lines up with the chosen face: 1080° (3 turns)
-  // shows the front (black) face; 1260° (3.5 turns) shows the back
-  // (white) face. Without this the coin would always settle on black.
-  const finalRotation = isFirst ? '1080deg' : '1260deg';
+  // Pick a result-specific keyframe so the spin actually lands on
+  // the right face. Earlier we tried using a CSS variable inside the
+  // single keyframe's rotateY(), but some browsers don't resolve var()
+  // inside transform animations and the coin always settled on the
+  // default (black) face — defeating the whole point.
+  const spinClass = isFirst ? 'coin-spin-black' : 'coin-spin-white';
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm first-player-roll">
       <div className="text-center px-6">
         <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-amber-200/70">
           — {t.firstPlayerRollLabel} —
         </div>
-        <div
-          className="coin-flip mx-auto mb-5"
-          style={{ ['--coin-final' as 'color']: finalRotation } as CSSProperties}
-        >
+        <div className={`coin-flip ${spinClass} mx-auto mb-5`}>
           <div className="coin-face coin-face-black" />
           <div className="coin-face coin-face-white" />
         </div>
@@ -2410,26 +2409,36 @@ export default function App() {
 
         /* Coin toss used by <FirstPlayerRoll> to decide first/second.
            A 3D disc spinning on the Y-axis with a black face and a
-           white face, both rendered as radial gradients (matches the
-           in-board piece styling). 2.0s of rotation with strong ease-
-           out so the final 25% visibly decelerates and the player can
-           read which face landed up. The total rotation is set per
-           result via --coin-final (1080deg = lands on black,
-           1260deg = lands on white) so the result is honest, not just
-           visual. */
+           white face. Two separate keyframes (per result) so the
+           landing rotation is hard-coded and reliable: 1080deg lands
+           on the front (black) face, 1260deg lands on the back
+           (white) face. Earlier attempts to drive the final angle
+           via a CSS variable failed on some browsers — the var()
+           inside transform: rotateY() in keyframes wasn't always
+           resolved, so the coin defaulted to landing on black. */
         .coin-flip {
           width: 110px;
           height: 110px;
           position: relative;
           transform-style: preserve-3d;
-          --coin-final: 1080deg;
-          animation: coin-spin 2s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
         }
-        @keyframes coin-spin {
-          0%   { transform: rotateY(0deg) rotateX(-8deg) scale(0.55); opacity: 0; }
-          10%  { transform: rotateY(60deg) rotateX(-8deg) scale(1.05); opacity: 1; }
-          70%  { transform: rotateY(calc(var(--coin-final) - 240deg)) rotateX(-8deg) scale(1); opacity: 1; }
-          100% { transform: rotateY(var(--coin-final)) rotateX(-8deg) scale(1); opacity: 1; }
+        .coin-spin-black {
+          animation: coin-spin-black 2s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
+        }
+        .coin-spin-white {
+          animation: coin-spin-white 2s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
+        }
+        @keyframes coin-spin-black {
+          0%   { transform: rotateY(0deg)    rotateX(-8deg) scale(0.55); opacity: 0; }
+          10%  { transform: rotateY(60deg)   rotateX(-8deg) scale(1.05); opacity: 1; }
+          70%  { transform: rotateY(840deg)  rotateX(-8deg) scale(1); opacity: 1; }
+          100% { transform: rotateY(1080deg) rotateX(-8deg) scale(1); opacity: 1; }
+        }
+        @keyframes coin-spin-white {
+          0%   { transform: rotateY(0deg)    rotateX(-8deg) scale(0.55); opacity: 0; }
+          10%  { transform: rotateY(60deg)   rotateX(-8deg) scale(1.05); opacity: 1; }
+          70%  { transform: rotateY(1020deg) rotateX(-8deg) scale(1); opacity: 1; }
+          100% { transform: rotateY(1260deg) rotateX(-8deg) scale(1); opacity: 1; }
         }
         /* Coin faces. Both share a thick amber rim (inset 3px gold)
            so the disc reads as a "coin" regardless of which face is

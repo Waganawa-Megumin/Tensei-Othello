@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.5)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.6)
 
 ---
 
@@ -66,6 +66,18 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.5)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイントス、白結果でも黒面で停止するバグ修正（CSS 変数 →
+      結果別 keyframe へ）** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      v0.24.3〜0.24.5 で `--coin-final` CSS 変数を使って結果ごとの
+      最終回転角を切り替えていたが、ブラウザによっては
+      `transform: rotateY(var(...))` のキーフレーム内 var() を解決
+      しない既知問題で、常に初期値（1080deg = 黒面）に戻り「白の
+      はずなのに黒のコインが止まる」状態だった。`coin-spin-black` /
+      `coin-spin-white` の 2 つのキーフレームに分離し、JSX 側で
+      `isFirst` に応じてクラス名を選択する方式に変更。各 keyframe
+      の最終 rotateY はハードコード（1080deg / 1260deg）で確実な
+      着地。`v0.24.6`
 - [x] **コイン白黒判別の最終調整（金縁＋暗 inset 一切なしの白面）** —
       completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — v0.24.4 でも白がはっきり読めない状態
