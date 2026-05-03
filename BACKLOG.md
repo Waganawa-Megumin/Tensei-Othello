@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.26.0)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.0)
 
 ---
 
@@ -66,6 +66,16 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.26.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **横向きを「縦の圧縮版」ではなく専用レイアウトに作り直し** —
+      completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — タイトル画面: 横向きで title font
+      `text-3xl → text-xl`、subtitle/description/footer-hint 隠蔽、
+      mode カードは 3 列のまま padding 圧縮、見出しのみ表示。
+      ゲーム画面: PlayerPanel に**横向き専用の縦スタックレイアウト**
+      を追加（avatar 上 / 名前+Lv+♥ 中 / quote / 駒数 下 を縦に
+      flex-col で展開）、grid を `items-stretch` でパネル高さ＝
+      盤面高さに揃え、横向きパネルが板と同じ高さの細い strip に。
+      左右のガラ空き感が解消。`v0.27.0`
 - [x] **横向きスマホで縦スペースを使い切るレイアウト圧縮（A〜E 全部）**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — `max-md:landscape:` variant を全方向に

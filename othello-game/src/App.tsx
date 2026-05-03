@@ -890,29 +890,88 @@ function PlayerPanel({
   lives,
   compact = false,
 }: PlayerPanelProps) {
+  const stoneStyle =
+    color === BLACK
+      ? {
+          background:
+            'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)',
+          boxShadow:
+            'inset -1px -1px 2px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)',
+        }
+      : {
+          background:
+            'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
+          boxShadow:
+            'inset 1px 1px 2px rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.4)',
+        };
   return (
     <div
-      className={`relative px-4 max-md:landscape:px-2.5 md:px-5 border rounded-sm transition-all ${
-        compact ? 'py-1.5 md:py-2' : 'py-3 max-md:landscape:py-1.5 md:py-3.5'
-      } ${
+      className={`relative border rounded-sm transition-all ${
         isActive
           ? 'border-amber-200/60 bg-amber-200/[0.04] player-panel-active'
           : 'border-amber-200/15'
+      } ${
+        compact
+          ? 'px-4 md:px-5 py-1.5 md:py-2'
+          : 'px-4 md:px-5 py-3 md:py-3.5 max-md:landscape:p-2'
       }`}
     >
-      <div className="flex items-center gap-3 max-md:landscape:gap-2 md:gap-4">
-        <div className="max-md:landscape:hidden">
-          <AvatarBadge kanji={kanji} idx={idx} image={image} size={compact ? 'sm' : 'md'} />
+      {/* ──────────────────────────────────────────────────────────
+          Landscape-phone vertical layout. Each panel is a tall,
+          narrow strip that matches the board's height (the parent
+          grid uses items-stretch in landscape). Content is spread
+          top → middle → bottom so the strip *uses* its height
+          rather than centering and leaving space empty.
+          ────────────────────────────────────────────────────────── */}
+      <div className="hidden max-md:landscape:flex flex-col items-center text-center gap-1.5 h-full justify-between py-1">
+        <AvatarBadge kanji={kanji} idx={idx} image={image} size="md" />
+        <div className="flex flex-col items-center gap-0.5 min-w-0 max-w-full">
+          <span className="jp-display text-amber-100/95 text-sm font-medium truncate max-w-full inline-flex items-center gap-1">
+            {name}
+            {thinking && <SumiThinking />}
+          </span>
+          {(level !== undefined || lives !== undefined) && (
+            <div className="flex items-baseline gap-1.5">
+              {level !== undefined && (
+                <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
+                  Lv.{level}
+                </span>
+              )}
+              {lives !== undefined && (
+                <span
+                  className={`latin-display tabular-nums text-[10px] tracking-wider ${
+                    lives === 0 ? 'text-red-300/95' : 'text-amber-200/85'
+                  }`}
+                  title={`Lives: ${lives}`}
+                  aria-label={`Lives: ${lives}`}
+                >
+                  ♥ {lives}
+                </span>
+              )}
+            </div>
+          )}
+          {quote && !compact && (
+            <span className="jp-display text-amber-200/65 text-[10px] italic truncate max-w-full block">
+              「{quote}」
+            </span>
+          )}
         </div>
-        {/* Tighter avatar in landscape phones — 'sm' instead of 'md'
-            so the wide horizontal panel stops eating space the board
-            could use. */}
-        <div className="hidden max-md:landscape:block">
-          <AvatarBadge kanji={kanji} idx={idx} image={image} size="sm" />
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-4 h-4 rounded-full" style={stoneStyle} />
+          <div className="latin-display text-2xl text-amber-100 tabular-nums font-medium leading-none">
+            {count}
+          </div>
         </div>
+      </div>
+
+      {/* ──────────────────────────────────────────────────────────
+          Default horizontal layout (portrait phone + desktop).
+          ────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 md:gap-4 max-md:landscape:hidden">
+        <AvatarBadge kanji={kanji} idx={idx} image={image} size={compact ? 'sm' : 'md'} />
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 max-md:landscape:gap-1.5">
-            <span className="jp-display text-amber-100/95 text-base max-md:landscape:text-sm md:text-lg truncate">
+          <div className="flex items-baseline gap-2">
+            <span className="jp-display text-amber-100/95 text-base md:text-lg truncate">
               {name}
             </span>
             {thinking && <SumiThinking />}
@@ -934,25 +993,13 @@ function PlayerPanel({
             )}
           </div>
           {quote && !compact && (
-            <div className="jp-display text-amber-200/70 text-[11px] md:text-xs italic truncate mt-0.5 max-md:landscape:hidden">
+            <div className="jp-display text-amber-200/70 text-[11px] md:text-xs italic truncate mt-0.5">
               「{quote}」
             </div>
           )}
         </div>
         <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
-          <div
-            className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full"
-            style={{
-              background:
-                color === BLACK
-                  ? 'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)'
-                  : 'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
-              boxShadow:
-                color === BLACK
-                  ? 'inset -1px -1px 2px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.4)'
-                  : 'inset 1px 1px 2px rgba(255,255,255,0.6), 0 1px 2px rgba(0,0,0,0.4)',
-            }}
-          />
+          <div className="w-3 h-3 md:w-3.5 md:h-3.5 rounded-full" style={stoneStyle} />
           <div className="latin-display text-3xl md:text-4xl text-amber-100 tabular-nums font-medium leading-none">
             {count}
           </div>
@@ -2777,7 +2824,7 @@ export default function App() {
           </div>
 
           {/* Score panels + board */}
-          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 max-md:landscape:gap-2 items-center">
+          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 max-md:landscape:gap-2 items-center max-md:landscape:items-stretch">
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}
