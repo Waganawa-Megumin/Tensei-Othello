@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.0)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.1)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **棋譜リプレイ strip を 2 段レイアウトに分割（ボタンはみ出し
+      修正 + 視線導線改善）** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) — 注釈
+      付き棋譜を読み込むと jump-bad/good ボタンが枠から飛び出す不具合
+      を修正。strip を「上段: counter + メタアクション（📜/✨/?/✕）
+      / 下段: 再生コントロール（⏮◀▶/⏸ 速度 ▶⏭ ⚠👍）」の縦 2 段に
+      再構成。読む→操作するの視線導線が自然になり、各行に flex-wrap
+      も設定したので極端に狭い端末でも安全。`v0.21.1`
 - [x] **棋譜リプレイ強化: 自動再生 + 速度セレクタ + 長押しヘルプ + ?
       モーダル + キーボードショートカット** — completed: 2026-05-03 —
       by: `claude/othello-ui-autosave-bPnmY` — commit: (next push) —

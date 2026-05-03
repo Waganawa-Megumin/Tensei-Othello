@@ -2251,11 +2251,56 @@ export default function App() {
               setReplayCursor(kifu.length);
             };
             return (
-              <div className="mt-3 px-2 py-2 rounded-sm border border-amber-200/25 bg-zinc-950/60 flex items-center justify-between gap-2 flex-wrap">
-                <div className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider px-1">
-                  {t.kifuMoveCounter(cursor, kifu.length, currentNotation)}
+              <div className="mt-3 px-2 py-2 rounded-sm border border-amber-200/25 bg-zinc-950/60 flex flex-col gap-2">
+                {/* Top row: status + meta-actions. Counter sits left so
+                    the player reads where they are first; review / help
+                    / close anchor right so they don't shift across rows
+                    when annotations toggle. */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider px-1">
+                    {t.kifuMoveCounter(cursor, kifu.length, currentNotation)}
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap justify-end">
+                    {loadedSlotReview && (
+                      <ReplayIconButton
+                        icon={ScrollText}
+                        helpText={t.reviewViewSaved}
+                        onClick={() =>
+                          viewSavedReview({
+                            annotations: loadedSlotReview.annotations,
+                            text: loadedSlotReview.text,
+                            savedAt: loadedSlotReview.savedAt,
+                          })
+                        }
+                      />
+                    )}
+                    {gameMode === 'ai' && kifu.length > 0 && (
+                      <ReplayIconButton
+                        icon={Sparkles}
+                        helpText={
+                          loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton
+                        }
+                        onClick={startReview}
+                      />
+                    )}
+                    <ReplayIconButton
+                      icon={HelpCircle}
+                      helpText={t.replayHelpTitle}
+                      onClick={() => setHelpModalOpen(true)}
+                    />
+                    <ReplayIconButton
+                      icon={X}
+                      helpText={t.kifuViewingClose}
+                      onClick={reset}
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center gap-1">
+
+                {/* Bottom row: playback controls. Centered so it reads
+                    like a media player; flex-wrap ensures the
+                    annotation-jump pair drops to its own line on very
+                    narrow phones instead of clipping out of the card. */}
+                <div className="flex items-center justify-center gap-1 flex-wrap">
                   <ReplayIconButton
                     icon={ChevronsLeft}
                     helpText={t.replayFirst}
@@ -2325,40 +2370,6 @@ export default function App() {
                       />
                     </>
                   )}
-                </div>
-                <div className="flex items-center gap-1 ml-auto">
-                  {loadedSlotReview && (
-                    <ReplayIconButton
-                      icon={ScrollText}
-                      helpText={t.reviewViewSaved}
-                      onClick={() =>
-                        viewSavedReview({
-                          annotations: loadedSlotReview.annotations,
-                          text: loadedSlotReview.text,
-                          savedAt: loadedSlotReview.savedAt,
-                        })
-                      }
-                    />
-                  )}
-                  {gameMode === 'ai' && kifu.length > 0 && (
-                    <ReplayIconButton
-                      icon={Sparkles}
-                      helpText={
-                        loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton
-                      }
-                      onClick={startReview}
-                    />
-                  )}
-                  <ReplayIconButton
-                    icon={HelpCircle}
-                    helpText={t.replayHelpTitle}
-                    onClick={() => setHelpModalOpen(true)}
-                  />
-                  <ReplayIconButton
-                    icon={X}
-                    helpText={t.kifuViewingClose}
-                    onClick={reset}
-                  />
                 </div>
               </div>
             );
