@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.0)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.1)
 
 ---
 
@@ -66,6 +66,18 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイントスを 3D → 2D 色トグル方式に作り直し（白黒判別問題の
+      根本解決）** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      `preserve-3d` + `backface-visibility` + `rotateY()` の 3D コイン
+      は端末（特に mobile Chrome）で白面が出ない問題を v0.24.6 までに
+      解決できなかったため、3D ベースを完全に撤去。新しい方式は単一
+      の 2D ディスクで `coin-2d-b` / `coin-2d-w` クラスを React state
+      で切り替える方式。setTimeout で 1.8 秒間に約 10 回パチパチ反転
+      し、最後の flip で結果側にロック。class-driven background-color
+      は CSS 更新の中で最も信頼性が高く、JS 状態と画面表示が必ず
+      一致する。盤上の白黒石とは別の意匠（漆黒 / 象牙 + 金縁 + 中央に
+      対色 pip）で識別を強化。`v0.25.1`
 - [x] **アンロック方式を一度に全 20 体 → 1 章クリアごとに 1 人ずつ、
       キャラ並びも mikoto..yu..haruki に再構成** — completed:
       2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` — commit:

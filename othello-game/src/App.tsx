@@ -733,42 +733,67 @@ interface FirstPlayerRollProps {
 }
 
 function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
-  // Timing schedule (total 3.5s, designed for legibility):
-  //   0–200ms : coin scales in from 0.55 → 1.0 with a small overshoot
-  //   200–2000ms : 3 visible turns, ease-out cubic so the last ~25%
-  //              clearly decelerates and the landing face is readable
-  //              (rotates a half-turn farther for the white outcome
-  //              so it stops on the right face — see --coin-final)
-  //   2000–3500ms : reveal text fades in and the coin holds steady
-  //   3500ms : dismiss
+  // Two state machines: which face is currently visible (B/W flips
+  // back-and-forth during the toss), and whether the reveal text is
+  // shown. Both are driven by setTimeouts because every prior
+  // attempt at CSS-only 3D coin flips suffered from browser-side
+  // var() / backface-visibility quirks. Pure JS state + simple flat
+  // background colour swapping is the only approach that reliably
+  // shows the right colour at the end on every device.
+  //
+  // Timing schedule (total 3.5s):
+  //   0–1800ms : ~10 face flips, accelerating-then-decelerating
+  //   1800ms   : lock onto the result face
+  //   2000ms   : reveal text fades in
+  //   3500ms   : dismiss
+  type Face = 'B' | 'W';
   const [phase, setPhase] = useState<'spin' | 'reveal'>('spin');
+  const [face, setFace] = useState<Face>('B');
   useEffect(() => {
-    if (!active) return;
+    if (!active || result === null) return;
+    let cancelled = false;
     setPhase('spin');
-    const reveal = window.setTimeout(() => setPhase('reveal'), 2000);
-    const finish = window.setTimeout(onComplete, 3500);
+    setFace('B');
+    const timers: number[] = [];
+    // Cumulative timestamps for each flip — accelerate then ease out
+    // so the last few flips read clearly. Final flip at 1800ms locks
+    // onto the actual result.
+    const flipMoments = [120, 240, 360, 480, 620, 770, 940, 1130, 1340, 1570, 1800];
+    flipMoments.forEach((ms, i) => {
+      // First flip lands on white (result === BLACK or not), then
+      // toggles every step. The penultimate one is the opposite of
+      // the result so the final lock-in feels like a settle.
+      const isLast = i === flipMoments.length - 1;
+      const targetFace: Face = isLast
+        ? (result === BLACK ? 'B' : 'W')
+        : (i % 2 === 0 ? 'W' : 'B');
+      timers.push(
+        window.setTimeout(() => {
+          if (!cancelled) setFace(targetFace);
+        }, ms),
+      );
+    });
+    timers.push(
+      window.setTimeout(() => {
+        if (!cancelled) setPhase('reveal');
+      }, 2000),
+    );
+    timers.push(window.setTimeout(onComplete, 3500));
     return () => {
-      window.clearTimeout(reveal);
-      window.clearTimeout(finish);
+      cancelled = true;
+      timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [active, onComplete]);
+  }, [active, result, onComplete]);
   if (!active || result === null) return null;
   const isFirst = result === BLACK;
-  // Pick a result-specific keyframe so the spin actually lands on
-  // the right face. Earlier we tried using a CSS variable inside the
-  // single keyframe's rotateY(), but some browsers don't resolve var()
-  // inside transform animations and the coin always settled on the
-  // default (black) face — defeating the whole point.
-  const spinClass = isFirst ? 'coin-spin-black' : 'coin-spin-white';
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm first-player-roll">
       <div className="text-center px-6">
         <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-amber-200/70">
           — {t.firstPlayerRollLabel} —
         </div>
-        <div className={`coin-flip ${spinClass} mx-auto mb-5`}>
-          <div className="coin-face coin-face-black" />
-          <div className="coin-face coin-face-white" />
+        <div className={`coin-2d coin-2d-${face === 'B' ? 'b' : 'w'} mx-auto mb-5`}>
+          <span className="coin-2d-pip" />
         </div>
         <div
           className={`jp-display tracking-[0.18em] text-2xl md:text-3xl font-bold transition-opacity duration-500 ${
@@ -2463,69 +2488,62 @@ export default function App() {
         }
 
         /* Coin toss used by <FirstPlayerRoll> to decide first/second.
-           A 3D disc spinning on the Y-axis with a black face and a
-           white face. Two separate keyframes (per result) so the
-           landing rotation is hard-coded and reliable: 1080deg lands
-           on the front (black) face, 1260deg lands on the back
-           (white) face. Earlier attempts to drive the final angle
-           via a CSS variable failed on some browsers — the var()
-           inside transform: rotateY() in keyframes wasn't always
-           resolved, so the coin defaulted to landing on black. */
-        .coin-flip {
-          width: 110px;
-          height: 110px;
-          position: relative;
-          transform-style: preserve-3d;
-        }
-        .coin-spin-black {
-          animation: coin-spin-black 2s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
-        }
-        .coin-spin-white {
-          animation: coin-spin-white 2s cubic-bezier(0.16, 0.84, 0.22, 1) forwards;
-        }
-        @keyframes coin-spin-black {
-          0%   { transform: rotateY(0deg)    rotateX(-8deg) scale(0.55); opacity: 0; }
-          10%  { transform: rotateY(60deg)   rotateX(-8deg) scale(1.05); opacity: 1; }
-          70%  { transform: rotateY(840deg)  rotateX(-8deg) scale(1); opacity: 1; }
-          100% { transform: rotateY(1080deg) rotateX(-8deg) scale(1); opacity: 1; }
-        }
-        @keyframes coin-spin-white {
-          0%   { transform: rotateY(0deg)    rotateX(-8deg) scale(0.55); opacity: 0; }
-          10%  { transform: rotateY(60deg)   rotateX(-8deg) scale(1.05); opacity: 1; }
-          70%  { transform: rotateY(1020deg) rotateX(-8deg) scale(1); opacity: 1; }
-          100% { transform: rotateY(1260deg) rotateX(-8deg) scale(1); opacity: 1; }
-        }
-        /* Coin faces. Both share a thick amber rim (inset 3px gold)
-           so the disc reads as a "coin" regardless of which face is
-           up. Beyond that the two faces are deliberately stark — the
-           white face has zero dark inset, the black face has zero
-           bright highlight — so during the spin the eye can lock
-           onto each face's true color without ambiguity. */
-        .coin-face {
-          position: absolute;
-          inset: 0;
+           Deliberately *not* a 3D coin — past attempts at preserve-3d
+           + backface-visibility + Y-rotation reliably broke on parts
+           of mobile Chrome (the white face never appeared). Now it's
+           a single 2D disc whose class swaps between coin-2d-b /
+           coin-2d-w via React state on a setTimeout schedule. The
+           class-driven background colour change is the most reliable
+           CSS update there is, so what JS thinks the face is == what
+           the browser actually paints. The illusion of "spinning"
+           comes from the rapid colour flips themselves plus a brief
+           scaleX squeeze on every change. */
+        .coin-2d {
+          width: 132px;
+          height: 132px;
           border-radius: 50%;
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-        }
-        .coin-face-black {
-          background:
-            radial-gradient(circle at 32% 32%, #2a2a2a 0%, #0a0a0a 55%, #000 100%);
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 4px solid #c9a961;
           box-shadow:
-            inset 0 0 0 3px rgba(201, 169, 97, 0.6),
-            inset 6px 6px 14px rgba(255, 255, 255, 0.08),
-            0 12px 26px rgba(0, 0, 0, 0.7),
-            0 0 38px rgba(201, 169, 97, 0.42);
+            0 14px 30px rgba(0, 0, 0, 0.7),
+            0 0 42px rgba(201, 169, 97, 0.3);
+          /* The transition acts on every class swap, so each flip
+             reads as a quick scaleX squeeze + colour change. */
+          transition: background-color 60ms linear, transform 90ms ease;
+          animation: coin-2d-pop-in 0.28s ease-out;
         }
-        .coin-face-white {
-          transform: rotateY(180deg);
-          background:
-            radial-gradient(circle at 32% 32%, #ffffff 0%, #f8efd8 60%, #f0e2b6 100%);
-          box-shadow:
-            inset 0 0 0 3px rgba(201, 169, 97, 0.6),
-            inset 6px 6px 14px rgba(255, 255, 255, 0.65),
-            0 12px 26px rgba(0, 0, 0, 0.55),
-            0 0 38px rgba(255, 245, 220, 0.6);
+        .coin-2d-b {
+          background: #050505;
+          transform: scaleX(1);
+        }
+        .coin-2d-w {
+          background: #fefdf6;
+          transform: scaleX(1);
+        }
+        /* The pip is a small accent dot in the centre of each face
+           so the two sides feel like distinct "designs", not just
+           recolours of the same blank disc. */
+        .coin-2d-pip {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+        }
+        .coin-2d-b .coin-2d-pip {
+          background: #c9a961;
+          box-shadow: 0 0 0 1px rgba(201, 169, 97, 0.45),
+                      0 0 12px rgba(201, 169, 97, 0.55);
+        }
+        .coin-2d-w .coin-2d-pip {
+          background: #2a1f14;
+          box-shadow: 0 0 0 1px rgba(42, 31, 20, 0.6);
+        }
+        @keyframes coin-2d-pop-in {
+          from { transform: scale(0.55); opacity: 0; }
+          to   { transform: scale(1);    opacity: 1; }
         }
         .first-player-roll {
           animation: roll-fade-in 0.25s ease-out;
