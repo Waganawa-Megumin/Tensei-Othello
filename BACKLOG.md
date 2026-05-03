@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.1)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.0)
 
 ---
 
@@ -31,6 +31,19 @@ Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.1)
       i18n の `storyChapters` を構造化し（intro / pre-battle dialogue /
       post-victory / post-defeat）、設定の章カード + GameOver モーダル
       で表示。
+- [ ] **棋譜リプレイ追加 UX（v0.21.0 で見送り）**
+  - プログレスバー上を tap/drag で任意手数へジャンプ
+  - 盤上の last-move セルに小さく `12` のような手数ラベル
+  - 自動再生中のみ手番側を太枠でハイライト
+  - 終局時に紙吹雪 or サマリ pop
+  - Coach モード: 自動再生中に Claude 注釈を音声合成 + 字幕
+      は 1 行のキャラ＋戦法紹介のみ。プロローグ（progress=0）と
+      エンディング（クリア後）はそれぞれ短文プローズあり。各章に
+      対局前後のミニシナリオ（出会い・会話・敗北後/勝利後の余韻）を
+      足すと章ブラウザーが本物の "ストーリービューワー" になる。
+      i18n の `storyChapters` を構造化し（intro / pre-battle dialogue /
+      post-victory / post-defeat）、設定の章カード + GameOver モーダル
+      で表示。
 - [ ] **App.tsx の分割リファクタ** — 単一ファイル ~2300 行。`components/`
       `data/` `lib/` 構成へ。CLAUDE.md セクション 12 に旧設計案あり
 - [ ] **AI 思考中の UI 改善** — 現状「…」だけ。スピナー or アバター揺れ
@@ -38,7 +51,6 @@ Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.1)
 - [ ] **ストーリー章クリア時の演出** — 紙吹雪・章タイトルカード等の小演出
 - [ ] **スマホ縦長レイアウト調整** — 特に設定モーダル内のキャラグリッド
       崩れ対応
-- [ ] **棋譜リプレイの自動再生（▶ Play）** — 1 手/秒で進む再生ボタン
 
 ### P3 — nice-to-have
 
@@ -46,12 +58,22 @@ Last updated: 2026-05-02 by `claude/othello-ui-autosave-bPnmY` (v0.20.1)
 - [ ] **触覚フィードバック** — モバイルで石を置いた時の vibrate (Phase 4)
 - [ ] **評価関数の高度化** — Edax のテーブル導入、終盤完全読み (Phase 4)
 - [ ] **勝率・統計画面** — 既に saveSlots に集計データはある、表示 UI 追加
-- [ ] **アクセシビリティ** — キーボード操作、スクリーンリーダー対応
+- [ ] **アクセシビリティ** — キーボード操作（v0.21.0 で棋譜リプレイ画面
+      に ←/→/Space/Home/End を実装。盤面操作と全画面 toolbar への展開
+      は未着手）、スクリーンリーダー対応
 
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **棋譜リプレイ強化: 自動再生 + 速度セレクタ + 長押しヘルプ + ?
+      モーダル + キーボードショートカット** — completed: 2026-05-03 —
+      by: `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      `<ReplayIconButton>` 導入で全アイコンに 500ms 長押しのヘルプ
+      ポップオーバー。Play/Pause + 速度サイクル（0.5x/1x/2x/4x）+ `?`
+      ヘルプ一覧モーダル。デスクトップは ←/→/Space/Home/End で操作
+      可能。`isAutoPlaying` / `autoPlayMs` state に functional-updater
+      ベースの `setInterval` で `replayCursor` を進める。`v0.21.0`
 - [x] **設定モーダル下部の二択ボタンを文脈依存で簡素化** — completed:
       2026-05-02 — by: `claude/othello-ui-autosave-bPnmY` — commit:
       (next push) — story モードでは bottom row 自体を非表示（章カード

@@ -14,11 +14,14 @@ import {
   ChevronsRight,
   Flag,
   FolderOpen,
+  HelpCircle,
   Home,
   Info,
   Lightbulb,
   Lock,
   Menu,
+  Pause,
+  Play,
   RotateCcw,
   ScrollText,
   Sparkles,
@@ -373,6 +376,126 @@ function ToolbarBtn({ icon: Icon, label, onClick, active, disabled }: ToolbarBtn
   );
 }
 
+/**
+ * Icon-only button for the kifu replay strip with a long-press help
+ * popover. Mobile users can't use the native `title` tooltip, so a
+ * 500ms press shows the help text in a small bubble above the button
+ * (auto-dismissed after 2s or on outside click). Short taps fire
+ * `onClick` as usual.
+ */
+interface ReplayIconButtonProps {
+  icon: LucideIcon;
+  helpText: string;
+  onClick: () => void;
+  disabled?: boolean;
+  /** Extra Tailwind classes (e.g. color tints for warn/positive). */
+  className?: string;
+  /** Aria-label override (defaults to helpText). */
+  ariaLabel?: string;
+}
+
+function ReplayIconButton({
+  icon: Icon,
+  helpText,
+  onClick,
+  disabled,
+  className,
+  ariaLabel,
+}: ReplayIconButtonProps) {
+  const [showHelp, setShowHelp] = useState(false);
+  const timerRef = useRef<number | null>(null);
+  // True once the long-press timer has fired. Consumed by the next
+  // click event so the press doesn't double as a tap.
+  const longPressedRef = useRef(false);
+
+  const cancelTimer = () => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const handlePointerDown = () => {
+    if (disabled) return;
+    longPressedRef.current = false;
+    cancelTimer();
+    timerRef.current = window.setTimeout(() => {
+      longPressedRef.current = true;
+      setShowHelp(true);
+    }, 500);
+  };
+
+  const handlePointerUp = () => {
+    cancelTimer();
+  };
+
+  const handlePointerCancel = () => {
+    cancelTimer();
+    // Mid-drag finger lifted off — don't count as long-press, otherwise
+    // a stray drag would suppress the next click.
+    longPressedRef.current = false;
+  };
+
+  // Native click fires on mouse short tap, touch tap, AND keyboard
+  // activation (Enter / Space) — exactly the cases we want to treat
+  // as "execute". The long-press path sets a flag that we consume here
+  // to suppress the trailing click that follows a long-press release.
+  const handleClick = () => {
+    if (longPressedRef.current) {
+      longPressedRef.current = false;
+      return;
+    }
+    if (disabled) return;
+    onClick();
+  };
+
+  // Auto-dismiss the help bubble after 2s and on outside click.
+  useEffect(() => {
+    if (!showHelp) return;
+    const dismiss = () => setShowHelp(false);
+    const t = window.setTimeout(dismiss, 2000);
+    // Defer the listener attach by a tick so the long-press release
+    // doesn't immediately dismiss the bubble.
+    const attach = window.setTimeout(() => {
+      window.addEventListener('pointerdown', dismiss, { once: true });
+    }, 0);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(attach);
+      window.removeEventListener('pointerdown', dismiss);
+    };
+  }, [showHelp]);
+
+  // Cleanup timer on unmount.
+  useEffect(() => () => cancelTimer(), []);
+
+  const baseBtn = 'btn p-2 disabled:opacity-30 disabled:cursor-not-allowed';
+
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerCancel}
+        onPointerCancel={handlePointerCancel}
+        onClick={handleClick}
+        disabled={disabled}
+        title={helpText}
+        aria-label={ariaLabel ?? helpText}
+        className={`${baseBtn}${className ? ` ${className}` : ''}`}
+      >
+        <Icon size={16} strokeWidth={1.5} />
+      </button>
+      {showHelp && (
+        <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-900/95 border border-amber-200/30 rounded-sm jp-display text-amber-100 text-[11px] leading-tight whitespace-nowrap z-50 pointer-events-none shadow-lg">
+          {helpText}
+        </span>
+      )}
+    </span>
+  );
+}
+
 interface PlayerPanelProps {
   color: Color;
   count: number;
@@ -582,6 +705,15 @@ export default function App() {
   // (use `board` directly). 0 = initial empty-center board, 1..N =
   // board after replaying the first N moves of `kifu`.
   const [replayCursor, setReplayCursor] = useState<number | null>(null);
+  /** Auto-advance replay cursor at a fixed cadence. Stops automatically
+   *  on the final move and on `loadedKifuView` exit. */
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  /** Cadence (ms per move). Cycled through 0.5x / 1x / 2x / 4x by the
+   *  speed button next to ▶. */
+  const [autoPlayMs, setAutoPlayMs] = useState(1000);
+  /** Help-overlay modal listing every replay-strip control + the
+   *  desktop keyboard shortcuts. */
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
   // Saved Claude review attached to the currently-loaded kifu, if any.
   // `annotations` is the new structured per-move payload; `text` is the
   // legacy plain-text payload from older saves. Either or both may be
@@ -1002,13 +1134,40 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsOpen]);
 
+  // Auto-play the replay cursor while `isAutoPlaying` is true. Stops on
+  // the final move and whenever the loaded-kifu view exits. Uses the
+  // functional updater for `replayCursor` so the interval doesn't have
+  // to re-bind on every step.
+  useEffect(() => {
+    if (!loadedKifuView || !isAutoPlaying) return;
+    const id = window.setInterval(() => {
+      setReplayCursor((c) => {
+        const next = (c ?? 0) + 1;
+        if (next >= kifu.length) {
+          setIsAutoPlaying(false);
+          return kifu.length;
+        }
+        return next;
+      });
+    }, autoPlayMs);
+    return () => window.clearInterval(id);
+  }, [loadedKifuView, isAutoPlaying, autoPlayMs, kifu.length]);
+
+  // Pause auto-play when the user leaves the loaded-kifu view by any
+  // other means (e.g. clicking the board to start a new game).
+  useEffect(() => {
+    if (!loadedKifuView && isAutoPlaying) setIsAutoPlaying(false);
+  }, [loadedKifuView, isAutoPlaying]);
+
   // Android / browser back button: close the topmost layer instead of
   // exiting the PWA. Each "layer" pushes a history entry so popstate
   // brings us back one step. Order of priority: review -> modal ->
   // game -> title.
   useEffect(() => {
     const onPopState = () => {
-      if (reviewOpen) {
+      if (helpModalOpen) {
+        setHelpModalOpen(false);
+      } else if (reviewOpen) {
         reviewHandleRef.current?.abort();
         setReviewOpen(false);
       } else if (slotPickerOpen) {
@@ -1026,7 +1185,7 @@ export default function App() {
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [settingsOpen, kifuOpen, infoOpen, screen, reviewOpen, slotPickerOpen]);
+  }, [settingsOpen, kifuOpen, infoOpen, screen, reviewOpen, slotPickerOpen, helpModalOpen]);
 
   // Push a history entry whenever a new layer opens, so the back button
   // has something to pop. We compare against the previous depth to avoid
@@ -1039,12 +1198,77 @@ export default function App() {
       (kifuOpen ? 1 : 0) +
       (infoOpen ? 1 : 0) +
       (reviewOpen ? 1 : 0) +
-      (slotPickerOpen ? 1 : 0);
+      (slotPickerOpen ? 1 : 0) +
+      (helpModalOpen ? 1 : 0);
     if (depth > layerDepthRef.current) {
       window.history.pushState({ depth }, '');
     }
     layerDepthRef.current = depth;
-  }, [screen, settingsOpen, kifuOpen, infoOpen, reviewOpen, slotPickerOpen]);
+  }, [screen, settingsOpen, kifuOpen, infoOpen, reviewOpen, slotPickerOpen, helpModalOpen]);
+
+  // Keyboard shortcuts for the kifu replay viewer (desktop only — input
+  // focus is bypassed). Mobile users get the long-press/help modal
+  // instead. Mirrors the buttons in the replay strip 1:1.
+  useEffect(() => {
+    if (!loadedKifuView) return;
+    const onKey = (e: KeyboardEvent) => {
+      // Skip when the user is typing in any input or any modal that
+      // owns the layer is open.
+      if (
+        settingsOpen ||
+        reviewOpen ||
+        kifuOpen ||
+        infoOpen ||
+        slotPickerOpen ||
+        helpModalOpen
+      ) {
+        return;
+      }
+      const tag = (document.activeElement as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          setIsAutoPlaying(false);
+          setReplayCursor((c) => Math.max(0, (c ?? kifu.length) - 1));
+          return;
+        case 'ArrowRight':
+          e.preventDefault();
+          setIsAutoPlaying(false);
+          setReplayCursor((c) => Math.min(kifu.length, (c ?? 0) + 1));
+          return;
+        case 'Home':
+          e.preventDefault();
+          setIsAutoPlaying(false);
+          setReplayCursor(0);
+          return;
+        case 'End':
+          e.preventDefault();
+          setIsAutoPlaying(false);
+          setReplayCursor(kifu.length);
+          return;
+        case ' ':
+        case 'Spacebar':
+          e.preventDefault();
+          toggleAutoPlay();
+          return;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    loadedKifuView,
+    settingsOpen,
+    reviewOpen,
+    kifuOpen,
+    infoOpen,
+    slotPickerOpen,
+    helpModalOpen,
+    kifu.length,
+    isAutoPlaying,
+    replayCursor,
+  ]);
 
   /* ----- Actions ----- */
 
@@ -1299,6 +1523,41 @@ export default function App() {
     } else {
       setKifuOpen(true);
     }
+  }
+
+  /* ----- Auto-play replay ----- */
+
+  /** Speed presets in cadence-ms. Cycled by the speed button next to
+   *  Play. Order: 1x → 2x → 4x → 0.5x → 1x… so a single tap usually
+   *  speeds things up rather than slowing them down. */
+  const AUTOPLAY_SPEEDS: ReadonlyArray<{ ms: number; label: string }> = [
+    { ms: 1000, label: '1x' },
+    { ms: 500, label: '2x' },
+    { ms: 250, label: '4x' },
+    { ms: 2000, label: '0.5x' },
+  ];
+
+  function currentSpeedLabel(): string {
+    const found = AUTOPLAY_SPEEDS.find((s) => s.ms === autoPlayMs);
+    return found?.label ?? '1x';
+  }
+
+  function cycleAutoPlaySpeed() {
+    const idx = AUTOPLAY_SPEEDS.findIndex((s) => s.ms === autoPlayMs);
+    const next = AUTOPLAY_SPEEDS[(idx + 1) % AUTOPLAY_SPEEDS.length];
+    setAutoPlayMs(next.ms);
+  }
+
+  function toggleAutoPlay() {
+    if (isAutoPlaying) {
+      setIsAutoPlaying(false);
+      return;
+    }
+    if ((replayCursor ?? kifu.length) >= kifu.length) {
+      // At the final move — rewind so play visibly does something.
+      setReplayCursor(0);
+    }
+    setIsAutoPlaying(true);
   }
 
   /* ----- Hint ----- */
@@ -1972,50 +2231,71 @@ export default function App() {
               cursor > 0 && cursor <= kifu.length
                 ? moveToNotation(kifu[cursor - 1]).toUpperCase()
                 : null;
-            const iconBtn =
-              'btn p-2 disabled:opacity-30 disabled:cursor-not-allowed';
+            // Manual stepping should pause auto-play — surprising
+            // otherwise to step then have the cursor keep walking on
+            // its own a moment later.
+            const stepFirst = () => {
+              setIsAutoPlaying(false);
+              setReplayCursor(0);
+            };
+            const stepPrev = () => {
+              setIsAutoPlaying(false);
+              setReplayCursor((c) => Math.max(0, (c ?? kifu.length) - 1));
+            };
+            const stepNext = () => {
+              setIsAutoPlaying(false);
+              setReplayCursor((c) => Math.min(kifu.length, (c ?? 0) + 1));
+            };
+            const stepLast = () => {
+              setIsAutoPlaying(false);
+              setReplayCursor(kifu.length);
+            };
             return (
               <div className="mt-3 px-2 py-2 rounded-sm border border-amber-200/25 bg-zinc-950/60 flex items-center justify-between gap-2 flex-wrap">
                 <div className="latin-display text-amber-100/85 text-[11px] tabular-nums tracking-wider px-1">
                   {t.kifuMoveCounter(cursor, kifu.length, currentNotation)}
                 </div>
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setReplayCursor(0)}
+                  <ReplayIconButton
+                    icon={ChevronsLeft}
+                    helpText={t.replayFirst}
+                    onClick={stepFirst}
                     disabled={atStart}
-                    className={iconBtn}
-                    title={t.replayFirst}
-                    aria-label={t.replayFirst}
-                  >
-                    <ChevronsLeft size={16} strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => setReplayCursor((c) => Math.max(0, (c ?? kifu.length) - 1))}
+                  />
+                  <ReplayIconButton
+                    icon={ChevronLeft}
+                    helpText={t.replayPrev}
+                    onClick={stepPrev}
                     disabled={atStart}
-                    className={iconBtn}
-                    title={t.replayPrev}
-                    aria-label={t.replayPrev}
-                  >
-                    <ChevronLeft size={16} strokeWidth={1.5} />
-                  </button>
+                  />
+                  <ReplayIconButton
+                    icon={isAutoPlaying ? Pause : Play}
+                    helpText={isAutoPlaying ? t.replayPause : t.replayPlay}
+                    onClick={toggleAutoPlay}
+                    disabled={kifu.length === 0}
+                    className="text-amber-100"
+                  />
                   <button
-                    onClick={() => setReplayCursor((c) => Math.min(kifu.length, (c ?? 0) + 1))}
-                    disabled={atEnd}
-                    className={iconBtn}
-                    title={t.replayNext}
-                    aria-label={t.replayNext}
+                    type="button"
+                    onClick={cycleAutoPlaySpeed}
+                    className="btn px-2 py-1 latin-display tabular-nums text-[11px] tracking-wider"
+                    title={t.replaySpeedFormat(currentSpeedLabel())}
+                    aria-label={t.replaySpeedFormat(currentSpeedLabel())}
                   >
-                    <ChevronRight size={16} strokeWidth={1.5} />
+                    {currentSpeedLabel()}
                   </button>
-                  <button
-                    onClick={() => setReplayCursor(kifu.length)}
+                  <ReplayIconButton
+                    icon={ChevronRight}
+                    helpText={t.replayNext}
+                    onClick={stepNext}
                     disabled={atEnd}
-                    className={iconBtn}
-                    title={t.replayLast}
-                    aria-label={t.replayLast}
-                  >
-                    <ChevronsRight size={16} strokeWidth={1.5} />
-                  </button>
+                  />
+                  <ReplayIconButton
+                    icon={ChevronsRight}
+                    helpText={t.replayLast}
+                    onClick={stepLast}
+                    disabled={atEnd}
+                  />
                   {/* Jump to next bad / good annotated move (cycles
                       back to first if past the last one). Disabled
                       when no annotation of that quality exists, or
@@ -2023,30 +2303,34 @@ export default function App() {
                   {activeAnnotations && (
                     <>
                       <span className="w-px h-5 bg-amber-200/20 mx-1" />
-                      <button
-                        onClick={() => jumpToNextAnnotated(sortedBadAnnotationIndices)}
+                      <ReplayIconButton
+                        icon={AlertTriangle}
+                        helpText={t.jumpNextBad}
+                        onClick={() => {
+                          setIsAutoPlaying(false);
+                          jumpToNextAnnotated(sortedBadAnnotationIndices);
+                        }}
                         disabled={sortedBadAnnotationIndices.length === 0}
-                        className={`${iconBtn} text-orange-300/85`}
-                        title={t.jumpNextBad}
-                        aria-label={t.jumpNextBad}
-                      >
-                        <AlertTriangle size={16} strokeWidth={1.5} />
-                      </button>
-                      <button
-                        onClick={() => jumpToNextAnnotated(sortedGoodAnnotationIndices)}
+                        className="text-orange-300/85"
+                      />
+                      <ReplayIconButton
+                        icon={ThumbsUp}
+                        helpText={t.jumpNextGood}
+                        onClick={() => {
+                          setIsAutoPlaying(false);
+                          jumpToNextAnnotated(sortedGoodAnnotationIndices);
+                        }}
                         disabled={sortedGoodAnnotationIndices.length === 0}
-                        className={`${iconBtn} text-emerald-300/85`}
-                        title={t.jumpNextGood}
-                        aria-label={t.jumpNextGood}
-                      >
-                        <ThumbsUp size={16} strokeWidth={1.5} />
-                      </button>
+                        className="text-emerald-300/85"
+                      />
                     </>
                   )}
                 </div>
                 <div className="flex items-center gap-1 ml-auto">
                   {loadedSlotReview && (
-                    <button
+                    <ReplayIconButton
+                      icon={ScrollText}
+                      helpText={t.reviewViewSaved}
                       onClick={() =>
                         viewSavedReview({
                           annotations: loadedSlotReview.annotations,
@@ -2054,31 +2338,27 @@ export default function App() {
                           savedAt: loadedSlotReview.savedAt,
                         })
                       }
-                      className={iconBtn}
-                      title={t.reviewViewSaved}
-                      aria-label={t.reviewViewSaved}
-                    >
-                      <ScrollText size={16} strokeWidth={1.5} />
-                    </button>
+                    />
                   )}
                   {gameMode === 'ai' && kifu.length > 0 && (
-                    <button
+                    <ReplayIconButton
+                      icon={Sparkles}
+                      helpText={
+                        loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton
+                      }
                       onClick={startReview}
-                      className={iconBtn}
-                      title={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
-                      aria-label={loadedSlotReview ? t.reviewGenerateNew : t.reviewMatchButton}
-                    >
-                      <Sparkles size={16} strokeWidth={1.5} />
-                    </button>
+                    />
                   )}
-                  <button
+                  <ReplayIconButton
+                    icon={HelpCircle}
+                    helpText={t.replayHelpTitle}
+                    onClick={() => setHelpModalOpen(true)}
+                  />
+                  <ReplayIconButton
+                    icon={X}
+                    helpText={t.kifuViewingClose}
                     onClick={reset}
-                    className={iconBtn}
-                    title={t.kifuViewingClose}
-                    aria-label={t.kifuViewingClose}
-                  >
-                    <X size={16} strokeWidth={1.5} />
-                  </button>
+                  />
                 </div>
               </div>
             );
@@ -2667,6 +2947,115 @@ export default function App() {
                     </div>
                   )}
                 </section>
+              </div>
+            </div>
+          )}
+
+          {/* Replay-controls help modal — opened by the `?` button on
+              the replay strip. Just a static reference list so users
+              can confirm what each icon does without long-pressing. */}
+          {helpModalOpen && (
+            <div className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6">
+              <div className="modal-card scroll-y w-full max-w-md max-h-[95vh] rounded-sm p-5 md:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="latin-display italic ornament text-[10px] uppercase mb-1">
+                      — {t.replayHelpSubtitle} —
+                    </div>
+                    <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">
+                      {t.replayHelpTitle}
+                    </h2>
+                  </div>
+                  <button onClick={() => setHelpModalOpen(false)} className="btn">
+                    {t.close}
+                  </button>
+                </div>
+
+                <ul className="space-y-2 text-sm">
+                  {(
+                    [
+                      { icon: ChevronsLeft, label: t.replayFirst, desc: t.replayHelpDescFirst },
+                      { icon: ChevronLeft, label: t.replayPrev, desc: t.replayHelpDescPrev },
+                      { icon: Play, label: t.replayPlay, desc: t.replayHelpDescPlay },
+                      { icon: ChevronRight, label: t.replayNext, desc: t.replayHelpDescNext },
+                      { icon: ChevronsRight, label: t.replayLast, desc: t.replayHelpDescLast },
+                      {
+                        icon: AlertTriangle,
+                        label: t.jumpNextBad,
+                        desc: t.replayHelpDescJumpBad,
+                        color: 'text-orange-300/85',
+                      },
+                      {
+                        icon: ThumbsUp,
+                        label: t.jumpNextGood,
+                        desc: t.replayHelpDescJumpGood,
+                        color: 'text-emerald-300/85',
+                      },
+                      {
+                        icon: ScrollText,
+                        label: t.reviewViewSaved,
+                        desc: t.replayHelpDescViewSavedReview,
+                      },
+                      {
+                        icon: Sparkles,
+                        label: t.reviewMatchButton,
+                        desc: t.replayHelpDescGenerateReview,
+                      },
+                      { icon: X, label: t.kifuViewingClose, desc: t.replayHelpDescClose },
+                    ] as ReadonlyArray<{
+                      icon: LucideIcon;
+                      label: string;
+                      desc: string;
+                      color?: string;
+                    }>
+                  ).map((row, i) => {
+                    const I = row.icon;
+                    return (
+                      <li
+                        key={i}
+                        className="flex items-start gap-3 px-2 py-2 rounded-sm border border-amber-200/15 bg-amber-200/[0.02]"
+                      >
+                        <span
+                          className={`shrink-0 mt-0.5 ${row.color ?? 'text-amber-100/90'}`}
+                        >
+                          <I size={16} strokeWidth={1.5} />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="jp-display text-amber-100 text-sm font-bold tracking-wider">
+                            {row.label}
+                          </div>
+                          <p className="jp-display text-amber-100/80 text-xs leading-relaxed mt-0.5">
+                            {row.desc}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                  <li className="flex items-start gap-3 px-2 py-2 rounded-sm border border-amber-200/15 bg-amber-200/[0.02]">
+                    <span className="shrink-0 mt-0.5 latin-display tabular-nums text-amber-100/85 text-[11px] font-bold">
+                      1x
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="jp-display text-amber-100 text-sm font-bold tracking-wider">
+                        {t.replaySpeedFormat(currentSpeedLabel())}
+                      </div>
+                      <p className="jp-display text-amber-100/80 text-xs leading-relaxed mt-0.5">
+                        {t.replayHelpDescSpeed}
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+
+                <div className="mt-5 pt-4 border-t border-amber-200/15">
+                  <h3 className="jp-display text-amber-100/90 text-xs tracking-[0.25em] uppercase mb-2">
+                    {t.replayHelpKeyboardHeading}
+                  </h3>
+                  <ul className="space-y-1 jp-display text-amber-100/80 text-xs leading-relaxed">
+                    <li>{t.replayHelpKeyboardArrows}</li>
+                    <li>{t.replayHelpKeyboardSpace}</li>
+                    <li>{t.replayHelpKeyboardHomeEnd}</li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}

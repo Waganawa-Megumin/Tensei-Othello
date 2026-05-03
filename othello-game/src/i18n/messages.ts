@@ -180,6 +180,27 @@ export interface Messages {
   reviewGenerateNew: string;
   jumpNextBad: string;
   jumpNextGood: string;
+  // Auto-play + speed selector + help modal
+  replayPlay: string;
+  replayPause: string;
+  replaySpeedFormat: (label: string) => string; // e.g. "速度: 1x"
+  replayHelpTitle: string;
+  replayHelpSubtitle: string;
+  replayHelpDescFirst: string;
+  replayHelpDescPrev: string;
+  replayHelpDescPlay: string;
+  replayHelpDescNext: string;
+  replayHelpDescLast: string;
+  replayHelpDescJumpBad: string;
+  replayHelpDescJumpGood: string;
+  replayHelpDescViewSavedReview: string;
+  replayHelpDescGenerateReview: string;
+  replayHelpDescSpeed: string;
+  replayHelpDescClose: string;
+  replayHelpKeyboardHeading: string;
+  replayHelpKeyboardArrows: string;
+  replayHelpKeyboardSpace: string;
+  replayHelpKeyboardHomeEnd: string;
 
   // Structured review (per-move annotations)
   reviewSummaryHeading: string;
@@ -418,6 +439,26 @@ export const ja: Messages = {
   reviewGenerateNew: 'レビューを新規生成',
   jumpNextBad: '次の悪手へ',
   jumpNextGood: '次の好手へ',
+  replayPlay: '自動再生を始める',
+  replayPause: '自動再生を停止',
+  replaySpeedFormat: (label) => `速度 ${label}`,
+  replayHelpTitle: 'リプレイ操作の説明',
+  replayHelpSubtitle: 'Replay Controls',
+  replayHelpDescFirst: '初手の前まで一気に戻る',
+  replayHelpDescPrev: '1 手戻る',
+  replayHelpDescPlay: '自動再生 / 一時停止。終端に来ると自動で停止',
+  replayHelpDescNext: '1 手進める',
+  replayHelpDescLast: '最終局面まで一気に進める',
+  replayHelpDescJumpBad: '次の悪手（緩手・悪手・大悪手）に飛ぶ。末尾まで来ると先頭に巻き戻る',
+  replayHelpDescJumpGood: '次の好手（妙手・好手）に飛ぶ。末尾まで来ると先頭に巻き戻る',
+  replayHelpDescViewSavedReview: '保存済みのレビュー（総評・注釈）を読む',
+  replayHelpDescGenerateReview: 'Claude にこの対局をレビューしてもらう。完了時に同じ棋譜へ自動添付',
+  replayHelpDescSpeed: '自動再生の速度を切替（0.5x → 1x → 2x → 4x → 0.5x）',
+  replayHelpDescClose: 'リプレイ閲覧を終了して新規対局へ',
+  replayHelpKeyboardHeading: 'キーボード（PC）',
+  replayHelpKeyboardArrows: '← / → : 1 手戻る / 進める',
+  replayHelpKeyboardSpace: 'Space : 自動再生 / 一時停止',
+  replayHelpKeyboardHomeEnd: 'Home / End : 先頭 / 末尾',
 
   reviewSummaryHeading: '総評',
   reviewImprovementsHeading: '次回への助言',
@@ -655,6 +696,26 @@ your journey on the board reaches its close.`,
   reviewGenerateNew: 'Generate new review',
   jumpNextBad: 'Next mistake',
   jumpNextGood: 'Next good move',
+  replayPlay: 'Start auto-play',
+  replayPause: 'Pause auto-play',
+  replaySpeedFormat: (label) => `Speed ${label}`,
+  replayHelpTitle: 'Replay controls',
+  replayHelpSubtitle: 'Replay Controls',
+  replayHelpDescFirst: 'Jump to before the first move',
+  replayHelpDescPrev: 'Step back one move',
+  replayHelpDescPlay: 'Auto-play / pause. Stops automatically at the final move.',
+  replayHelpDescNext: 'Step forward one move',
+  replayHelpDescLast: 'Jump to the final position',
+  replayHelpDescJumpBad: 'Jump to the next inaccuracy / mistake / blunder. Wraps to the first one when past the last.',
+  replayHelpDescJumpGood: 'Jump to the next good or brilliant move. Wraps to the first one when past the last.',
+  replayHelpDescViewSavedReview: 'Open the saved review (overview + per-move annotations)',
+  replayHelpDescGenerateReview: 'Have Claude review this match. The result is auto-attached to the same kifu.',
+  replayHelpDescSpeed: 'Cycle the auto-play speed (0.5x → 1x → 2x → 4x → 0.5x)',
+  replayHelpDescClose: 'Exit replay and start a new match',
+  replayHelpKeyboardHeading: 'Keyboard (desktop)',
+  replayHelpKeyboardArrows: '← / → : step back / forward',
+  replayHelpKeyboardSpace: 'Space : auto-play / pause',
+  replayHelpKeyboardHomeEnd: 'Home / End : first / last move',
 
   reviewSummaryHeading: 'Overview',
   reviewImprovementsHeading: 'What to improve',
