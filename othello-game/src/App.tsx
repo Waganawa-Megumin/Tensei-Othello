@@ -2523,9 +2523,12 @@ export default function App() {
         .coin-2d-b {
           background: #1f1d18;
         }
-        /* Matte cream face — warm, low luminance, no sheen. */
+        /* Matte muted off-white — distinctly warm yellow undertone
+           so it harmonises with the gold rim, but luminance kept low
+           enough that the flip toss doesn't feel bright on the dark
+           backdrop. */
         .coin-2d-w {
-          background: #d6c79a;
+          background: #ccbf90;
         }
         /* Pip is gold on both faces (matches the rim) so the rim and
            centre form a single visual family. The contrast that
