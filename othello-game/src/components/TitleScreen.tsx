@@ -4,7 +4,7 @@ import type { Locale, Messages } from '../i18n/messages';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.27.0 · landscape-redesign';
+const BUILD_TAG = 'v0.27.1 · landscape-actually-fires';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -39,7 +39,7 @@ export function TitleScreen({
   const completed = storyProgress >= 20;
 
   return (
-    <div className="stage-bg min-h-screen w-full relative flex flex-col items-center justify-center px-4 py-8 max-md:landscape:py-3 overflow-hidden">
+    <div className="stage-bg min-h-screen w-full relative flex flex-col items-center justify-center px-4 py-8 max-lg:landscape:py-3 overflow-hidden">
       {/* Decorative title-screen background — radial light + scattered stones */}
       <div className="absolute inset-0 pointer-events-none">
         <div
@@ -74,29 +74,29 @@ export function TitleScreen({
       </div>
 
       {/* Title block */}
-      <div className="relative text-center mb-10 max-md:landscape:mb-3 md:mb-12">
-        <div className="latin-display italic ornament text-amber-200/50 text-xs max-md:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-md:landscape:mb-1">
+      <div className="relative text-center mb-10 max-lg:landscape:mb-3 md:mb-12">
+        <div className="latin-display italic ornament text-amber-200/50 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1">
           — Reincarnated as an Othello Player —
         </div>
         <h1
-          className="jp-display text-amber-100 text-3xl max-md:landscape:text-xl md:text-5xl font-bold tracking-[0.15em] mb-3 max-md:landscape:mb-1 leading-tight"
+          className="jp-display text-amber-100 text-3xl max-lg:landscape:text-xl md:text-5xl font-bold tracking-[0.15em] mb-3 max-lg:landscape:mb-1 leading-tight"
           style={{ textShadow: '0 0 24px rgba(201, 169, 97, 0.25)' }}
         >
-          転生したら<br className="md:hidden max-md:landscape:hidden" />オセロ世界でした！
+          転生したら<br className="md:hidden max-lg:landscape:hidden" />オセロ世界でした！
         </h1>
-        <p className="jp-display italic text-amber-200/60 text-sm md:text-base tracking-wider max-md:landscape:hidden">
+        <p className="jp-display italic text-amber-200/60 text-sm md:text-base tracking-wider max-lg:landscape:hidden">
           {t.titleSubhead}
         </p>
       </div>
 
       {/* Mode selection cards */}
-      <div className="relative w-full max-w-4xl grid md:grid-cols-3 max-md:landscape:grid-cols-3 gap-3 max-md:landscape:gap-2 md:gap-4 mb-6 max-md:landscape:mb-2">
+      <div className="relative w-full max-w-4xl grid md:grid-cols-3 max-lg:landscape:grid-cols-3 gap-3 max-lg:landscape:gap-2 md:gap-4 mb-6 max-lg:landscape:mb-2">
         {/* Story mode card */}
         <button
           onClick={() => onStart({ mode: 'ai', sub: 'story' })}
-          className="group relative text-left p-5 max-md:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group relative text-left p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
-          <div className="flex items-center gap-2 mb-3 max-md:landscape:mb-1.5">
+          <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Sparkles
               size={18}
               strokeWidth={1.4}
@@ -106,10 +106,10 @@ export function TitleScreen({
               {t.titleStoryLabel}
             </div>
           </div>
-          <h3 className="jp-display text-amber-100 text-xl max-md:landscape:text-base md:text-2xl font-bold tracking-wider mb-2 max-md:landscape:mb-1">
+          <h3 className="jp-display text-amber-100 text-xl max-lg:landscape:text-base md:text-2xl font-bold tracking-wider mb-2 max-lg:landscape:mb-1">
             {t.titleStoryHeading}
           </h3>
-          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4 max-md:landscape:hidden">
+          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4 max-lg:landscape:hidden">
             {t.titleStoryDesc}
           </p>
           {activeSlot && (
@@ -182,9 +182,9 @@ export function TitleScreen({
         {/* Free mode card */}
         <button
           onClick={() => onStart({ mode: 'ai', sub: 'free' })}
-          className="group text-left p-5 max-md:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group text-left p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
-          <div className="flex items-center gap-2 mb-3 max-md:landscape:mb-1.5">
+          <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Swords
               size={18}
               strokeWidth={1.4}
@@ -194,13 +194,13 @@ export function TitleScreen({
               {t.titleFreeLabel}
             </div>
           </div>
-          <h3 className="jp-display text-amber-100 text-xl max-md:landscape:text-base md:text-2xl font-bold tracking-wider mb-2 max-md:landscape:mb-1">
+          <h3 className="jp-display text-amber-100 text-xl max-lg:landscape:text-base md:text-2xl font-bold tracking-wider mb-2 max-lg:landscape:mb-1">
             {t.titleFreeHeading}
           </h3>
-          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4 max-md:landscape:hidden">
+          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4 max-lg:landscape:hidden">
             {t.titleFreeDesc}
           </p>
-          <div className="jp-display italic text-amber-200/70 text-[11px] max-md:landscape:hidden">
+          <div className="jp-display italic text-amber-200/70 text-[11px] max-lg:landscape:hidden">
             {t.titleFreeMeta}
           </div>
         </button>
@@ -208,9 +208,9 @@ export function TitleScreen({
         {/* Two-player mode card */}
         <button
           onClick={() => onStart({ mode: 'human' })}
-          className="group text-left p-5 max-md:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group text-left p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
-          <div className="flex items-center gap-2 mb-3 max-md:landscape:mb-1.5">
+          <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Users
               size={18}
               strokeWidth={1.4}
@@ -220,21 +220,21 @@ export function TitleScreen({
               {t.titleTwoPlayersLabel}
             </div>
           </div>
-          <h3 className="jp-display text-amber-100 text-xl max-md:landscape:text-base md:text-2xl font-bold tracking-wider mb-2 max-md:landscape:mb-1">
+          <h3 className="jp-display text-amber-100 text-xl max-lg:landscape:text-base md:text-2xl font-bold tracking-wider mb-2 max-lg:landscape:mb-1">
             {t.titleTwoPlayersHeading}
           </h3>
-          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4 max-md:landscape:hidden">
+          <p className="jp-display text-amber-200/60 text-xs md:text-sm leading-relaxed mb-4 max-lg:landscape:hidden">
             {t.titleTwoPlayersDesc}
           </p>
-          <div className="jp-display italic text-amber-200/70 text-[11px] max-md:landscape:hidden">
+          <div className="jp-display italic text-amber-200/70 text-[11px] max-lg:landscape:hidden">
             {t.titleTwoPlayersMeta}
           </div>
         </button>
       </div>
 
       {/* Footer hint + language toggle */}
-      <div className="relative flex flex-col items-center gap-3 max-md:landscape:gap-1">
-        <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.3em] uppercase max-md:landscape:hidden">
+      <div className="relative flex flex-col items-center gap-3 max-lg:landscape:gap-1">
+        <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.3em] uppercase max-lg:landscape:hidden">
           {t.titleFooterHint}
         </div>
         <div className="flex gap-1 jp-display text-[11px]">

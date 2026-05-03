@@ -413,14 +413,14 @@ function ToolbarBtn({ icon: Icon, label, onClick, active, disabled }: ToolbarBtn
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex flex-col items-center justify-center gap-1 py-3 max-md:landscape:py-1.5 transition-colors ${
+      className={`flex flex-col items-center justify-center gap-1 py-3 max-lg:landscape:py-1.5 transition-colors ${
         active ? 'bg-amber-200/15 text-amber-100' : 'bg-zinc-950/80 text-amber-100/85'
       } ${disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-900 hover:text-amber-100'}`}
       aria-label={label}
       title={label}
     >
       <Icon size={20} strokeWidth={1.4} />
-      <span className="jp-display text-[10px] tracking-wider max-md:landscape:hidden">{label}</span>
+      <span className="jp-display text-[10px] tracking-wider max-lg:landscape:hidden">{label}</span>
     </button>
   );
 }
@@ -913,7 +913,7 @@ function PlayerPanel({
       } ${
         compact
           ? 'px-4 md:px-5 py-1.5 md:py-2'
-          : 'px-4 md:px-5 py-3 md:py-3.5 max-md:landscape:p-2'
+          : 'px-4 md:px-5 py-3 md:py-3.5 max-lg:landscape:p-2'
       }`}
     >
       {/* ──────────────────────────────────────────────────────────
@@ -923,10 +923,11 @@ function PlayerPanel({
           top → middle → bottom so the strip *uses* its height
           rather than centering and leaving space empty.
           ────────────────────────────────────────────────────────── */}
-      <div className="hidden max-md:landscape:flex flex-col items-center text-center gap-1.5 h-full justify-between py-1">
-        <AvatarBadge kanji={kanji} idx={idx} image={image} size="md" />
-        <div className="flex flex-col items-center gap-0.5 min-w-0 max-w-full">
-          <span className="jp-display text-amber-100/95 text-sm font-medium truncate max-w-full inline-flex items-center gap-1">
+      <div className="hidden max-lg:landscape:flex flex-col items-center text-center gap-2 h-full justify-between py-2">
+        {/* Avatar is the focal point — go large in landscape phones. */}
+        <AvatarBadge kanji={kanji} idx={idx} image={image} size="lg" />
+        <div className="flex flex-col items-center gap-1 min-w-0 max-w-full">
+          <span className="jp-display text-amber-100/95 text-base font-medium truncate max-w-full inline-flex items-center gap-1">
             {name}
             {thinking && <SumiThinking />}
           </span>
@@ -967,7 +968,7 @@ function PlayerPanel({
       {/* ──────────────────────────────────────────────────────────
           Default horizontal layout (portrait phone + desktop).
           ────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 md:gap-4 max-md:landscape:hidden">
+      <div className="flex items-center gap-3 md:gap-4 max-lg:landscape:hidden">
         <AvatarBadge kanji={kanji} idx={idx} image={image} size={compact ? 'sm' : 'md'} />
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
@@ -2792,9 +2793,9 @@ export default function App() {
           onComplete={() => setFirstPlayerRoll(null)}
           t={t}
         />
-        <div className="relative max-w-5xl mx-auto px-4 py-6 max-md:landscape:py-1 md:py-10">
+        <div className="relative max-w-5xl mx-auto px-4 py-6 max-lg:landscape:py-1 md:py-10">
           {/* Top icon toolbar */}
-          <div className="grid grid-cols-8 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 max-md:landscape:mb-2 md:rounded-sm overflow-hidden">
+          <div className="grid grid-cols-8 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 max-lg:landscape:mb-2 md:rounded-sm overflow-hidden">
             <ToolbarBtn icon={Home} label={t.toolbarTitle} onClick={() => setScreen('title')} />
             <ToolbarBtn icon={Menu} label={t.toolbarMenu} onClick={() => setSettingsOpen(true)} />
             <ToolbarBtn
@@ -2824,7 +2825,7 @@ export default function App() {
           </div>
 
           {/* Score panels + board */}
-          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 max-md:landscape:gap-2 items-center max-md:landscape:items-stretch">
+          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 max-lg:landscape:gap-2 items-center max-lg:landscape:items-stretch">
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}
@@ -2851,13 +2852,13 @@ export default function App() {
             </div>
 
             <div className="md:order-2">
-              <div className="board-felt p-3 max-md:landscape:p-1.5 md:p-4 rounded-sm relative">
+              <div className="board-felt p-3 max-lg:landscape:p-1.5 md:p-4 rounded-sm relative">
                 {/* Board width: capped by the smaller viewport
                     dimension. In landscape phone, the smaller side
                     is height — so we let the board grow to 95vmin
                     of the available height. The container's
                     aspect-ratio 1/1 keeps it square. */}
-                <div className="w-[min(86vmin,520px)] max-md:landscape:w-[min(95vmin,520px)]">
+                <div className="w-[min(86vmin,520px)] max-lg:landscape:w-[min(95vmin,520px)]">
                   <div className="flex mb-1">
                     <div style={{ width: 18 }} />
                     <div className="flex-1 grid grid-cols-8">
@@ -2991,7 +2992,7 @@ export default function App() {
           </div>
 
           {/* Progress bar */}
-          <div className={`max-w-xl mx-auto ${loadedKifuView ? 'mt-3' : 'mt-7 max-md:landscape:mt-2'}`}>
+          <div className={`max-w-xl mx-auto ${loadedKifuView ? 'mt-3' : 'mt-7 max-lg:landscape:mt-2'}`}>
             {/* `key={kifu.length}` forces a re-mount on every move so the
                  progress-flash animation replays — the player gets a
                  brief gold halo confirming the bar just moved. */}
@@ -3200,7 +3201,7 @@ export default function App() {
               (the score bar + replay strip already show all the
               relevant context) — hide it to free vertical space. */}
           {!loadedKifuView && (
-            <div className="text-center mt-6 max-md:landscape:hidden latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
+            <div className="text-center mt-6 max-lg:landscape:hidden latin-display italic text-amber-200/55 text-xs tracking-[0.3em] uppercase">
               {gameMode === 'human'
                 ? t.footerHuman
                 : aiMode === 'story'

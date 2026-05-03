@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.0)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.1)
 
 ---
 
@@ -66,6 +66,16 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **landscape variant の breakpoint 修正（max-md → max-lg）+
+      アバター大型化** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      v0.27.0 で `max-md:landscape:` を使ったが、md = 768px に対し
+      iPhone 14 横向きは 852px 幅 → variant が**発火していなかった**。
+      `max-lg:landscape:` (1024px) に変更して全 35 箇所一括置換、
+      実機の landscape phone（最大 ~1023px）で必ず発火するように。
+      ついでにアバターを `md → lg` に大型化（48px → 64px）、内部
+      gap も 1.5 → 2 に増やし「アバターどんと、情報が下に伸びる」
+      ゲーム UI 風レイアウトに。`v0.27.1`
 - [x] **横向きを「縦の圧縮版」ではなく専用レイアウトに作り直し** —
       completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — タイトル画面: 横向きで title font
