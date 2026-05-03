@@ -2431,12 +2431,12 @@ export default function App() {
           70%  { transform: rotateY(calc(var(--coin-final) - 240deg)) rotateX(-8deg) scale(1); opacity: 1; }
           100% { transform: rotateY(var(--coin-final)) rotateX(-8deg) scale(1); opacity: 1; }
         }
-        /* Coin faces. Per-face box-shadows so the white face doesn't
-           inherit a dark inset shadow that pulls it toward grey. The
-           white face uses a warm amber glow and bright highlight so
-           it stays unmistakably "white" against the dark backdrop;
-           the black face uses a deep cold inset and gold glow for
-           contrast. */
+        /* Coin faces. Both share a thick amber rim (inset 3px gold)
+           so the disc reads as a "coin" regardless of which face is
+           up. Beyond that the two faces are deliberately stark — the
+           white face has zero dark inset, the black face has zero
+           bright highlight — so during the spin the eye can lock
+           onto each face's true color without ambiguity. */
         .coin-face {
           position: absolute;
           inset: 0;
@@ -2446,22 +2446,22 @@ export default function App() {
         }
         .coin-face-black {
           background:
-            radial-gradient(circle at 30% 28%, #6e6e6e 0%, #2a2a2a 38%, #050505 75%, #000 100%);
+            radial-gradient(circle at 32% 32%, #2a2a2a 0%, #0a0a0a 55%, #000 100%);
           box-shadow:
-            inset -4px -4px 12px rgba(0, 0, 0, 0.7),
-            inset 5px 5px 14px rgba(255, 255, 255, 0.22),
-            0 10px 24px rgba(0, 0, 0, 0.7),
-            0 0 36px rgba(201, 169, 97, 0.35);
+            inset 0 0 0 3px rgba(201, 169, 97, 0.6),
+            inset 6px 6px 14px rgba(255, 255, 255, 0.08),
+            0 12px 26px rgba(0, 0, 0, 0.7),
+            0 0 38px rgba(201, 169, 97, 0.42);
         }
         .coin-face-white {
           transform: rotateY(180deg);
           background:
-            radial-gradient(circle at 30% 28%, #ffffff 0%, #fdf6e3 35%, #f5e8c8 75%, #ecdfba 100%);
+            radial-gradient(circle at 32% 32%, #ffffff 0%, #f8efd8 60%, #f0e2b6 100%);
           box-shadow:
-            inset -4px -4px 12px rgba(170, 130, 70, 0.35),
-            inset 6px 6px 16px rgba(255, 255, 255, 0.85),
-            0 10px 24px rgba(0, 0, 0, 0.55),
-            0 0 38px rgba(255, 240, 200, 0.55);
+            inset 0 0 0 3px rgba(201, 169, 97, 0.6),
+            inset 6px 6px 14px rgba(255, 255, 255, 0.65),
+            0 12px 26px rgba(0, 0, 0, 0.55),
+            0 0 38px rgba(255, 245, 220, 0.6);
         }
         .first-player-roll {
           animation: roll-fade-in 0.25s ease-out;

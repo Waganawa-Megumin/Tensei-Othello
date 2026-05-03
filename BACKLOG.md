@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.4)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.5)
 
 ---
 
@@ -66,6 +66,17 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.4)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイン白黒判別の最終調整（金縁＋暗 inset 一切なしの白面）** —
+      completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — v0.24.4 でも白がはっきり読めない状態
+      （ユーザースクショ提示）。両 face に共通の太い金縁
+      `inset 0 0 0 3px rgba(201,169,97,0.6)` を入れて「コインの輪郭」を
+      確定させた上で、白面から暗 inset を完全撤去（替わりに白の inset
+      highlight 0.65 alpha）、黒面からは bright highlight を弱める
+      （0.08 alpha）方針に。グラデも 3-stop で簡素化、白は
+      `#ffffff → #f8efd8 → #f0e2b6` のクリーム系のみ、黒は
+      `#2a2a2a → #0a0a0a → #000` の純黒系のみで色相のブレを排除。
+      `v0.24.5`
 - [x] **コイントスの白面が灰色っぽく見える問題を修正（白黒コントラスト
       最大化）** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
