@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.22.0)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.0)
 
 ---
 
@@ -66,6 +66,17 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.22.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **motion-pass-1 素材の取り込み（ChatGPT 納品分）**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — `docs/ui_motion_assets.md` の 5 依頼が
+      ChatGPT から到着、17 ファイルすべて仕様通り（SVG は `currentColor`、
+      favicon は #c9a961 + #0a0805、wagara は asanoha 暫定採用）。
+      `othello-game/public/{ornaments,textures}/` に配置し、CSS mask
+      で petal / sumi / divider を SVG ベースに切替、`.stage-bg::after`
+      に和柄 watermark を追加。`<BrushDivider variant="...">` コンポー
+      ネントを新設し GameOver モーダル（victory / lives0）と replay help
+      モーダルに配置。SumiThinking は 4 frame サイクル（350ms 間隔）に
+      アップグレード。`v0.23.0`
 - [x] **モーション・エフェクト第 1 弾（挿絵待ちの間の UX 底上げ）**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — 7 件のコード演出: (1) スコア数字

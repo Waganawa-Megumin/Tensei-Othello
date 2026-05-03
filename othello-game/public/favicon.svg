@@ -1,24 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <radialGradient id="bg" cx="50%" cy="32%" r="68%">
-      <stop offset="0%" stop-color="#2a1f14"/>
-      <stop offset="100%" stop-color="#0a0805"/>
-    </radialGradient>
-    <radialGradient id="black" cx="35%" cy="32%" r="58%">
-      <stop offset="0%" stop-color="#5a5a5a"/>
-      <stop offset="55%" stop-color="#1a1a1a"/>
-      <stop offset="100%" stop-color="#000"/>
-    </radialGradient>
-    <radialGradient id="white" cx="35%" cy="32%" r="58%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="55%" stop-color="#ebe2cc"/>
-      <stop offset="100%" stop-color="#c5b89c"/>
-    </radialGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <circle cx="180" cy="180" r="86" fill="url(#black)"/>
-  <circle cx="332" cy="332" r="86" fill="url(#white)"/>
-  <text x="256" y="486" font-family="'Shippori Mincho', 'Noto Serif JP', serif"
-        font-size="72" font-weight="700" text-anchor="middle"
-        fill="#c9a961" letter-spacing="6">転生オセロ</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path d="M48 9C58 19 58 39 44 51 29 64 7 54 8 32 9 15 29 2 48 9Z" stroke="#c9a961" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M50 10c2 2 4 5 5 8" stroke="#c9a961" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+  <circle cx="25" cy="25" r="10" fill="#0a0805"/>
+  <circle cx="39" cy="39" r="10" fill="#c9a961" stroke="#0a0805" stroke-width="2.2"/>
 </svg>

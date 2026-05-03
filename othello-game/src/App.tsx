@@ -576,8 +576,10 @@ function ChapterClearConfetti({ active }: { active: boolean }) {
       rotation: number;
       drift: number;
       tone: string;
+      variant: 1 | 2 | 3;
     }>;
     const tones = ['#fbbcd0', '#fde9f3', '#f9c8d8', '#f5e8c8'];
+    const variants: Array<1 | 2 | 3> = [1, 2, 3];
     return Array.from({ length: 36 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
@@ -586,6 +588,7 @@ function ChapterClearConfetti({ active }: { active: boolean }) {
       rotation: Math.random() * 360,
       drift: 18 + Math.random() * 24,
       tone: tones[Math.floor(Math.random() * tones.length)],
+      variant: variants[Math.floor(Math.random() * variants.length)],
     }));
   }, [active]);
   if (!active) return null;
@@ -594,7 +597,7 @@ function ChapterClearConfetti({ active }: { active: boolean }) {
       {petals.map((p) => (
         <span
           key={p.id}
-          className="petal"
+          className={`petal petal-v${p.variant}`}
           style={
             {
               left: `${p.left}%`,
@@ -612,20 +615,60 @@ function ChapterClearConfetti({ active }: { active: boolean }) {
 }
 
 /**
- * Three-dot pulsing indicator used in place of the literal "…" while
- * the AI is thinking. Drives a sumi-e-flavored cadence: each dot fades
- * up and scales in turn, suggesting the brush dancing on the page.
- * When the SVG brushstroke assets land we'll swap the inner spans for
- * `<img src="/ornaments/sumi-thinking-{1..4}.svg">` cycled with the
- * same timing.
+ * Decorative brush-stroke ornament from the motion-pass-1 asset pack.
+ * Renders a single divider-{variant}.svg as a CSS-mask shape so the
+ * stroke picks up the parent's text color (we lean on the existing
+ * .ornament amber tone). Five variants ship: thin / bold / flourish /
+ * end / double — picked per use-site to match the section's weight.
+ */
+function BrushDivider({
+  variant = 'thin',
+  className = '',
+}: {
+  variant?: 'thin' | 'bold' | 'flourish' | 'end' | 'double';
+  className?: string;
+}) {
+  const url = `/ornaments/divider-${variant}.svg`;
+  return (
+    <span
+      className={`brush-divider ${className}`}
+      style={
+        {
+          WebkitMaskImage: `url('${url}')`,
+          maskImage: `url('${url}')`,
+        } as CSSProperties
+      }
+      aria-hidden="true"
+    />
+  );
+}
+
+/**
+ * Sumi-e brushstroke "thinking" indicator. Cycles through the 4
+ * `sumi-thinking-{1..4}.svg` frames at 350ms each so the brush appears
+ * to land, lift, sweep, and re-land. The SVG is applied via CSS mask
+ * so the fill picks up the parent's text color (defaults to amber).
  */
 function SumiThinking() {
+  const [frame, setFrame] = useState(1);
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setFrame((f) => (f % 4) + 1);
+    }, 350);
+    return () => window.clearInterval(id);
+  }, []);
+  const url = `/ornaments/sumi-thinking-${frame}.svg`;
   return (
-    <span className="sumi-thinking" aria-hidden="true">
-      <span />
-      <span />
-      <span />
-    </span>
+    <span
+      className="sumi-thinking-icon"
+      style={
+        {
+          WebkitMaskImage: `url('${url}')`,
+          maskImage: `url('${url}')`,
+        } as CSSProperties
+      }
+      aria-hidden="true"
+    />
   );
 }
 
@@ -1918,6 +1961,17 @@ export default function App() {
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.7 0 0 0 0 0.6 0 0 0 0 0.4 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
           opacity: 0.07; mix-blend-mode: overlay; pointer-events: none;
         }
+        /* Wagara watermark layered above the noise but well below
+           interactive content. The asanoha tile already has a low
+           alpha baked in; we knock it down further with opacity so
+           it reads as a faint lattice rather than competing pattern. */
+        .stage-bg::after {
+          content: ''; position: absolute; inset: 0;
+          background-image: url('/textures/wagara-tile.png');
+          background-repeat: repeat;
+          opacity: 0.55;
+          pointer-events: none;
+        }
 
         .board-felt {
           background: #267a5e;
@@ -2104,53 +2158,80 @@ export default function App() {
           50%      { box-shadow: 0 0 22px 2px rgba(252, 211, 77, 0.32); }
         }
 
-        /* Sumi-e flavored "thinking" indicator: three dots pulse in
-           sequence. Replaces the literal "…" the AI panel used to
-           show. The base background is amber so it sits naturally
-           beside Shippori Mincho display type. */
-        .sumi-thinking {
-          display: inline-flex;
-          gap: 5px;
-          align-items: center;
-          height: 1em;
+        /* Brush-stroke decorative divider. Sized to a comfortable
+           ornament height and tinted via the parent's color (amber
+           by default). Use as a sibling of h1/h2 to give the eye a
+           moment to breathe before the heading. */
+        .brush-divider {
+          display: block;
+          width: min(18rem, 60%);
+          height: 18px;
+          margin: 0 auto;
+          background-color: currentColor;
+          color: rgba(201, 169, 97, 0.55);
+          -webkit-mask-position: center;
+                  mask-position: center;
+          -webkit-mask-repeat: no-repeat;
+                  mask-repeat: no-repeat;
+          -webkit-mask-size: contain;
+                  mask-size: contain;
         }
-        .sumi-thinking > span {
-          width: 6px; height: 6px;
-          border-radius: 50%;
-          background: rgba(245, 232, 200, 0.85);
-          animation: sumi-pulse 1.4s ease-in-out infinite;
-        }
-        .sumi-thinking > span:nth-child(2) { animation-delay: 0.2s; }
-        .sumi-thinking > span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes sumi-pulse {
-          0%, 60%, 100% { opacity: 0.25; transform: scale(0.85); }
-          30%           { opacity: 1;    transform: scale(1.18); }
+
+        /* Sumi-e flavored "thinking" indicator. The <SumiThinking>
+           component cycles through 4 brushstroke SVG frames at 350 ms
+           per frame; the inline span uses a CSS mask so the SVG fill
+           tints to currentColor. */
+        .sumi-thinking-icon {
+          display: inline-block;
+          width: 1.4em;
+          height: 1.4em;
+          background-color: rgba(245, 232, 200, 0.92);
+          -webkit-mask-position: center;
+                  mask-position: center;
+          -webkit-mask-repeat: no-repeat;
+                  mask-repeat: no-repeat;
+          -webkit-mask-size: contain;
+                  mask-size: contain;
+          vertical-align: middle;
+          margin-left: 4px;
         }
 
         /* Sakura petal celebration. Two animations run together:
            petal-fall drops the element from above the viewport to
            below it, while petal-sway rocks the inline margin to
-           imitate wind drift. The placeholder shape is a 14x14
-           radial-gradient blossom; once petal-{1,2,3}.svg ship from
-           the asset request, swap the pseudo-element background to
-           the SVG. */
+           imitate wind drift. Shape comes from petal-{1,2,3}.svg via
+           CSS mask; the inline color from JS becomes the petal tint
+           through background-color: currentColor. */
         .petal {
           --petal-drift: 22px;
           position: absolute;
           top: -24px;
-          width: 14px;
-          height: 14px;
-          background:
-            radial-gradient(ellipse at 50% 35%,
-              currentColor 0%,
-              currentColor 35%,
-              rgba(255, 255, 255, 0) 75%);
-          border-radius: 50% 0 50% 50%;
-          opacity: 0.95;
+          width: 18px;
+          height: 18px;
+          background-color: currentColor;
+          -webkit-mask-position: center;
+                  mask-position: center;
+          -webkit-mask-repeat: no-repeat;
+                  mask-repeat: no-repeat;
+          -webkit-mask-size: contain;
+                  mask-size: contain;
+          opacity: 0.92;
           will-change: transform, top;
           animation:
             petal-fall linear forwards,
             petal-sway ease-in-out infinite alternate;
+        }
+        .petal-v1 {
+          -webkit-mask-image: url('/ornaments/petal-1.svg');
+                  mask-image: url('/ornaments/petal-1.svg');
+        }
+        .petal-v2 {
+          -webkit-mask-image: url('/ornaments/petal-2.svg');
+                  mask-image: url('/ornaments/petal-2.svg');
+        }
+        .petal-v3 {
+          -webkit-mask-image: url('/ornaments/petal-3.svg');
+                  mask-image: url('/ornaments/petal-3.svg');
         }
         @keyframes petal-fall {
           0%   { top: -32px; }
@@ -2702,6 +2783,10 @@ export default function App() {
                     <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-red-300/80">
                       — {t.gameOverScreenLabel} —
                     </div>
+                    <BrushDivider
+                      variant="end"
+                      className="text-red-300/55 mb-3"
+                    />
                     <h2
                       className="jp-display text-4xl md:text-5xl font-bold mb-6 tracking-[0.18em] text-red-200/95"
                       style={{ textShadow: '0 0 18px rgba(220, 80, 80, 0.35)' }}
@@ -2776,6 +2861,10 @@ export default function App() {
                         ? t.chapterN(playedChapter)
                         : t.finalResult}
                   </div>
+                  <BrushDivider
+                    variant={justCompletedStory ? 'flourish' : 'bold'}
+                    className="mb-3"
+                  />
                   <h2 className="jp-display text-4xl md:text-5xl text-amber-100 font-bold mb-6 tracking-[0.15em]">
                     {justCompletedStory
                       ? t.storyEnding
@@ -3230,10 +3319,11 @@ export default function App() {
             <div className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6">
               <div className="modal-card scroll-y w-full max-w-md max-h-[95vh] rounded-sm p-5 md:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="latin-display italic ornament text-[10px] uppercase mb-1">
                       — {t.replayHelpSubtitle} —
                     </div>
+                    <BrushDivider variant="thin" className="mb-2 max-w-[12rem]" />
                     <h2 className="jp-display text-amber-100 text-xl md:text-2xl font-bold tracking-[0.15em]">
                       {t.replayHelpTitle}
                     </h2>
