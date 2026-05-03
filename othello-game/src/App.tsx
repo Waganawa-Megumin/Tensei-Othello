@@ -388,8 +388,14 @@ interface ReplayIconButtonProps {
   helpText: string;
   onClick: () => void;
   disabled?: boolean;
-  /** Extra Tailwind classes (e.g. color tints for warn/positive). */
-  className?: string;
+  /**
+   * Tailwind classes applied to the lucide SVG itself (not the button)
+   * so color tints actually stick. The shared `.btn` rule sets `color`
+   * via an inline `<style>` block that wins over a Tailwind utility on
+   * the button — but the SVG's own color rule wins for its own stroke,
+   * since the icon uses `currentColor`.
+   */
+  iconClassName?: string;
   /** Aria-label override (defaults to helpText). */
   ariaLabel?: string;
 }
@@ -399,7 +405,7 @@ function ReplayIconButton({
   helpText,
   onClick,
   disabled,
-  className,
+  iconClassName,
   ariaLabel,
 }: ReplayIconButtonProps) {
   const [showHelp, setShowHelp] = useState(false);
@@ -483,9 +489,9 @@ function ReplayIconButton({
         disabled={disabled}
         title={helpText}
         aria-label={ariaLabel ?? helpText}
-        className={`${baseBtn}${className ? ` ${className}` : ''}`}
+        className={baseBtn}
       >
-        <Icon size={16} strokeWidth={1.5} />
+        <Icon size={16} strokeWidth={1.5} className={iconClassName} />
       </button>
       {showHelp && (
         <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-1 bg-zinc-900/95 border border-amber-200/30 rounded-sm jp-display text-amber-100 text-[11px] leading-tight whitespace-nowrap z-50 pointer-events-none shadow-lg">
@@ -2318,7 +2324,7 @@ export default function App() {
                     helpText={isAutoPlaying ? t.replayPause : t.replayPlay}
                     onClick={toggleAutoPlay}
                     disabled={kifu.length === 0}
-                    className="text-amber-100"
+                    iconClassName="text-amber-100"
                   />
                   <button
                     type="button"
@@ -2356,7 +2362,7 @@ export default function App() {
                           jumpToNextAnnotated(sortedBadAnnotationIndices);
                         }}
                         disabled={sortedBadAnnotationIndices.length === 0}
-                        className="text-orange-300/85"
+                        iconClassName="text-orange-300/85"
                       />
                       <ReplayIconButton
                         icon={ThumbsUp}
@@ -2366,7 +2372,7 @@ export default function App() {
                           jumpToNextAnnotated(sortedGoodAnnotationIndices);
                         }}
                         disabled={sortedGoodAnnotationIndices.length === 0}
-                        className="text-emerald-300/85"
+                        iconClassName="text-emerald-300/85"
                       />
                     </>
                   )}

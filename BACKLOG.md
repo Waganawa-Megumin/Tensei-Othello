@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.1)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.2)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.21.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **リプレイ strip の jump-bad/good ボタンに色がつかない不具合修正**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — `.btn` クラスが inline `<style>` で `color`
+      を直接指定しており、`text-orange-300/85` がボタンレベルで負けて
+      いた。`ReplayIconButton` を改修して色クラスを **lucide SVG 自身**
+      に渡すように（`iconClassName` prop に rename）。SVG の自身の
+      color rule が currentColor 経由でストロークに勝つため、ヘルプ
+      モーダルの説明と現物のアイコン色が一致するように。`v0.21.2`
 - [x] **棋譜リプレイ strip を 2 段レイアウトに分割（ボタンはみ出し
       修正 + 視線導線改善）** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) — 注釈
