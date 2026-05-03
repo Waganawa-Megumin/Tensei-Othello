@@ -2825,7 +2825,7 @@ export default function App() {
           </div>
 
           {/* Score panels + board */}
-          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 max-lg:landscape:gap-2 items-center max-lg:landscape:items-stretch">
+          <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] max-lg:landscape:grid-cols-[140px_auto_140px] max-lg:landscape:justify-center gap-5 md:gap-6 landscape:gap-4 max-lg:landscape:gap-5 items-center max-lg:landscape:items-stretch">
             <div className="md:order-1">
               <PlayerPanel
                 color={BLACK}
@@ -2854,11 +2854,13 @@ export default function App() {
             <div className="md:order-2">
               <div className="board-felt p-3 max-lg:landscape:p-1.5 md:p-4 rounded-sm relative">
                 {/* Board width: capped by the smaller viewport
-                    dimension. In landscape phone, the smaller side
-                    is height — so we let the board grow to 95vmin
-                    of the available height. The container's
-                    aspect-ratio 1/1 keeps it square. */}
-                <div className="w-[min(86vmin,520px)] max-lg:landscape:w-[min(95vmin,520px)]">
+                    dimension. In landscape phone the height includes
+                    browser chrome (URL bar) at first paint, so 95vmin
+                    overshoots and the bottom of the board scrolls
+                    off. Use 70vh to leave room for the toolbar +
+                    progress bar + page padding within the *visible*
+                    viewport, plus a hard cap. */}
+                <div className="w-[min(86vmin,520px)] max-lg:landscape:w-[min(70vh,420px)]">
                   <div className="flex mb-1">
                     <div style={{ width: 18 }} />
                     <div className="flex-1 grid grid-cols-8">

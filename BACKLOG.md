@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.1)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.2)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.27.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **横向きの盤面 overflow 修正＋パネルと盤面の隙間確保** —
+      completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — 95vmin (374px) は URL bar 込みの実効
+      viewport を超えて板が下端で切れていた → `min(70vh, 420px)` に
+      下げて確実に収まるサイズに。grid を `1fr auto 1fr` →
+      `[140px auto 140px]` の固定パネル幅 + `justify-center` で
+      中央寄せ。gap も `gap-2 → gap-5` (8px → 20px) に拡大して、
+      パネルと盤面の間に余裕。`v0.27.2`
 - [x] **landscape variant の breakpoint 修正（max-md → max-lg）+
       アバター大型化** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
