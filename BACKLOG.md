@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.2)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.3)
 
 ---
 
@@ -66,6 +66,17 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.2)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **`<BrushDivider>` と `<SumiThinking>` も inline SVG 化（mask-image
+      経由の描画失敗を一掃）** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) — 桜と
+      同じ問題（モバイル Safari で mask-image が silently fail）が divider
+      と AI thinking インジケーターでも起こりうるため、両方とも
+      inline SVG 描画に統一。divider 5 variants（thin/bold/flourish/
+      end/double）と sumi 4 frames のパスデータを `DIVIDER_PATHS` /
+      `SUMI_FRAMES` const として内包、`fill="currentColor"` で CSS
+      `color` から着色できる純粋な React 描画に切替。CSS 側の `mask-*`
+      宣言を全削除。素材ファイルは引き続き `public/ornaments/` に
+      残してあり外部参照（docs / SNS）には使える。`v0.23.3`
 - [x] **桜紙吹雪が描画されない不具合を inline SVG 化で修正**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — `<ChapterClearConfetti>` の petal を CSS

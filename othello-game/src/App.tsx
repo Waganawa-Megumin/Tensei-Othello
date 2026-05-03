@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from 'react';
 import {
   AlertTriangle,
@@ -630,11 +631,57 @@ function ChapterClearConfetti({ active }: { active: boolean }) {
 
 /**
  * Decorative brush-stroke ornament from the motion-pass-1 asset pack.
- * Renders a single divider-{variant}.svg as a CSS-mask shape so the
- * stroke picks up the parent's text color (we lean on the existing
- * .ornament amber tone). Five variants ship: thin / bold / flourish /
- * end / double — picked per use-site to match the section's weight.
+ * Renders the divider as an **inline SVG** (path data inlined below)
+ * rather than reaching into /ornaments/divider-N.svg via CSS
+ * `mask-image` — that approach silently fails on older Mobile Safari
+ * and during the first paint of a fresh PWA install. Inline keeps the
+ * ornament functional on every device and frame.
  */
+const DIVIDER_PATHS: Record<
+  'thin' | 'bold' | 'flourish' | 'end' | 'double',
+  ReactNode
+> = {
+  thin: (
+    <>
+      <path d="M12 12.1C48 11 78 12.8 119 12c38-.8 73-1.2 109 .6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" opacity="0.82" />
+      <path d="M13 12.2C58 10.4 101 13.4 159 12.1c29-.7 51-.4 67 .4" stroke="currentColor" strokeWidth="4.8" strokeLinecap="round" opacity="0.14" />
+      <path d="M13 12.1h12M216 12.5h11" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" opacity="0.55" />
+    </>
+  ),
+  bold: (
+    <>
+      <path d="M11 12C48 9 76 13.3 103 12.5c18-.5 30-3.8 51-2.5 25 1.5 54 4 77 2" stroke="currentColor" strokeWidth="5.8" strokeLinecap="round" opacity="0.78" />
+      <path d="M16 12.4C60 11.8 91 12.2 120 12s61 .6 105-.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.65" />
+      <path d="M33 10.3c4 1.8 10 1.9 15 .4M184 14.4c8-.7 16-1.2 25-.1" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.28" />
+    </>
+  ),
+  flourish: (
+    <>
+      <path d="M13 12c37-1.5 67 .9 92-.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" opacity="0.68" />
+      <path d="M135 11.7c24 1.2 58-1 92 .4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" opacity="0.68" />
+      <path d="M120 5.6l6.4 6.4-6.4 6.4-6.4-6.4z" fill="currentColor" opacity="0.74" />
+      <path d="M120 8.8l3.2 3.2-3.2 3.2-3.2-3.2z" fill="currentColor" opacity="0.28" />
+      <path d="M101 12h7M132 12h7" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" opacity="0.42" />
+    </>
+  ),
+  end: (
+    <>
+      <path d="M12 12.3C46 10.5 83 12.9 123 11.8" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" opacity="0.78" />
+      <path d="M122 11.8c24-.6 41 .8 58 1" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" opacity="0.44" />
+      <path d="M181 12.8c12 .2 21-.2 29-.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.24" />
+      <path d="M213 12.2h9M226 11.9h3" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" opacity="0.15" />
+      <path d="M38 10.8c10 2.3 24 1.1 36 1.6" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" opacity="0.28" />
+    </>
+  ),
+  double: (
+    <>
+      <path d="M15 8.7C54 7.6 89 9.4 121 8.9c37-.5 72-.8 106 .4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" opacity="0.72" />
+      <path d="M27 15.3c36-1.2 72 .8 109-.1 28-.7 53-.6 77 .2" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" opacity="0.58" />
+      <path d="M15 8.8h6M221 9.3h6M27 15.3h8M207 15.4h6" stroke="currentColor" strokeWidth="0.75" strokeLinecap="round" opacity="0.42" />
+    </>
+  ),
+};
+
 function BrushDivider({
   variant = 'thin',
   className = '',
@@ -642,47 +689,70 @@ function BrushDivider({
   variant?: 'thin' | 'bold' | 'flourish' | 'end' | 'double';
   className?: string;
 }) {
-  const url = `/ornaments/divider-${variant}.svg`;
   return (
-    <span
+    <svg
       className={`brush-divider ${className}`}
-      style={
-        {
-          WebkitMaskImage: `url('${url}')`,
-          maskImage: `url('${url}')`,
-        } as CSSProperties
-      }
+      viewBox="0 0 240 24"
+      preserveAspectRatio="xMidYMid meet"
+      fill="none"
       aria-hidden="true"
-    />
+    >
+      {DIVIDER_PATHS[variant]}
+    </svg>
   );
 }
 
 /**
- * Sumi-e brushstroke "thinking" indicator. Cycles through the 4
- * `sumi-thinking-{1..4}.svg` frames at 350ms each so the brush appears
- * to land, lift, sweep, and re-land. The SVG is applied via CSS mask
- * so the fill picks up the parent's text color (defaults to amber).
+ * Sumi-e brushstroke "thinking" indicator. Cycles through 4 inline
+ * SVG frames at 350 ms each so the brush appears to land, lift,
+ * sweep, and re-land. The frames are inlined (rather than loaded
+ * from /ornaments/sumi-thinking-N.svg via CSS `mask-image`) so they
+ * render reliably on every browser and at first paint.
  */
+const SUMI_FRAMES: Record<1 | 2 | 3 | 4, ReactNode> = {
+  1: (
+    <>
+      <circle cx="16" cy="18" r="4.2" fill="currentColor" opacity="0.9" />
+      <ellipse cx="16" cy="18.5" rx="6.2" ry="4.8" fill="currentColor" opacity="0.18" />
+    </>
+  ),
+  2: (
+    <>
+      <ellipse cx="16" cy="16" rx="4.1" ry="8.3" fill="currentColor" opacity="0.88" />
+      <ellipse cx="16" cy="20.5" rx="5.8" ry="2.6" fill="currentColor" opacity="0.16" />
+    </>
+  ),
+  3: (
+    <>
+      <path fill="currentColor" opacity="0.88" d="M9 22c2-7 9-13 15-15-1 5-7 13-15 15z" />
+      <path fill="currentColor" opacity="0.18" d="M8 23c5-2 12-5 18-10-4 6-10 10-18 10z" />
+    </>
+  ),
+  4: (
+    <>
+      <circle cx="16" cy="18" r="4.4" fill="currentColor" opacity="0.82" />
+      <circle cx="19.2" cy="16.8" r="1.3" fill="currentColor" opacity="0.3" />
+      <ellipse cx="16" cy="18.6" rx="7" ry="5.2" fill="currentColor" opacity="0.2" />
+    </>
+  ),
+};
+
 function SumiThinking() {
-  const [frame, setFrame] = useState(1);
+  const [frame, setFrame] = useState<1 | 2 | 3 | 4>(1);
   useEffect(() => {
     const id = window.setInterval(() => {
-      setFrame((f) => (f % 4) + 1);
+      setFrame((f) => (((f % 4) + 1) as 1 | 2 | 3 | 4));
     }, 350);
     return () => window.clearInterval(id);
   }, []);
-  const url = `/ornaments/sumi-thinking-${frame}.svg`;
   return (
-    <span
+    <svg
       className="sumi-thinking-icon"
-      style={
-        {
-          WebkitMaskImage: `url('${url}')`,
-          maskImage: `url('${url}')`,
-        } as CSSProperties
-      }
+      viewBox="0 0 32 32"
       aria-hidden="true"
-    />
+    >
+      {SUMI_FRAMES[frame]}
+    </svg>
   );
 }
 
@@ -2175,40 +2245,26 @@ export default function App() {
           50%      { box-shadow: 0 0 22px 2px rgba(252, 211, 77, 0.32); }
         }
 
-        /* Brush-stroke decorative divider. Sized to a comfortable
-           ornament height and tinted via the parent's color (amber
-           by default). Use as a sibling of h1/h2 to give the eye a
-           moment to breathe before the heading. */
+        /* Brush-stroke decorative divider. Inline-SVG <BrushDivider>
+           strokes inherit color from this rule via currentColor, so
+           a per-instance className like text-red-300/55 recolors
+           every stroke at once. */
         .brush-divider {
           display: block;
           width: min(18rem, 60%);
           height: 18px;
           margin: 0 auto;
-          background-color: currentColor;
           color: rgba(201, 169, 97, 0.55);
-          -webkit-mask-position: center;
-                  mask-position: center;
-          -webkit-mask-repeat: no-repeat;
-                  mask-repeat: no-repeat;
-          -webkit-mask-size: contain;
-                  mask-size: contain;
         }
 
-        /* Sumi-e flavored "thinking" indicator. The <SumiThinking>
-           component cycles through 4 brushstroke SVG frames at 350 ms
-           per frame; the inline span uses a CSS mask so the SVG fill
-           tints to currentColor. */
+        /* Sumi-e flavored "thinking" indicator. <SumiThinking> renders
+           inline SVG (4 frames swapped on a 350 ms timer); the SVG
+           fills inherit currentColor from this rule. */
         .sumi-thinking-icon {
           display: inline-block;
           width: 1.4em;
           height: 1.4em;
-          background-color: rgba(245, 232, 200, 0.92);
-          -webkit-mask-position: center;
-                  mask-position: center;
-          -webkit-mask-repeat: no-repeat;
-                  mask-repeat: no-repeat;
-          -webkit-mask-size: contain;
-                  mask-size: contain;
+          color: rgba(245, 232, 200, 0.92);
           vertical-align: middle;
           margin-left: 4px;
         }
