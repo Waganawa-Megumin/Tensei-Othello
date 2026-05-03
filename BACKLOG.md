@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.5)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.26.0)
 
 ---
 
@@ -66,6 +66,16 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.5)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **横向きスマホで縦スペースを使い切るレイアウト圧縮（A〜E 全部）**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — `max-md:landscape:` variant を全方向に
+      適用: ページ padding `py-6 → py-1`、ツールバーラベル隠蔽 + py
+      圧縮、ツールバー下マージン `mb-5 → mb-2`、PlayerPanel padding/
+      gap 圧縮、avatar `md → sm`、quote 行隠蔽、進捗バー上マージン
+      `mt-7 → mt-2`、フッターキャプション隠蔽、グリッド gap `gap-4
+      → gap-2`、盤面 padding `p-3 → p-1.5`、盤面サイズ `86vmin →
+      95vmin`。これで iPhone 横向きでも盤面まで一画面に収まり、左右
+      パネルもコンパクトに。 `v0.26.0`
 - [x] **コイントス白面を `#b8a36a` のアンティークゴールド寄りに調整**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — `#ccbf90` でも明るかったため、もう一段
