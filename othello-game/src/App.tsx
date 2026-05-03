@@ -1964,12 +1964,15 @@ export default function App() {
         /* Wagara watermark layered above the noise but well below
            interactive content. The asanoha tile already has a low
            alpha baked in; we knock it down further with opacity so
-           it reads as a faint lattice rather than competing pattern. */
+           it reads as a faint lattice rather than competing pattern.
+           Kept conservative (0.35) so semi-transparent UI cards on
+           top — like the replay strip — don't pick up the pattern
+           through their backgrounds. */
         .stage-bg::after {
           content: ''; position: absolute; inset: 0;
           background-image: url('/textures/wagara-tile.png');
           background-repeat: repeat;
-          opacity: 0.55;
+          opacity: 0.35;
           pointer-events: none;
         }
 
@@ -2589,7 +2592,7 @@ export default function App() {
               setReplayCursor(kifu.length);
             };
             return (
-              <div className="mt-3 px-2 py-2 rounded-sm border border-amber-200/25 bg-zinc-950/60 flex flex-col gap-2">
+              <div className="mt-3 px-2 py-2 rounded-sm border border-amber-200/30 bg-zinc-950/90 flex flex-col gap-2">
                 {/* Top row: status + meta-actions. Counter sits left so
                     the player reads where they are first; review / help
                     / close anchor right so they don't shift across rows
@@ -2721,7 +2724,7 @@ export default function App() {
             const q = currentAnnotation.quality;
             const style = QUALITY_STYLES[q];
             return (
-              <div className="mt-2 px-3 py-2.5 rounded-sm border border-amber-200/20 bg-zinc-950/60 flex items-start gap-2">
+              <div className="mt-2 px-3 py-2.5 rounded-sm border border-amber-200/25 bg-zinc-950/90 flex items-start gap-2">
                 <span
                   className={`shrink-0 latin-display text-[10px] tracking-[0.2em] uppercase border px-2 py-0.5 rounded-sm ${style.badge}`}
                 >

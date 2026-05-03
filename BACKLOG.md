@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.0)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.1)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **リプレイ strip の視認性復帰（wagara が透けて見えていた）**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — v0.23.0 で stage-bg に和柄 watermark を
+      敷いたら、`bg-zinc-950/60` の半透明 strip 越しに wagara が透けて
+      しまい「2 段レイアウトが薄く見える」状態に。strip と注釈
+      コメントブロックを `bg-zinc-950/90` に bump、stage-bg::after の
+      wagara opacity を 0.55 → 0.35 に下げて、半透明 UI が背景パターン
+      を拾わないように調整。`v0.23.1`
 - [x] **motion-pass-1 素材の取り込み（ChatGPT 納品分）**
       — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
       — commit: (next push) — `docs/ui_motion_assets.md` の 5 依頼が
