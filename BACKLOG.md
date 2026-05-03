@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.4)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.0)
 
 ---
 
@@ -66,6 +66,16 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.23.4)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **先攻／後攻の選択 + 位置スワップ + 握り石コインフリップ演出**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — `playerColor` state を導入、人間が黒/白
+      どちらを取るかでパネル位置・AI トリガ・undo・resign・lives/level
+      表示・勝敗記録の対象がすべて切替わるように改修。フリーモードに
+      「ランダム/先攻（黒）/後攻（白）」の 3 択 UI を追加。ストーリー
+      モードは毎章ランダム。ランダム選択時は CSS 3D 回転の握り石コイン
+      フリップ overlay を 2 秒表示してから対局開始。kifu スロットにも
+      `playerColor?: Color` を保存・復元（旧スロットは BLACK 既定で
+      下位互換）。`v0.24.0`
 - [x] **プレイヤーパネル枠と盤面外枠の重なり修正** — completed:
       2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` — commit:
       (next push) — portrait モバイルでパネル下端と盤面外枠（13px の

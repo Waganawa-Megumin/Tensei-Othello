@@ -56,6 +56,13 @@ interface PersistedSlotV1 {
    * review was generated via the annotate_othello_game tool call.
    */
   reviewAnnotations?: ReviewAnnotations;
+  /**
+   * Color the human played in this match (BLACK = went first, WHITE =
+   * went second). Optional for backward compat — older slots predate
+   * the first/second selector and assumed Black; the loader defaults
+   * to BLACK when absent.
+   */
+  playerColor?: Color;
 }
 
 export type PersistedSlot = PersistedSlotV1;
@@ -214,5 +221,9 @@ function migrateSlot(raw: unknown): PersistedSlot | null {
     reviewAnnotations: isObject(raw.reviewAnnotations)
       ? (raw.reviewAnnotations as unknown as ReviewAnnotations)
       : undefined,
+    playerColor:
+      raw.playerColor === 1 || raw.playerColor === -1
+        ? (raw.playerColor as Color)
+        : undefined,
   };
 }

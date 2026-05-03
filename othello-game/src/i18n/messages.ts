@@ -73,6 +73,19 @@ export interface Messages {
   chapterClearedBadge: string;
   chapterCounter: (n: number, max: number) => string;
 
+  // First/second selector + roll animation
+  firstPlayerHeading: string;
+  firstPlayerSubtitle: string;
+  firstPlayerRandom: string;
+  firstPlayerFirst: string;
+  firstPlayerSecond: string;
+  firstPlayerStoryHint: string;
+  firstPlayerRollLabel: string;
+  firstPlayerRollFirst: (name: string) => string;
+  firstPlayerRollSecond: (name: string) => string;
+  firstPlayerRollFirstHint: string;
+  firstPlayerRollSecondHint: string;
+
   // Match info modal
   matchInfo: string;
   mode: string;
@@ -311,6 +324,18 @@ export const ja: Messages = {
   chapterCurrentBadge: '（現在）',
   chapterClearedBadge: '（クリア済）',
   chapterCounter: (n, max) => `第${n}章 / 第${max}章`,
+
+  firstPlayerHeading: '手番',
+  firstPlayerSubtitle: 'First / Second',
+  firstPlayerRandom: 'ランダム',
+  firstPlayerFirst: '先攻（黒）',
+  firstPlayerSecond: '後攻（白）',
+  firstPlayerStoryHint: '※ ストーリーモードでは毎章ランダムに決まります',
+  firstPlayerRollLabel: '握り石',
+  firstPlayerRollFirst: (name) => `${name}：先攻（黒）`,
+  firstPlayerRollSecond: (name) => `${name}：後攻（白）`,
+  firstPlayerRollFirstHint: '黒石を握った。先に石を打つ',
+  firstPlayerRollSecondHint: '白石を握った。相手の手を読んで応える',
 
   matchInfo: '対局情報',
   mode: 'Mode',
@@ -568,6 +593,18 @@ export const en: Messages = {
   chapterCurrentBadge: '(current)',
   chapterClearedBadge: '(cleared)',
   chapterCounter: (n, max) => `Chapter ${n} / ${max}`,
+
+  firstPlayerHeading: 'Turn order',
+  firstPlayerSubtitle: 'First / Second',
+  firstPlayerRandom: 'Random',
+  firstPlayerFirst: 'Go first (Black)',
+  firstPlayerSecond: 'Go second (White)',
+  firstPlayerStoryHint: 'In story mode the side is rolled at the start of every chapter.',
+  firstPlayerRollLabel: 'The toss',
+  firstPlayerRollFirst: (name) => `${name}: First (Black)`,
+  firstPlayerRollSecond: (name) => `${name}: Second (White)`,
+  firstPlayerRollFirstHint: 'You drew Black — you move first.',
+  firstPlayerRollSecondHint: 'You drew White — read your opponent and respond.',
 
   matchInfo: 'Match Info',
   mode: 'Mode',

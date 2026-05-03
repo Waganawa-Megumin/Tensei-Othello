@@ -703,6 +703,70 @@ function BrushDivider({
 }
 
 /**
+ * Coin-flip overlay shown at the start of a match whose first/second
+ * assignment was randomized (story mode every chapter, free mode when
+ * the player chose "ランダム"). Spins a stylized stone disc on the
+ * Y-axis for ~1s, then settles on the chosen color and reveals
+ * "あなた：先攻 (黒)" / "あなた：後攻 (白)" before auto-dismissing.
+ */
+interface FirstPlayerRollProps {
+  active: boolean;
+  result: Color | null;
+  playerName: string;
+  onComplete: () => void;
+  t: Messages;
+}
+
+function FirstPlayerRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
+  // Phase 1 (0-1.0s): coin spinning, no label yet.
+  // Phase 2 (1.0-2.0s): coin landed, label visible.
+  // After 2.0s: dismiss.
+  const [phase, setPhase] = useState<'spin' | 'reveal'>('spin');
+  useEffect(() => {
+    if (!active) return;
+    setPhase('spin');
+    const reveal = window.setTimeout(() => setPhase('reveal'), 1000);
+    const finish = window.setTimeout(onComplete, 2000);
+    return () => {
+      window.clearTimeout(reveal);
+      window.clearTimeout(finish);
+    };
+  }, [active, onComplete]);
+  if (!active || result === null) return null;
+  const isFirst = result === BLACK;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 backdrop-blur-sm first-player-roll">
+      <div className="text-center px-6">
+        <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-amber-200/70">
+          — {t.firstPlayerRollLabel} —
+        </div>
+        <div className="coin-flip mx-auto mb-5">
+          <div className="coin-face coin-face-black" />
+          <div className="coin-face coin-face-white" />
+        </div>
+        <div
+          className={`jp-display tracking-[0.18em] text-2xl md:text-3xl font-bold transition-opacity duration-500 ${
+            phase === 'reveal' ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ color: isFirst ? '#f5e8c8' : '#ebe2cc' }}
+        >
+          {isFirst
+            ? t.firstPlayerRollFirst(playerName)
+            : t.firstPlayerRollSecond(playerName)}
+        </div>
+        <p
+          className={`jp-display italic text-amber-200/65 text-xs md:text-sm mt-3 transition-opacity duration-500 ${
+            phase === 'reveal' ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          {isFirst ? t.firstPlayerRollFirstHint : t.firstPlayerRollSecondHint}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Sumi-e brushstroke "thinking" indicator. Cycles through 4 inline
  * SVG frames at 350 ms each so the brush appears to land, lift,
  * sweep, and re-land. The frames are inlined (rather than loaded
@@ -920,6 +984,28 @@ export default function App() {
   const [history, setHistory] = useState<HistorySnapshot[]>([]);
   /** Color of the side that resigned, or null if no resignation. */
   const [resigned, setResigned] = useState<Color | null>(null);
+  /**
+   * The color the *human* is playing in this match. BLACK = the player
+   * goes first, WHITE = AI plays first and the player responds. Drives
+   * the AI-trigger, undo target, resign side, lives display, and which
+   * side of the score panel shows the human avatar. In two-player mode
+   * this is ignored (both panels are humans).
+   */
+  const [playerColor, setPlayerColor] = useState<Color>(BLACK);
+  /**
+   * Free-mode preference for which side the human takes when starting a
+   * fresh game. Story mode ignores this — the side is randomized every
+   * chapter via the coin-flip animation. 'first'/'second' map to
+   * Black/White respectively.
+   */
+  const [firstPlayerPref, setFirstPlayerPref] = useState<'random' | 'first' | 'second'>('first');
+  /**
+   * Roll-animation state. When non-null we mount <FirstPlayerRoll> over
+   * the board for ~1.5s before the game becomes interactive. `result`
+   * is fixed up-front so the animation visibly resolves to whichever
+   * side `playerColor` was just set to.
+   */
+  const [firstPlayerRoll, setFirstPlayerRoll] = useState<{ result: Color } | null>(null);
 
   // Settings state
   const [gameMode, setGameMode] = useState<GameMode>('ai');
@@ -1180,7 +1266,7 @@ export default function App() {
   const noCurrent = validMoves.length === 0;
   const noOpp = oppMoves.length === 0;
   const gameOver = (noCurrent && noOpp) || resigned !== null;
-  const isHumanTurn = gameMode === 'human' || currentColor === BLACK;
+  const isHumanTurn = gameMode === 'human' || currentColor === playerColor;
 
   /* ----- Effects ----- */
 
@@ -1234,18 +1320,29 @@ export default function App() {
   // making the entire effect dependent on the function identity.
   const doMoveRef = useRef<(row: number, col: number) => void>(() => {});
 
-  // AI move via Web Worker
+  // AI move via Web Worker. Triggers whenever the side to move is the
+  // AI's color (i.e. the opposite of the human's). When the human plays
+  // White (chose 'second'), the very first move of the game is the AI's
+  // — this effect kicks in straight from the initial board state.
   useEffect(() => {
-    if (gameMode !== 'ai' || currentColor !== WHITE || gameOver || noCurrent || passInfo !== null) {
+    if (
+      gameMode !== 'ai' ||
+      currentColor === playerColor ||
+      gameOver ||
+      noCurrent ||
+      passInfo !== null ||
+      firstPlayerRoll !== null
+    ) {
       setAiThinking(false);
       return;
     }
     setAiThinking(true);
     const delay = 450 + Math.min(level * 35, 700);
     let cancelled = false;
+    const aiColor = opponent(playerColor);
     const timer = window.setTimeout(() => {
       ai
-        .requestMove(board, WHITE, level)
+        .requestMove(board, aiColor, level)
         .then((move) => {
           if (cancelled || !move) return;
           doMoveRef.current(move.row, move.col);
@@ -1264,7 +1361,7 @@ export default function App() {
       setAiThinking(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo]);
+  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo, playerColor, firstPlayerRoll]);
 
   // Record the result once gameOver fires. Story matches update the
   // active slot (advancing progress on a win, deducting a life on a
@@ -1278,14 +1375,18 @@ export default function App() {
       setResultRecorded(true);
       return;
     }
-    // Determine the result from the human's (Black's) perspective.
+    // Determine the result from the human's perspective. The human's
+    // color is `playerColor`; AI plays the opposite. The resigner is
+    // always the human (the AI doesn't resign), so a resignation always
+    // counts as a player loss regardless of which side they took.
+    const humanCount = playerColor === BLACK ? counts.black : counts.white;
+    const aiCount = playerColor === BLACK ? counts.white : counts.black;
     let result: 'win' | 'loss' | 'draw' | 'resign';
     if (resigned !== null) {
-      // Always counted as resign (the resigner is always Black in AI mode).
       result = 'resign';
-    } else if (counts.black > counts.white) {
+    } else if (humanCount > aiCount) {
       result = 'win';
-    } else if (counts.black < counts.white) {
+    } else if (humanCount < aiCount) {
       result = 'loss';
     } else {
       result = 'draw';
@@ -1315,6 +1416,7 @@ export default function App() {
     resigned,
     activeSlotId,
     computerChar,
+    playerColor,
   ]);
 
   // Whenever a fresh game starts (kifu cleared, board reset) clear the
@@ -1360,6 +1462,7 @@ export default function App() {
       storyProgress,
       counts: { black: counts.black, white: counts.white },
       result,
+      playerColor,
     }).then((key) => {
       if (key) {
         currentSlotKeyRef.current = key;
@@ -1588,6 +1691,23 @@ export default function App() {
     setReviewText('');
     currentSlotKeyRef.current = null;
     ai.cancel();
+    // Decide who plays which color for the new match. Story = always
+    // a coin-flip with animation; free with 'random' = same; free with
+    // 'first'/'second' = deterministic, no animation; two-player =
+    // doesn't apply (both panels are humans, leave at BLACK).
+    const isStory = aiMode === 'story' && gameMode === 'ai';
+    const isFree = aiMode === 'free' && gameMode === 'ai';
+    if (isStory || (isFree && firstPlayerPref === 'random')) {
+      const next: Color = Math.random() < 0.5 ? BLACK : WHITE;
+      setPlayerColor(next);
+      setFirstPlayerRoll({ result: next });
+    } else if (isFree) {
+      setPlayerColor(firstPlayerPref === 'second' ? WHITE : BLACK);
+      setFirstPlayerRoll(null);
+    } else {
+      setPlayerColor(BLACK);
+      setFirstPlayerRoll(null);
+    }
   }
 
   // Snapshot the current opponent while the game is in progress; once
@@ -1618,11 +1738,10 @@ export default function App() {
   function resign() {
     if (gameOver || aiThinking || passInfo !== null || kifu.length === 0) return;
     if (!window.confirm(t.resignConfirm)) return;
-    // The losing color is the side currently to move (in two-player) or
-    // always Black in AI mode (the human is Black). Both reduce to
-    // "currentColor" because the AI auto-plays so resign during AI's
-    // turn shouldn't be reachable anyway.
-    const loser: Color = gameMode === 'ai' ? BLACK : currentColor;
+    // AI mode: the human (playerColor) is the side that resigns. In
+    // two-player both panels are humans, so the side currently to move
+    // is the resigner.
+    const loser: Color = gameMode === 'ai' ? playerColor : currentColor;
     setResigned(loser);
     ai.cancel();
     setAiThinking(false);
@@ -1675,12 +1794,15 @@ export default function App() {
     ai.cancel();
 
     if (gameMode === 'ai') {
+      // Walk back to the last snapshot where it was the human's turn
+      // so undo lands on a state the player can act from. Works for
+      // both first (player = Black) and second (player = White).
       let i = history.length - 1;
-      while (i >= 0 && history[i].currentColor !== BLACK) i--;
+      while (i >= 0 && history[i].currentColor !== playerColor) i--;
       if (i < 0) return;
       const target = history[i];
       setBoard(target.board);
-      setCurrentColor(BLACK);
+      setCurrentColor(playerColor);
       setLastMove(target.lastMove);
       setHistory(history.slice(0, i));
       setKifu(kifu.slice(0, i));
@@ -1738,6 +1860,11 @@ export default function App() {
     if (typeof slot.level === 'number' && slot.level >= 1 && slot.level <= 20) {
       setLevel(slot.level);
     }
+    // Restore the perspective. Older slots predate playerColor and
+    // assumed Black; falling back to BLACK keeps their replay layout
+    // unchanged.
+    setPlayerColor(slot.playerColor === WHITE ? WHITE : BLACK);
+    setFirstPlayerRoll(null);
     setLoadedKifuView(true);
     setResultRecorded(true);
     // Track the slot we're parked on so a freshly-generated review
@@ -1970,14 +2097,18 @@ export default function App() {
 
   /* ----- Derived display info ----- */
 
-  const blackInfo = {
+  // Avatar bundles for whichever side the human is on. In two-player
+  // mode there's no AI so both sides come from AVATARS. In AI mode the
+  // computer takes the side opposite playerColor.
+  const humanInfo = {
     kanji: AVATARS[p1Avatar].kanji,
     idx: p1Avatar,
     image: AVATARS[p1Avatar].image,
     name: AVATARS[p1Avatar].name,
     quote: AVATARS[p1Avatar].quote,
+    level: undefined as number | undefined,
   };
-  const whiteInfo =
+  const aiInfo =
     gameMode === 'ai'
       ? {
           kanji: COMPUTERS[computerChar].kanji,
@@ -1985,7 +2116,7 @@ export default function App() {
           image: COMPUTERS[computerChar].image,
           name: COMPUTERS[computerChar].name,
           quote: COMPUTERS[computerChar].quote,
-          level: COMPUTERS[computerChar].level,
+          level: COMPUTERS[computerChar].level as number | undefined,
         }
       : {
           kanji: AVATARS[p2Avatar].kanji,
@@ -1993,8 +2124,22 @@ export default function App() {
           image: AVATARS[p2Avatar].image,
           name: AVATARS[p2Avatar].name,
           quote: AVATARS[p2Avatar].quote,
-          level: undefined,
+          level: undefined as number | undefined,
         };
+  // Map each board color to its current avatar bundle. In two-player
+  // mode the conventions stays p1=Black, p2=White (playerColor isn't
+  // meaningful there). In AI mode swap depending on which side the
+  // human took.
+  const blackInfo = gameMode === 'human'
+    ? humanInfo
+    : playerColor === BLACK
+      ? humanInfo
+      : aiInfo;
+  const whiteInfo = gameMode === 'human'
+    ? aiInfo
+    : playerColor === WHITE
+      ? humanInfo
+      : aiInfo;
 
   const winner: Color | typeof EMPTY | null = gameOver
     ? resigned !== null
@@ -2245,6 +2390,52 @@ export default function App() {
           50%      { box-shadow: 0 0 12px 0 rgba(252, 211, 77, 0.32); }
         }
 
+        /* Coin flip used by <FirstPlayerRoll> to decide first/second.
+           A 3D card spinning on the Y-axis with a black face and a white
+           face. After 1s of spin we let the user see whichever side
+           landed via the stop-on-final-rotation trick (final rotation
+           land at multiples of 360deg so both faces are visible during
+           the spin). The reveal text below the coin tells them which
+           side they took. */
+        .coin-flip {
+          width: 84px;
+          height: 84px;
+          position: relative;
+          transform-style: preserve-3d;
+          animation: coin-spin 1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes coin-spin {
+          0%   { transform: rotateY(0deg)    rotateX(-8deg) scale(0.85); }
+          60%  { transform: rotateY(900deg)  rotateX(-8deg) scale(1.05); }
+          100% { transform: rotateY(1080deg) rotateX(-8deg) scale(1); }
+        }
+        .coin-face {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          box-shadow:
+            inset -3px -3px 8px rgba(0, 0, 0, 0.45),
+            inset 3px 3px 10px rgba(255, 255, 255, 0.18),
+            0 8px 18px rgba(0, 0, 0, 0.55),
+            0 0 28px rgba(201, 169, 97, 0.25);
+        }
+        .coin-face-black {
+          background: radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000);
+        }
+        .coin-face-white {
+          transform: rotateY(180deg);
+          background: radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c);
+        }
+        .first-player-roll {
+          animation: roll-fade-in 0.25s ease-out;
+        }
+        @keyframes roll-fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
         /* Brush-stroke decorative divider. Inline-SVG <BrushDivider>
            strokes inherit color from this rule via currentColor, so
            a per-instance className like text-red-300/55 recolors
@@ -2404,6 +2595,15 @@ export default function App() {
 
       {screen === 'game' && (
       <div key="game" className="screen-fade stage-bg min-h-screen w-full relative">
+        {/* First/second coin-flip overlay. Mounted while
+            `firstPlayerRoll` is set; auto-dismisses itself after 2s. */}
+        <FirstPlayerRoll
+          active={firstPlayerRoll !== null}
+          result={firstPlayerRoll?.result ?? null}
+          playerName={AVATARS[p1Avatar].name}
+          onComplete={() => setFirstPlayerRoll(null)}
+          t={t}
+        />
         <div className="relative max-w-5xl mx-auto px-4 py-6 md:py-10">
           {/* Top icon toolbar */}
           <div className="grid grid-cols-8 gap-px bg-zinc-900/80 border-y border-amber-200/15 mb-5 md:rounded-sm overflow-hidden">
@@ -2447,8 +2647,14 @@ export default function App() {
                 image={blackInfo.image}
                 name={blackInfo.name}
                 quote={blackInfo.quote}
+                level={
+                  gameMode === 'ai' && playerColor === WHITE
+                    ? blackInfo.level
+                    : undefined
+                }
+                thinking={aiThinking && playerColor === WHITE}
                 lives={
-                  gameMode === 'ai' && aiMode === 'story' && activeSlot
+                  gameMode === 'ai' && aiMode === 'story' && activeSlot && playerColor === BLACK
                     ? lives
                     : undefined
                 }
@@ -2575,8 +2781,17 @@ export default function App() {
                 image={whiteInfo.image}
                 name={whiteInfo.name}
                 quote={whiteInfo.quote}
-                level={whiteInfo.level}
-                thinking={aiThinking}
+                level={
+                  gameMode === 'ai' && playerColor === BLACK
+                    ? whiteInfo.level
+                    : undefined
+                }
+                thinking={aiThinking && playerColor === BLACK}
+                lives={
+                  gameMode === 'ai' && aiMode === 'story' && activeSlot && playerColor === WHITE
+                    ? lives
+                    : undefined
+                }
                 compact={loadedKifuView}
               />
             </div>
@@ -2946,79 +3161,82 @@ export default function App() {
                     </p>
                   )}
 
-                  {/* You vs the opponent that was just played + final score. */}
-                  <div className="flex justify-center items-center gap-6 md:gap-8 my-5">
-                    <div className="flex flex-col items-center gap-2">
-                      <AvatarBadge
-                        kanji={blackInfo.kanji}
-                        idx={blackInfo.idx}
-                        image={blackInfo.image}
-                        size="md"
-                      />
-                      <div
-                        className="w-10 h-10 rounded-full"
-                        style={{
-                          background:
-                            'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)',
-                          boxShadow:
-                            'inset -2px -2px 4px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)',
-                        }}
-                      />
-                      <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
-                        {blackInfo.name}
+                  {/* You vs the opponent that was just played + final score.
+                      Layout always shows Black on the left, White on
+                      the right (the standard board convention). The
+                      avatar on each side depends on which color the
+                      human took: when playerColor === WHITE the human
+                      avatar appears on the right, AI on the left. */}
+                  {(() => {
+                    const humanSideIsBlack = gameMode !== 'ai' || playerColor === BLACK;
+                    const aiAvatar =
+                      gameMode === 'ai' && opponentSnapshot
+                        ? {
+                            kanji: opponentSnapshot.kanji,
+                            idx: 100 + opponentSnapshot.level,
+                            image: opponentSnapshot.image,
+                            name: opponentSnapshot.name,
+                          }
+                        : {
+                            kanji: aiInfo.kanji,
+                            idx: aiInfo.idx,
+                            image: aiInfo.image,
+                            name: aiInfo.name,
+                          };
+                    const blackDisplay = humanSideIsBlack ? humanInfo : aiAvatar;
+                    const whiteDisplay = humanSideIsBlack ? aiAvatar : humanInfo;
+                    return (
+                      <div className="flex justify-center items-center gap-6 md:gap-8 my-5">
+                        <div className="flex flex-col items-center gap-2">
+                          <AvatarBadge
+                            kanji={blackDisplay.kanji}
+                            idx={blackDisplay.idx}
+                            image={blackDisplay.image}
+                            size="md"
+                          />
+                          <div
+                            className="w-10 h-10 rounded-full"
+                            style={{
+                              background:
+                                'radial-gradient(circle at 30% 30%, #5a5a5a, #1a1a1a 55%, #000)',
+                              boxShadow:
+                                'inset -2px -2px 4px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5)',
+                            }}
+                          />
+                          <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
+                            {blackDisplay.name}
+                          </div>
+                          <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
+                            {counts.black}
+                          </div>
+                        </div>
+                        <div className="latin-display italic text-amber-200/65 text-xl">vs</div>
+                        <div className="flex flex-col items-center gap-2">
+                          <AvatarBadge
+                            kanji={whiteDisplay.kanji}
+                            idx={whiteDisplay.idx}
+                            image={whiteDisplay.image}
+                            size="md"
+                          />
+                          <div
+                            className="w-10 h-10 rounded-full"
+                            style={{
+                              background:
+                                'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
+                              boxShadow:
+                                'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)',
+                            }}
+                          />
+                          <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
+                            {whiteDisplay.name}
+                          </div>
+                          <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
+                            {counts.white}
+                          </div>
+                        </div>
                       </div>
-                      <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
-                        {counts.black}
-                      </div>
-                    </div>
-                    <div className="latin-display italic text-amber-200/65 text-xl">vs</div>
-                    <div className="flex flex-col items-center gap-2">
-                      {(() => {
-                        // For AI matches use the opponent snapshot (the
-                        // character that was actually just played); for
-                        // human matches stick with whiteInfo (P2 avatar).
-                        const opp =
-                          gameMode === 'ai' && opponentSnapshot
-                            ? {
-                                kanji: opponentSnapshot.kanji,
-                                idx: 100 + opponentSnapshot.level,
-                                image: opponentSnapshot.image,
-                                name: opponentSnapshot.name,
-                              }
-                            : {
-                                kanji: whiteInfo.kanji,
-                                idx: whiteInfo.idx,
-                                image: whiteInfo.image,
-                                name: whiteInfo.name,
-                              };
-                        return (
-                          <>
-                            <AvatarBadge
-                              kanji={opp.kanji}
-                              idx={opp.idx}
-                              image={opp.image}
-                              size="md"
-                            />
-                            <div
-                              className="w-10 h-10 rounded-full"
-                              style={{
-                                background:
-                                  'radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c)',
-                                boxShadow:
-                                  'inset 2px 2px 6px rgba(255,255,255,0.6), 0 4px 8px rgba(0,0,0,0.5)',
-                              }}
-                            />
-                            <div className="jp-display text-amber-100/85 text-[11px] truncate max-w-[6rem] text-center">
-                              {opp.name}
-                            </div>
-                            <div className="latin-display text-3xl md:text-4xl text-amber-100 leading-none">
-                              {counts.white}
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {isStoryMode && activeSlot && (
                     <div className="flex items-center justify-center gap-2 mb-3 latin-display italic text-amber-200/65 text-xs tracking-wider">
@@ -3984,6 +4202,10 @@ export default function App() {
                                 : t.chapterPlayReplay}
                             </button>
 
+                            <p className="jp-display italic text-amber-200/55 text-[11px] text-center">
+                              {t.firstPlayerStoryHint}
+                            </p>
+
                             {storyProgress > 0 && (
                               <div className="flex justify-end">
                                 <button
@@ -4000,6 +4222,35 @@ export default function App() {
 
                       {aiMode === 'free' && (
                         <>
+                          <div className="mb-5">
+                            <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
+                              {t.firstPlayerHeading}
+                              <span className="ml-2 normal-case tracking-wider text-amber-200/50">
+                                — {t.firstPlayerSubtitle}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <button
+                                onClick={() => setFirstPlayerPref('random')}
+                                className={`btn ${firstPlayerPref === 'random' ? 'btn-active' : ''}`}
+                              >
+                                {t.firstPlayerRandom}
+                              </button>
+                              <button
+                                onClick={() => setFirstPlayerPref('first')}
+                                className={`btn ${firstPlayerPref === 'first' ? 'btn-active' : ''}`}
+                              >
+                                {t.firstPlayerFirst}
+                              </button>
+                              <button
+                                onClick={() => setFirstPlayerPref('second')}
+                                className={`btn ${firstPlayerPref === 'second' ? 'btn-active' : ''}`}
+                              >
+                                {t.firstPlayerSecond}
+                              </button>
+                            </div>
+                          </div>
+
                           <div className="mb-5">
                             <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
                               {t.characterGridLabel}
