@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.1)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.2)
 
 ---
 
@@ -66,6 +66,17 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **握り石演出を撤回、白黒コイントス（CSS 3D）に戻す + 新素材
+      依頼に差し替え** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      v0.24.1 で実装した「拳が開いて石を見せる」演出が UX 上気持ち
+      悪いとの指摘で revert。`<FirstPlayerRoll>` を v0.24.0 の CSS
+      3D コインフリップに戻し（黒面・白面の radial-gradient ディスク
+      が Y 軸 1080° 回転）、`grip-*.svg` 4 ファイルを `public/` から
+      削除、`<GripIcon>` コードも除去。素材依頼仕様書 (依頼 #6) に
+      撤回マーク、新たに **依頼 #7: 白黒コイントス（オセロ石）素材**
+      を追記（`coin-{black,white}.svg`、CSS の `.coin-face` 背景に
+      差し込む形で 3D 回転はそのまま流用）。`v0.24.2`
 - [x] **「握り石」演出を CSS コインフリップから inline SVG 4-frame
       アニメに置き換え** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
