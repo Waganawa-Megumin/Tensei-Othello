@@ -12,9 +12,11 @@ const SLOTS_KEY = 'othello:save_slots';
 const ACTIVE_SLOT_KEY = 'othello:active_slot';
 const FREE_STATS_KEY = 'othello:free_stats';
 const LEGACY_STORY_PROGRESS_KEY = 'othello:story_progress';
+const CHARACTER_UNLOCKS_KEY = 'othello:character_unlocks';
 
 export const MAX_SLOTS = 10;
 export const INITIAL_LIVES = 5;
+export const TOTAL_BONUS_AVATARS = 20;
 export const SCHEMA_VERSION = 1 as const;
 
 /* ------------------------------------------------------------------ */
@@ -359,4 +361,47 @@ export async function recordFreeResult(input: {
     /* ignore */
   }
   return next;
+}
+
+/* ------------------------------------------------------------------ */
+/* Character unlocks (global, app-wide counter)                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Number of bonus character avatars the player has unlocked. 0 means
+ * only the default protagonist is available; 20 means the entire
+ * roster (including the special "first hero" Haruki at the end of
+ * AVATARS_DATA) has been earned. Each full 20-chapter story clear
+ * increments this by 1.
+ *
+ * On first read the function migrates older saves: if any save slot
+ * has already reached storyProgress >= 20 (the previous "all bonus
+ * chars unlocked at once" state), we seed the counter at 20 so
+ * existing players don't lose their earned roster.
+ */
+export async function getCharacterUnlocks(): Promise<number> {
+  try {
+    const raw = window.localStorage.getItem(CHARACTER_UNLOCKS_KEY);
+    if (raw !== null) {
+      const n = parseInt(raw, 10);
+      if (!isNaN(n) && n >= 0 && n <= TOTAL_BONUS_AVATARS) return n;
+    }
+    // Backward-compat: pull seed from any slot that already cleared.
+    const slots = await getSlots();
+    const cleared = slots.some((s) => s.storyProgress >= 20);
+    const seed = cleared ? TOTAL_BONUS_AVATARS : 0;
+    window.localStorage.setItem(CHARACTER_UNLOCKS_KEY, String(seed));
+    return seed;
+  } catch {
+    return 0;
+  }
+}
+
+export async function setCharacterUnlocks(n: number): Promise<void> {
+  const clamped = Math.max(0, Math.min(TOTAL_BONUS_AVATARS, Math.floor(n)));
+  try {
+    window.localStorage.setItem(CHARACTER_UNLOCKS_KEY, String(clamped));
+  } catch {
+    /* ignore */
+  }
 }

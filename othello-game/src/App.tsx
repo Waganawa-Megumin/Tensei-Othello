@@ -79,6 +79,9 @@ import {
   resetSlot as resetStoredSlot,
   recordSlotResult,
   recordFreeResult,
+  getCharacterUnlocks,
+  setCharacterUnlocks,
+  TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from './storage/saveSlots';
 
@@ -116,8 +119,12 @@ interface ComputerEntry {
 }
 
 // Default protagonist — always available, used as the player's starting
-// avatar. The 20 entries in AVATARS_DATA are bonus characters that unlock
-// only after the story is fully cleared (storyProgress >= 20).
+// avatar. The 20 entries in AVATARS_DATA are bonus characters that
+// unlock one at a time, each time the player completes a full
+// 20-chapter story run. The order of the array is the unlock order.
+// PLR01_haruki ("初代英雄の記憶を持つハルキ") is positioned LAST as a
+// special 20th-clear reward — flipping back to the original hero only
+// after the player has lived through every other archetype.
 const DEFAULT_AVATAR_DATA: AvatarEntry = {
   kanji: '君',
   name: 'あなた',
@@ -130,7 +137,6 @@ const DEFAULT_AVATAR_DATA: AvatarEntry = {
 };
 
 const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
-  { kanji: '春', name: 'ハルキ',   name_en: 'Haruki',    setting: '異世界転生の勇者',      setting_en: 'Isekai Hero',                quote: '冒険、はじまったな',     quote_en: 'The adventure begins.',              image: 'avatars/players/PLR01_haruki.png' },
   { kanji: '琴', name: '美琴',     name_en: 'Mikoto',    setting: '魔法学園の天才',        setting_en: 'Magic Academy Prodigy',      quote: '論理と魔法は同じ',       quote_en: 'Logic and magic are one.',           image: 'avatars/players/PLR02_mikoto.png' },
   { kanji: '凛', name: 'リン',     name_en: 'Rin',       setting: 'VRMMOの最強プレイヤー', setting_en: 'VRMMO Top Player',           quote: '現実より、得意なんだ',   quote_en: "I'm better here than in reality.",   image: 'avatars/players/PLR03_rin.png' },
   { kanji: '蓮', name: '蓮',       name_en: 'Ren',       setting: '剣道部主将',            setting_en: 'Kendo Captain',              quote: '正々堂々、参る',         quote_en: 'Fair and square, here I come.',      image: 'avatars/players/PLR04_ren.png' },
@@ -150,6 +156,9 @@ const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
   { kanji: '湊', name: '湊',       name_en: 'Minato',    setting: '海の冒険者',            setting_en: 'Sea Adventurer',             quote: '世界の果てへ',           quote_en: 'To the ends of the earth.',          image: 'avatars/players/PLR18_minato.png' },
   { kanji: '奏', name: '奏太',     name_en: 'Souta',     setting: '天才ピアニスト',        setting_en: 'Prodigy Pianist',            quote: 'この旋律、聴いてくれ',   quote_en: 'Listen to this melody.',             image: 'avatars/players/PLR19_souta.png' },
   { kanji: '悠', name: '悠',       name_en: 'Yu',        setting: '神話の英雄',            setting_en: 'Mythic Hero',                quote: '神々よ、いざ尋常に',     quote_en: 'Gods, let us duel honorably.',       image: 'avatars/players/PLR20_yu.png' },
+  // Special 20th-clear reward — only revealed after the player has
+  // walked the path with every other archetype.
+  { kanji: '春', name: 'ハルキ',   name_en: 'Haruki',    setting: '初代英雄の記憶を持つ者', setting_en: 'Bearer of the First Hero’s Memory', quote: 'すべてを覚えている',     quote_en: 'I remember it all.',                 image: 'avatars/players/PLR01_haruki.png' },
 ];
 
 const COMPUTERS_DATA: ReadonlyArray<ComputerEntry> = [
@@ -1026,10 +1035,26 @@ export default function App() {
 
   // Settings state
   const [gameMode, setGameMode] = useState<GameMode>('ai');
-  // Both default to index 0 (the always-available default avatar). The
-  // 20 bonus characters at indices 1..20 are gated on story completion.
+  // Both default to index 0 (the always-available default avatar).
+  // AVATARS[1..unlockedCount] are bonus characters unlocked one at a
+  // time as the player completes 20-chapter story runs. AVATARS[20]
+  // (Haruki, "the bearer of the first hero's memory") is the special
+  // 20th-clear reward.
   const [p1Avatar, setP1Avatar] = useState(0);
   const [p2Avatar, setP2Avatar] = useState(0);
+  /**
+   * How many bonus avatars are currently unlocked (0..20). Persisted
+   * via getCharacterUnlocks/setCharacterUnlocks. The default avatar is
+   * always available regardless of this value.
+   */
+  const [unlockedCount, setUnlockedCount] = useState(0);
+  /**
+   * When non-null, the GameOver modal renders a "新キャラクター解放"
+   * banner with the avatar's name. Set the moment storyProgress
+   * transitions from 19 → 20 in the result-recording effect; cleared
+   * by reset() and on title-screen entry.
+   */
+  const [unlockedThisRun, setUnlockedThisRun] = useState<number | null>(null);
   const [computerChar, setComputerChar] = useState(0);
   const [level, setLevel] = useState(1);
   const [aiMode, setAiMode] = useState<AiMode>('story');
@@ -1287,13 +1312,20 @@ export default function App() {
 
   /* ----- Effects ----- */
 
-  // Load persisted save slots + active slot id on mount.
+  // Load persisted save slots + active slot id + unlock counter on mount.
+  // The unlock counter migration (seeding from existing slots that
+  // already cleared) happens inside getCharacterUnlocks itself.
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getSlots(), getActiveSlotId()]).then(([loaded, id]) => {
+    Promise.all([
+      getSlots(),
+      getActiveSlotId(),
+      getCharacterUnlocks(),
+    ]).then(([loaded, id, unlocks]) => {
       if (cancelled) return;
       setSlots(loaded);
       setActiveSlotIdState(id);
+      setUnlockedCount(unlocks);
     });
     return () => {
       cancelled = true;
@@ -1412,12 +1444,32 @@ export default function App() {
     const opponentLevel = COMPUTERS[computerChar].level;
     const isStory = aiMode === 'story';
     if (isStory && activeSlotId !== null) {
+      // Detect "story just cleared" before recordSlotResult mutates
+      // storyProgress (it caps at 20). Old slot tells us where we
+      // were; if old=19 and we just won the chapter-20 fight, this
+      // run earned the next bonus character.
+      const slotBefore = activeSlot;
+      const justClearedStory =
+        result === 'win' &&
+        slotBefore !== null &&
+        slotBefore.storyProgress === 19;
       void recordSlotResult({
         slotId: activeSlotId,
         result,
         opponentLevel,
         isStory: true,
       }).then(setSlots);
+      if (justClearedStory && unlockedCount < TOTAL_BONUS_AVATARS) {
+        const nextUnlocks = unlockedCount + 1;
+        setUnlockedCount(nextUnlocks);
+        void setCharacterUnlocks(nextUnlocks);
+        // The newly unlocked avatar lives at AVATARS[nextUnlocks]
+        // (index 0 = default, 1..20 = bonus). Surface it on the
+        // GameOver modal and auto-select it as the player's next
+        // protagonist — they can flip back via Settings.
+        setUnlockedThisRun(nextUnlocks);
+        setP1Avatar(nextUnlocks);
+      }
     } else if (!isStory) {
       void recordFreeResult({ result, opponentLevel });
     }
@@ -1434,6 +1486,8 @@ export default function App() {
     activeSlotId,
     computerChar,
     playerColor,
+    activeSlot,
+    unlockedCount,
   ]);
 
   // Whenever a fresh game starts (kifu cleared, board reset) clear the
@@ -1699,6 +1753,7 @@ export default function App() {
     setLastResult(null);
     setKifu([]);
     setResigned(null);
+    setUnlockedThisRun(null);
     setLoadedKifuView(false);
     setReplayCursor(null);
     setLoadedSlotReview(null);
@@ -3199,6 +3254,31 @@ export default function App() {
                       {t.storyEndingProse}
                     </p>
                   )}
+                  {/* New protagonist unlocked! Surface the avatar that
+                       just joined the roster. AVATARS[unlockedThisRun]
+                       was already auto-selected as p1Avatar — the
+                       player can switch back via Settings. */}
+                  {unlockedThisRun !== null && AVATARS[unlockedThisRun] && (
+                    <div className="mt-3 mb-4 px-4 py-3 bg-amber-200/[0.08] border border-amber-300/40 rounded-sm flex items-center gap-3">
+                      <AvatarBadge
+                        kanji={AVATARS[unlockedThisRun].kanji}
+                        idx={unlockedThisRun}
+                        image={AVATARS[unlockedThisRun].image}
+                        size="md"
+                      />
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="latin-display italic text-amber-200/65 text-[10px] tracking-[0.25em] uppercase mb-0.5">
+                          {t.unlockBannerLabel}
+                        </div>
+                        <div className="jp-display text-amber-100 text-base md:text-lg truncate">
+                          {AVATARS[unlockedThisRun].name}
+                        </div>
+                        <div className="jp-display italic text-amber-200/65 text-[11px] truncate">
+                          — {AVATARS[unlockedThisRun].setting}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {isStoryMode && winner !== BLACK && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-3">
                       {t.storyEncouragement}
@@ -3997,7 +4077,11 @@ export default function App() {
                   </h3>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
                     {AVATARS.map((a, i) => {
-                      const isLocked = i > 0 && storyProgress < 20;
+                      // i === 0: default protagonist, always available.
+                      // i in 1..unlockedCount: a bonus avatar earned via
+                      // a 20-chapter story clear. i > unlockedCount: not
+                      // yet earned.
+                      const isLocked = i > unlockedCount;
                       return (
                         <button
                           key={i}
@@ -4035,9 +4119,9 @@ export default function App() {
                       );
                     })}
                   </div>
-                  {storyProgress < 20 && (
+                  {unlockedCount < TOTAL_BONUS_AVATARS && (
                     <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
-                      {t.protagonistLockHint}
+                      {t.protagonistLockHint(unlockedCount, TOTAL_BONUS_AVATARS)}
                     </p>
                   )}
                   <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
@@ -4359,12 +4443,14 @@ export default function App() {
                       </div>
                       <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
                         {AVATARS.map((a, i) => {
-                          const isLocked = i > 0 && storyProgress < 20;
+                          const isLocked = i > unlockedCount;
                           // Allow both players to share the default avatar
                           // when no bonus characters are unlocked yet —
                           // otherwise 2P mode would have no valid p2 pick.
+                          // Once at least one bonus is unlocked there's
+                          // always a different option available.
                           const collidesWithP1 =
-                            p1Avatar === i && storyProgress >= 20;
+                            p1Avatar === i && unlockedCount > 0;
                           const isDisabled = isLocked || collidesWithP1;
                           return (
                             <button
@@ -4407,12 +4493,12 @@ export default function App() {
                           );
                         })}
                       </div>
-                      {storyProgress < 20 && (
+                      {unlockedCount < TOTAL_BONUS_AVATARS && (
                         <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
-                          {t.protagonistLockHint}
+                          {t.protagonistLockHint(unlockedCount, TOTAL_BONUS_AVATARS)}
                         </p>
                       )}
-                      {p1Avatar === p2Avatar && storyProgress >= 20 && (
+                      {p1Avatar === p2Avatar && unlockedCount > 0 && (
                         <p className="jp-display text-amber-200/65 text-xs mt-2 italic">
                           {t.cannotChooseSelf}
                         </p>

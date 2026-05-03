@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.6)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.0)
 
 ---
 
@@ -66,6 +66,20 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.6)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **アンロック方式を一度に全 20 体 → 1 章クリアごとに 1 人ずつ、
+      キャラ並びも mikoto..yu..haruki に再構成** — completed:
+      2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` — commit:
+      (next push) — `AVATARS_DATA` の先頭にあった PLR01_haruki を末尾
+      に移動し「初代英雄の記憶を持つ者」として 20 番目の解放枠に。
+      `othello:character_unlocks` localStorage キー追加（`getCharacter
+      Unlocks` / `setCharacterUnlocks` / `TOTAL_BONUS_AVATARS` を
+      saveSlots に追加、既存セーブで storyProgress >= 20 だった人は
+      初回読込時 20 にシード migrate で互換）。設定の p1/p2 アバター
+      グリッドの `isLocked = i > unlockedCount` に書き換え、ロックヒン
+      トは「N / 20 解放済み」表示。result-recording effect で旧 storyP
+      rogress=19 + 勝利を検知して unlockedCount++、p1Avatar をその
+      index に自動セット。GameOver モーダルに「新キャラクター解放」
+      バナー（avatar + 名前 + setting）を追加。`v0.25.0`
 - [x] **コイントス、白結果でも黒面で停止するバグ修正（CSS 変数 →
       結果別 keyframe へ）** — completed: 2026-05-03 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —

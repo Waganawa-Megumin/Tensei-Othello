@@ -125,7 +125,8 @@ export interface Messages {
   freeMode: string;
   player2Protagonist: string;
   cannotChooseSelf: string;
-  protagonistLockHint: string;
+  protagonistLockHint: (unlocked: number, total: number) => string;
+  unlockBannerLabel: string;
   startNewGame: string;
   keepSettings: string;
   progress: string;
@@ -373,7 +374,9 @@ export const ja: Messages = {
   freeMode: 'フリー',
   player2Protagonist: 'Player 2 protagonist',
   cannotChooseSelf: '※あなたと同じ名は選べません',
-  protagonistLockHint: '※隠れキャラクターは全章クリアで解放されます',
+  protagonistLockHint: (unlocked, total) =>
+    `※全20章クリアで主人公が1人ずつ解放されます（${unlocked} / ${total} 解放済み）`,
+  unlockBannerLabel: '新キャラクター解放',
   startNewGame: 'この設定で対局を始める',
   keepSettings: 'この設定で続ける',
   progress: 'Progress',
@@ -642,7 +645,9 @@ export const en: Messages = {
   freeMode: 'Free',
   player2Protagonist: 'Player 2 protagonist',
   cannotChooseSelf: 'Cannot pick the same name as yourself',
-  protagonistLockHint: 'Hidden characters unlock after clearing all chapters.',
+  protagonistLockHint: (unlocked, total) =>
+    `Each new protagonist unlocks after a full 20-chapter clear (${unlocked} / ${total} unlocked).`,
+  unlockBannerLabel: 'New protagonist unlocked',
   startNewGame: 'Start match with these settings',
   keepSettings: 'Keep these settings',
   progress: 'Progress',
