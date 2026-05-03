@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.4)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.5)
 
 ---
 
@@ -66,9 +66,15 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.25.4)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイントス白面を `#b8a36a` のアンティークゴールド寄りに調整**
+      — completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: (next push) — `#ccbf90` でも明るかったため、もう一段
+      黄色寄り＋低輝度に。アンティーク・古紙のような落ち着いた色味
+      で、暗いバックドロップ上のフラッシュ感がさらに抑えられる。
+      `v0.25.5`
 - [x] **コイントス白面の輝度・色相微調整（マット黄色寄り温かみオフ
       ホワイト）** — completed: 2026-05-03 — by:
-      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      `claude/othello-ui-autosave-bPnmY` — commit: 67a7dce —
       `#d6c79a` は黄色寄りが強すぎ、`#ebe2c2` は明るすぎ、と試行錯誤の
       末 `#ccbf90` に。マット質感のまま温かみある黄味オフホワイトで、
       暗いバックドロップ上での輝度ジャンプも抑えられる。`v0.25.4`
