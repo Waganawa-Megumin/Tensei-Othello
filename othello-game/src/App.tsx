@@ -2431,24 +2431,37 @@ export default function App() {
           70%  { transform: rotateY(calc(var(--coin-final) - 240deg)) rotateX(-8deg) scale(1); opacity: 1; }
           100% { transform: rotateY(var(--coin-final)) rotateX(-8deg) scale(1); opacity: 1; }
         }
+        /* Coin faces. Per-face box-shadows so the white face doesn't
+           inherit a dark inset shadow that pulls it toward grey. The
+           white face uses a warm amber glow and bright highlight so
+           it stays unmistakably "white" against the dark backdrop;
+           the black face uses a deep cold inset and gold glow for
+           contrast. */
         .coin-face {
           position: absolute;
           inset: 0;
           border-radius: 50%;
           backface-visibility: hidden;
           -webkit-backface-visibility: hidden;
-          box-shadow:
-            inset -3px -3px 8px rgba(0, 0, 0, 0.5),
-            inset 3px 3px 10px rgba(255, 255, 255, 0.18),
-            0 10px 24px rgba(0, 0, 0, 0.6),
-            0 0 32px rgba(201, 169, 97, 0.28);
         }
         .coin-face-black {
-          background: radial-gradient(circle at 30% 30%, #6a6a6a, #1a1a1a 55%, #000);
+          background:
+            radial-gradient(circle at 30% 28%, #6e6e6e 0%, #2a2a2a 38%, #050505 75%, #000 100%);
+          box-shadow:
+            inset -4px -4px 12px rgba(0, 0, 0, 0.7),
+            inset 5px 5px 14px rgba(255, 255, 255, 0.22),
+            0 10px 24px rgba(0, 0, 0, 0.7),
+            0 0 36px rgba(201, 169, 97, 0.35);
         }
         .coin-face-white {
           transform: rotateY(180deg);
-          background: radial-gradient(circle at 30% 30%, #ffffff, #ebe2cc 55%, #c5b89c);
+          background:
+            radial-gradient(circle at 30% 28%, #ffffff 0%, #fdf6e3 35%, #f5e8c8 75%, #ecdfba 100%);
+          box-shadow:
+            inset -4px -4px 12px rgba(170, 130, 70, 0.35),
+            inset 6px 6px 16px rgba(255, 255, 255, 0.85),
+            0 10px 24px rgba(0, 0, 0, 0.55),
+            0 0 38px rgba(255, 240, 200, 0.55);
         }
         .first-player-roll {
           animation: roll-fade-in 0.25s ease-out;

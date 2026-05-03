@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.3)
+Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.4)
 
 ---
 
@@ -66,6 +66,15 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.24.3)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **コイントスの白面が灰色っぽく見える問題を修正（白黒コントラスト
+      最大化）** — completed: 2026-05-03 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      `.coin-face` 共通の inset shadow が `rgba(0,0,0,0.5)` 強で、白面の
+      右下を灰色に染めていた。グラデのふち #c5b89c も暗すぎ。
+      白・黒それぞれに専用 box-shadow を割当: 白は暖色 inset
+      `rgba(170,130,70,0.35)` ＋ 強い白ハイライト `rgba(255,255,255,0.85)`
+      ＋ 暖光外側 glow、黒は逆に深い inset と金色 glow。グラデも白面
+      は #fdf6e3 → #ecdfba（暗いふちを排除）。`v0.24.4`
 - [x] **コイントスのモーション・時間調整＋着地面の正しさ修正** —
       completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — 1080°/1秒 = 目で追えない速度だった上、
