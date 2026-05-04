@@ -34,12 +34,7 @@ Circles. Stars. Letters in a script he didn't recognise. Centred on him, drawing
 
 "Wait, what... is this..."
 
-Together with a high-pitched ring in his ears, a strangely calm voice reached him.
-
-*"Outer Hand. The Board World has called for you."*
-
-"H-hold on a sec—!"
-
+Together with a high-pitched ring in his ears, his vision lurched.
 A **vortex of black and white** erupted upward from beneath Haruki's feet, repainting the classroom in a single sweep.`,
   },
 

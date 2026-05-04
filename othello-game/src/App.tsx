@@ -1714,6 +1714,57 @@ export default function App() {
   //  ("re-watch any scene I've already passed"), but it no longer
   //  fires automatically inside the match flow.)
 
+  // Browser back / mobile edge-flick navigation. Without explicit
+  // history entries the SPA can't be backed out of — flicking from
+  // the screen edge on Android Chrome / iOS Safari does nothing.
+  // We push a `{ appScreen }` history entry every time the screen
+  // moves *forward* (anything other than 'title') and let popstate
+  // restore whichever screen sits in the previous entry. Going home
+  // collapses the chain via replaceState so a subsequent flick-back
+  // exits the app instead of bouncing through stale forward states.
+  const navHistoryRef = useRef<{ poppedFromHistory: boolean; lastScreen: Screen }>({
+    poppedFromHistory: false,
+    lastScreen: 'title',
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (
+      !window.history.state ||
+      typeof window.history.state.appScreen !== 'string'
+    ) {
+      window.history.replaceState({ appScreen: 'title' }, '');
+    }
+    const onPopState = (e: PopStateEvent) => {
+      const target =
+        (e.state && typeof e.state.appScreen === 'string'
+          ? e.state.appScreen
+          : 'title') as Screen;
+      navHistoryRef.current.poppedFromHistory = true;
+      setScreen(target);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const ref = navHistoryRef.current;
+    if (ref.lastScreen === screen) return;
+    if (ref.poppedFromHistory) {
+      // The change came from popstate — history is already in sync,
+      // don't append another entry.
+      ref.poppedFromHistory = false;
+    } else if (screen === 'title') {
+      // Going home via in-app UI (toolbar Home, GameOver back-to-title).
+      // Collapse the chain so a single flick-back exits the app rather
+      // than bouncing through stale intro/game entries.
+      window.history.replaceState({ appScreen: 'title' }, '');
+    } else {
+      window.history.pushState({ appScreen: screen }, '');
+    }
+    ref.lastScreen = screen;
+  }, [screen]);
+
+
   // Auto-pass — passInfo intentionally NOT in deps: including it would
   // trigger the cleanup function on every state change and clear our own
   // pending timeout, leaving the game stuck on the pass message.

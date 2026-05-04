@@ -644,7 +644,7 @@ export const ja: Messages = {
   intro: {
     prologueLabel: '序章',
     fallingLabel: '転落',
-    fallingVoice: '異邦の打ち手よ。盤上世界が、汝を呼んだ。',
+    fallingVoice: '異邦の打ち手よ。盤上世界が、汝を求む。',
     arrivalLabel: '到着',
     arrivalText: `気がつくと、ハルキはステージの真ん中に立っていた。
 ピンク色のスポットライト。ハートと星のバルーン。観客席はない。
@@ -982,7 +982,7 @@ your journey on the board reaches its close.`,
   intro: {
     prologueLabel: 'Prologue',
     fallingLabel: 'Falling',
-    fallingVoice: 'Outer Hand. The Board World has called for you.',
+    fallingVoice: 'Outer Hand. The Board World demands you.',
     arrivalLabel: 'Arrival',
     arrivalText: `When Haruki regained his senses, he was standing in the centre of a stage.
 Pink spotlights. Heart-and-star balloons. No audience seats.
