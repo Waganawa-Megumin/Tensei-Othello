@@ -52,6 +52,7 @@ import {
   type ValidMove,
 } from './engine/types';
 import { useAiWorker } from './hooks/useAiWorker';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import { loadCommentaryEnabled, saveCommentaryEnabled } from './storage/commentary';
 import { fetchCharacterCommentary } from './services/commentary';
 import type { CommentaryResult } from './prompts/commentary';
@@ -116,11 +117,13 @@ interface ComputerEntry {
   name_en: string;
   quote_en: string;
   /**
-   * Optional path to a wide chapter illustration (per manifest.json).
-   * Files are dropped at the path declared here; if the PNG doesn't
-   * exist yet, the chapter card falls back to the avatar-only layout.
+   * Optional base path for the chapter illustration (no extension, no
+   * orientation suffix). The `<ChapterArt>` component appends
+   * `-landscape.png` or `-portrait.png` based on viewport orientation
+   * and falls back silently to no image when the artifact is missing.
+   * Pack 3-6 ships these under `public/avatars/chapters/`.
    */
-  chapterArt?: string;
+  chapterArtBase?: string;
 }
 
 // Default protagonist — always available, used as the player's starting
@@ -167,26 +170,26 @@ const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
 ];
 
 const COMPUTERS_DATA: ReadonlyArray<ComputerEntry> = [
-  { kanji: '苺', name: 'いちか',   name_en: 'Ichika',    level: 1,  quote: 'ふぁいとぉ♪ 楽しんで！',       quote_en: 'Fight-o ♪ Have fun!',                       image: 'avatars/opponents/OPP01_ichika.png', chapterArt: 'avatars/opponents/chapters/OPP01_ichika_chapter.png' },
-  { kanji: '葵', name: '葵',       name_en: 'Aoi',       level: 2,  quote: '狙いはバッチリだよっ！',         quote_en: "Aim's locked in!",                           image: 'avatars/opponents/OPP02_aoi.png', chapterArt: 'avatars/opponents/chapters/OPP02_aoi_chapter.png' },
-  { kanji: '朝', name: '朝日',     name_en: 'Asahi',     level: 3,  quote: 'いざ尋常に！',                   quote_en: 'Let us duel!',                              image: 'avatars/opponents/OPP03_asahi.png', chapterArt: 'avatars/opponents/chapters/OPP03_asahi_chapter.png' },
-  { kanji: '撫', name: 'なでしこ', name_en: 'Nadeshiko', level: 4,  quote: '無理せずいきましょう',           quote_en: "Let's not push too hard.",                  image: 'avatars/opponents/OPP04_nadeshiko.png', chapterArt: 'avatars/opponents/chapters/OPP04_nadeshiko_chapter.png' },
-  { kanji: '響', name: '響',       name_en: 'Hibiki',    level: 5,  quote: '楽しい一局を奏でよう♪',         quote_en: "Let's compose a fun match ♪",                image: 'avatars/opponents/OPP05_hibiki.png', chapterArt: 'avatars/opponents/chapters/OPP05_hibiki_chapter.png' },
-  { kanji: '紬', name: 'つむぎ',   name_en: 'Tsumugi',   level: 6,  quote: '相棒もわくわくしてる',           quote_en: "My partner's excited too.",                 image: 'avatars/opponents/OPP06_tsumugi.png', chapterArt: 'avatars/opponents/chapters/OPP06_tsumugi_chapter.png' },
-  { kanji: '茜', name: '茜',       name_en: 'Akane',     level: 7,  quote: '歯車みたいにかっちりね！',       quote_en: 'Tight as gears!',                           image: 'avatars/opponents/OPP07_akane.png', chapterArt: 'avatars/opponents/chapters/OPP07_akane_chapter.png' },
-  { kanji: '薬', name: 'メル',     name_en: 'Mel',       level: 8,  quote: 'ふふ、ちょっと混ぜてみよっか？', quote_en: 'Heh, shall we mix things up?',              image: 'avatars/opponents/OPP08_mel.png', chapterArt: 'avatars/opponents/chapters/OPP08_mel_chapter.png' },
-  { kanji: '悟', name: '悟',       name_en: 'Satoru',    level: 9,  quote: '無心に石を置く、ただそれだけ',   quote_en: 'Place the stone without thought. That alone.', image: 'avatars/opponents/OPP09_satoru.png', chapterArt: 'avatars/opponents/chapters/OPP09_satoru_chapter.png' },
-  { kanji: '黒', name: 'シキ',     name_en: 'Shiki',     level: 10, quote: '気付いた時には遅いよ',           quote_en: "By the time you notice, it's too late.",    image: 'avatars/opponents/OPP10_shiki.png', chapterArt: 'avatars/opponents/chapters/OPP10_shiki_chapter.png' },
-  { kanji: '詩', name: 'シオン',   name_en: 'Shion',     level: 11, quote: 'すべては予測の内だ',             quote_en: 'All is within my predictions.',             image: 'avatars/opponents/OPP11_shion.png', chapterArt: 'avatars/opponents/chapters/OPP11_shion_chapter.png' },
-  { kanji: '夢', name: 'ルナ',     name_en: 'Luna',      level: 12, quote: '夢の中でもう勝ってるよ♡',       quote_en: "I've already won in my dream ♡",            image: 'avatars/opponents/OPP12_luna.png', chapterArt: 'avatars/opponents/chapters/OPP12_luna_chapter.png' },
-  { kanji: '雪', name: '雪乃',     name_en: 'Yukino',    level: 13, quote: 'この程度、解析するまでもない',   quote_en: 'Not even worth analyzing.',                 image: 'avatars/opponents/OPP13_yukino.png', chapterArt: 'avatars/opponents/chapters/OPP13_yukino_chapter.png' },
-  { kanji: '暁', name: 'アキラ',   name_en: 'Akira',     level: 14, quote: '君の手筋、見えているよ',         quote_en: 'I can see your moves.',                     image: 'avatars/opponents/OPP14_akira.png', chapterArt: 'avatars/opponents/chapters/OPP14_akira_chapter.png' },
-  { kanji: '銀', name: 'シエル',   name_en: 'Ciel',      level: 15, quote: '全データ把握、戦況優位',         quote_en: 'All data acquired. Position favorable.',    image: 'avatars/opponents/OPP15_ciel.png', chapterArt: 'avatars/opponents/chapters/OPP15_ciel_chapter.png' },
-  { kanji: '姫', name: 'アリア',   name_en: 'Aria',      level: 16, quote: 'お手柔らかに、ですわ',           quote_en: 'Be gentle with me.',                        image: 'avatars/opponents/OPP16_aria.png', chapterArt: 'avatars/opponents/chapters/OPP16_aria_chapter.png' },
-  { kanji: '獅', name: 'レオン',   name_en: 'Leon',      level: 17, quote: '正々堂々、参る！',               quote_en: 'Fair and square, here I come!',             image: 'avatars/opponents/OPP17_leon.png', chapterArt: 'avatars/opponents/chapters/OPP17_leon_chapter.png' },
-  { kanji: '宗', name: '宗次郎',   name_en: 'Sojiro',    level: 18, quote: '我が一刀、避けられはせぬ',       quote_en: 'My blade cannot be evaded.',                image: 'avatars/opponents/OPP18_sojiro.png', chapterArt: 'avatars/opponents/chapters/OPP18_sojiro_chapter.png' },
-  { kanji: '嵐', name: '嵐',       name_en: 'Arashi',    level: 19, quote: '我が竜の前に膝を折れ！',         quote_en: 'Kneel before my dragon!',                   image: 'avatars/opponents/OPP19_arashi.png', chapterArt: 'avatars/opponents/chapters/OPP19_arashi_chapter.png' },
-  { kanji: '零', name: 'ゼロ',     name_en: 'Zero',      level: 20, quote: '全ての変分は計算済み。詰みだ',   quote_en: 'All variations computed. Checkmate.',       image: 'avatars/opponents/OPP20_zero.png', chapterArt: 'avatars/opponents/chapters/OPP20_zero_chapter.png' },
+  { kanji: '苺', name: 'いちか',   name_en: 'Ichika',    level: 1,  quote: 'ふぁいとぉ♪ 楽しんで！',       quote_en: 'Fight-o ♪ Have fun!',                       image: 'avatars/opponents/OPP01_ichika.png', chapterArtBase: 'avatars/chapters/chapter_01_ichika' },
+  { kanji: '葵', name: '葵',       name_en: 'Aoi',       level: 2,  quote: '狙いはバッチリだよっ！',         quote_en: "Aim's locked in!",                           image: 'avatars/opponents/OPP02_aoi.png', chapterArtBase: 'avatars/chapters/chapter_02_aoi' },
+  { kanji: '朝', name: '朝日',     name_en: 'Asahi',     level: 3,  quote: 'いざ尋常に！',                   quote_en: 'Let us duel!',                              image: 'avatars/opponents/OPP03_asahi.png', chapterArtBase: 'avatars/chapters/chapter_03_asahi' },
+  { kanji: '撫', name: 'なでしこ', name_en: 'Nadeshiko', level: 4,  quote: '無理せずいきましょう',           quote_en: "Let's not push too hard.",                  image: 'avatars/opponents/OPP04_nadeshiko.png', chapterArtBase: 'avatars/chapters/chapter_04_nadeshiko' },
+  { kanji: '響', name: '響',       name_en: 'Hibiki',    level: 5,  quote: '楽しい一局を奏でよう♪',         quote_en: "Let's compose a fun match ♪",                image: 'avatars/opponents/OPP05_hibiki.png', chapterArtBase: 'avatars/chapters/chapter_05_hibiki' },
+  { kanji: '紬', name: 'つむぎ',   name_en: 'Tsumugi',   level: 6,  quote: '相棒もわくわくしてる',           quote_en: "My partner's excited too.",                 image: 'avatars/opponents/OPP06_tsumugi.png', chapterArtBase: 'avatars/chapters/chapter_06_tsumugi' },
+  { kanji: '茜', name: '茜',       name_en: 'Akane',     level: 7,  quote: '歯車みたいにかっちりね！',       quote_en: 'Tight as gears!',                           image: 'avatars/opponents/OPP07_akane.png', chapterArtBase: 'avatars/chapters/chapter_07_akane' },
+  { kanji: '薬', name: 'メル',     name_en: 'Mel',       level: 8,  quote: 'ふふ、ちょっと混ぜてみよっか？', quote_en: 'Heh, shall we mix things up?',              image: 'avatars/opponents/OPP08_mel.png', chapterArtBase: 'avatars/chapters/chapter_08_mel' },
+  { kanji: '悟', name: '悟',       name_en: 'Satoru',    level: 9,  quote: '無心に石を置く、ただそれだけ',   quote_en: 'Place the stone without thought. That alone.', image: 'avatars/opponents/OPP09_satoru.png', chapterArtBase: 'avatars/chapters/chapter_09_satoru' },
+  { kanji: '黒', name: 'シキ',     name_en: 'Shiki',     level: 10, quote: '気付いた時には遅いよ',           quote_en: "By the time you notice, it's too late.",    image: 'avatars/opponents/OPP10_shiki.png', chapterArtBase: 'avatars/chapters/chapter_10_shiki' },
+  { kanji: '詩', name: 'シオン',   name_en: 'Shion',     level: 11, quote: 'すべては予測の内だ',             quote_en: 'All is within my predictions.',             image: 'avatars/opponents/OPP11_shion.png', chapterArtBase: 'avatars/chapters/chapter_11_shion' },
+  { kanji: '夢', name: 'ルナ',     name_en: 'Luna',      level: 12, quote: '夢の中でもう勝ってるよ♡',       quote_en: "I've already won in my dream ♡",            image: 'avatars/opponents/OPP12_luna.png', chapterArtBase: 'avatars/chapters/chapter_12_luna' },
+  { kanji: '雪', name: '雪乃',     name_en: 'Yukino',    level: 13, quote: 'この程度、解析するまでもない',   quote_en: 'Not even worth analyzing.',                 image: 'avatars/opponents/OPP13_yukino.png', chapterArtBase: 'avatars/chapters/chapter_13_yukino' },
+  { kanji: '暁', name: 'アキラ',   name_en: 'Akira',     level: 14, quote: '君の手筋、見えているよ',         quote_en: 'I can see your moves.',                     image: 'avatars/opponents/OPP14_akira.png', chapterArtBase: 'avatars/chapters/chapter_14_akira' },
+  { kanji: '銀', name: 'シエル',   name_en: 'Ciel',      level: 15, quote: '全データ把握、戦況優位',         quote_en: 'All data acquired. Position favorable.',    image: 'avatars/opponents/OPP15_ciel.png', chapterArtBase: 'avatars/chapters/chapter_15_ciel' },
+  { kanji: '姫', name: 'アリア',   name_en: 'Aria',      level: 16, quote: 'お手柔らかに、ですわ',           quote_en: 'Be gentle with me.',                        image: 'avatars/opponents/OPP16_aria.png', chapterArtBase: 'avatars/chapters/chapter_16_aria' },
+  { kanji: '獅', name: 'レオン',   name_en: 'Leon',      level: 17, quote: '正々堂々、参る！',               quote_en: 'Fair and square, here I come!',             image: 'avatars/opponents/OPP17_leon.png', chapterArtBase: 'avatars/chapters/chapter_17_leon' },
+  { kanji: '宗', name: '宗次郎',   name_en: 'Sojiro',    level: 18, quote: '我が一刀、避けられはせぬ',       quote_en: 'My blade cannot be evaded.',                image: 'avatars/opponents/OPP18_sojiro.png', chapterArtBase: 'avatars/chapters/chapter_18_sojiro' },
+  { kanji: '嵐', name: '嵐',       name_en: 'Arashi',    level: 19, quote: '我が竜の前に膝を折れ！',         quote_en: 'Kneel before my dragon!',                   image: 'avatars/opponents/OPP19_arashi.png', chapterArtBase: 'avatars/chapters/chapter_19_arashi' },
+  { kanji: '零', name: 'ゼロ',     name_en: 'Zero',      level: 20, quote: '全ての変分は計算済み。詰みだ',   quote_en: 'All variations computed. Checkmate.',       image: 'avatars/opponents/OPP20_zero.png', chapterArtBase: 'avatars/chapters/chapter_20_zero' },
 ];
 
 /* ============================================================
@@ -1189,16 +1192,22 @@ function PlayerPanel({
  * dropping a file at the configured path makes the art appear without
  * any code change.
  */
-function ChapterArt({ src, alt }: { src?: string; alt: string }) {
+function ChapterArt({ srcBase, alt }: { srcBase?: string; alt: string }) {
   const [ok, setOk] = useState(true);
-  if (!src || !ok) return null;
+  const isLandscape = useMediaQuery('(orientation: landscape)');
+  if (!srcBase || !ok) return null;
+  // Pack 3-6 ships chapter images as `<base>-landscape.png` and
+  // `<base>-portrait.png`. Pick whichever matches the viewport so the
+  // composition reads correctly on phones held either way.
+  const src = `${srcBase}-${isLandscape ? 'landscape' : 'portrait'}.png`;
+  const aspect = isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]';
   return (
     <img
       src={src}
       alt={alt}
       loading="lazy"
       onError={() => setOk(false)}
-      className="w-full aspect-[16/9] object-cover rounded-sm border border-amber-200/15 mb-3"
+      className={`w-full ${aspect} object-cover rounded-sm border border-amber-200/15 mb-3`}
     />
   );
 }
@@ -4869,7 +4878,7 @@ export default function App() {
                           <div className="latin-display italic ornament text-[10px] uppercase mb-2">
                             — Chapter {targetLevel} —
                           </div>
-                          <ChapterArt src={opp.chapterArt} alt={opp.name} />
+                          <ChapterArt srcBase={opp.chapterArtBase} alt={opp.name} />
                           <div className="flex items-center gap-3 mb-3">
                             <AvatarBadge
                               kanji={opp.kanji}

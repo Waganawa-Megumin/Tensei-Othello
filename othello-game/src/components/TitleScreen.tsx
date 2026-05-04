@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Sparkles, Swords, Users } from 'lucide-react';
 import type { Locale, Messages } from '../i18n/messages';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { renderEmphasized } from '../i18n/story/render';
 
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.30.1 · llm-banter-only';
+const BUILD_TAG = 'v0.31.0 · default-route-finished';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -37,9 +40,38 @@ export function TitleScreen({
 }: TitleScreenProps) {
   const hasProgress = storyProgress > 0 && storyProgress < 20;
   const completed = storyProgress >= 20;
+  const isLandscape = useMediaQuery('(orientation: landscape)');
+  const [bgOk, setBgOk] = useState(true);
+  const bgSrc = `${import.meta.env.BASE_URL}title-bg-${
+    isLandscape ? 'landscape' : 'portrait'
+  }.png`;
 
   return (
     <div className="stage-bg min-h-screen w-full relative flex flex-col items-center justify-center px-4 py-8 max-lg:landscape:py-3 overflow-hidden">
+      {/* Title-screen background illustration. Loaded from public/ so
+          its presence/absence is independent of the JS bundle — if the
+          PNG isn't shipped (or 404s) the existing dark stage-bg shows
+          through unchanged. */}
+      {bgOk && (
+        <img
+          src={bgSrc}
+          alt=""
+          aria-hidden
+          onError={() => setBgOk(false)}
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+          style={{ opacity: 0.45 }}
+        />
+      )}
+      {/* Dark vignette over the bg image so foreground text stays
+          readable even on bright illustration regions. */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 90% 70% at 50% 50%, transparent 30%, rgba(10,8,5,0.55) 75%, rgba(10,8,5,0.85) 100%)',
+        }}
+      />
+
       {/* Decorative title-screen background — radial light + scattered stones */}
       <div className="absolute inset-0 pointer-events-none">
         <div
@@ -75,6 +107,11 @@ export function TitleScreen({
 
       {/* Title block */}
       <div className="relative text-center mb-10 max-lg:landscape:mb-3 md:mb-12">
+        {/* Tagline from the finished scenario — shown as a small
+            poetic line above the work title. */}
+        <p className="jp-display italic text-amber-100/85 text-sm max-lg:landscape:text-xs md:text-base tracking-wider mb-3 max-lg:landscape:mb-1">
+          {renderEmphasized(t.story.prologue.tagline)}
+        </p>
         <div className="latin-display italic ornament text-amber-200/50 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1">
           — Reincarnated as an Othello Player —
         </div>
@@ -177,6 +214,12 @@ export function TitleScreen({
               {t.titleStoryFreshStart(firstChapterName)}
             </div>
           )}
+          {/* Scenario-supplied CTA from the finished prologue. Sits as
+              a subtle action line under all states so the user always
+              sees the "what does this button do?" prompt. */}
+          <div className="jp-display italic text-amber-100/80 text-[11px] tracking-wider mt-3 pt-2 border-t border-amber-200/10">
+            ▸ {t.story.prologue.startButton}
+          </div>
         </button>
 
         {/* Free mode card */}
