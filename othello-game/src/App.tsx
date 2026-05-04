@@ -1487,10 +1487,6 @@ export default function App() {
   // UI state
   const [hintMove, setHintMove] = useState<Move | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  /** Story-log modal — chronological scroll of cleared chapter
-   *  text + chapter art + prologue / narrative inserts. Reachable
-   *  from the settings modal "📜 ストーリーログ" button. */
-  const [storyLogOpen, setStoryLogOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>('title');
   // Story overlay (prologue / narrative inserts / ending). Active key is
   // the OverlayKey we're currently displaying; null when none.
@@ -5362,14 +5358,14 @@ export default function App() {
                 <button
                   onClick={() => {
                     setSettingsOpen(false);
-                    setStoryLogOpen(true);
+                    setArchiveOpen(true);
                   }}
                   className="btn jp-display text-left text-sm px-4 py-2.5"
                 >
-                  📜 {t.storyLogOpenLabel}
+                  📖 {t.archiveModalTitle}
                 </button>
                 <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
-                  {t.storyLogDesc}
+                  {t.archiveSettingsDesc}
                 </p>
                 {unlockedCount > 0 && (
                   <>
@@ -5429,195 +5425,13 @@ export default function App() {
         t={t}
       />
 
-      {/* Story log — chronological scroll of cleared chapters: chapter
-          art, intro narration, both dialogue lines, and closing prose.
-          Prologue and narrative inserts are stitched in at canonical
-          story positions when their seen-flags are set on the active
-          slot. Reachable from settings; works on title and game screens
-          alike (z-[55] tucks it under the z-[70] review overlays so a
-          mis-routed click on a scene-link can't get buried). */}
-      {storyLogOpen && (() => {
-        const slotKey = activeSlotId !== null ? String(activeSlotId) : null;
-        const cleared = activeSlot?.storyProgress ?? 0;
-        const seenPrologue =
-          slotKey !== null && hasSeenOverlay(slotKey, 'prologue');
-        const seenSolitude =
-          slotKey !== null && hasSeenOverlay(slotKey, 'narrative:solitude');
-        const seenAllies =
-          slotKey !== null && hasSeenOverlay(slotKey, 'narrative:allies');
-        const seenFinal =
-          slotKey !== null && hasSeenOverlay(slotKey, 'narrative:final');
-        const seenEnding =
-          slotKey !== null && hasSeenOverlay(slotKey, 'ending');
-        const isEmpty =
-          !seenPrologue && cleared === 0 && !seenEnding;
-        return (
-          <div
-            className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6"
-            onClick={() => setStoryLogOpen(false)}
-          >
-            <div
-              className="modal-card scroll-y w-full max-w-2xl max-h-[95vh] rounded-sm"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-label={t.storyLogTitle}
-            >
-              <div className="px-5 md:px-7 py-4 border-b border-amber-200/15 sticky top-0 bg-zinc-950/95 backdrop-blur-sm z-10 flex items-start justify-between gap-3">
-                <div>
-                  <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.4em] uppercase mb-1">
-                    Story Log
-                  </div>
-                  <h2 className="jp-display text-amber-100 text-lg md:text-xl tracking-wider">
-                    {t.storyLogTitle}
-                  </h2>
-                  <p className="jp-display italic text-amber-200/60 text-xs mt-1">
-                    {t.storyLogSubtitle}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setStoryLogOpen(false)}
-                  className="btn text-xs"
-                >
-                  {t.close}
-                </button>
-              </div>
-
-              <div className="px-5 md:px-7 py-5 space-y-7">
-                {isEmpty && (
-                  <p className="jp-display italic text-amber-200/65 text-sm leading-relaxed text-center py-10">
-                    {t.storyLogEmpty}
-                  </p>
-                )}
-
-                {seenPrologue && (
-                  <article>
-                    <div className="latin-display italic text-amber-300/65 text-[10px] tracking-[0.35em] uppercase mb-1.5">
-                      {t.storyLogPrologueLabel}
-                    </div>
-                    <h3 className="jp-display text-amber-100 text-base md:text-lg tracking-wider mb-3 leading-snug">
-                      {renderEmphasized(t.story.prologue.title)}
-                    </h3>
-                    <div className="jp-display text-amber-100/85 text-sm leading-loose whitespace-pre-line">
-                      {renderEmphasized(t.story.prologue.text)}
-                    </div>
-                  </article>
-                )}
-
-                {Array.from({ length: Math.min(cleared, 20) }).map((_, idx) => {
-                  const level = idx + 1;
-                  const compIdx = COMPUTERS.findIndex((c) => c.level === level);
-                  if (compIdx < 0) return null;
-                  const comp = COMPUTERS[compIdx];
-                  const ch = t.story.chapterStories[idx];
-                  if (!ch) return null;
-                  const oppName = locale === 'ja' ? comp.name : comp.name_en;
-                  return (
-                    <div key={`ch-${level}`}>
-                      <article className="border-t border-amber-200/15 pt-5">
-                        <ChapterArt
-                          srcBase={
-                            comp.chapterArtBase
-                              ? `${import.meta.env.BASE_URL}${comp.chapterArtBase}`
-                              : undefined
-                          }
-                          alt={t.storyLogChapterHeading(level, oppName)}
-                        />
-                        <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.35em] uppercase mb-1">
-                          Chapter {level}
-                        </div>
-                        <h3 className="jp-display text-amber-100 text-base md:text-lg tracking-wider mb-3">
-                          {t.storyLogChapterHeading(level, oppName)}
-                        </h3>
-                        <div className="jp-display text-amber-100/85 text-sm leading-loose whitespace-pre-line mb-3">
-                          {renderEmphasized(ch.intro)}
-                        </div>
-                        <div className="jp-display text-amber-100/95 text-sm italic leading-relaxed mb-2 px-3 border-l-2 border-amber-200/30">
-                          「{renderEmphasized(ch.bossPre)}」
-                        </div>
-                        <div className="jp-display text-amber-200/65 text-xs italic leading-relaxed mb-2 px-3">
-                          ({renderEmphasized(ch.bossPost)})
-                        </div>
-                        <div className="jp-display text-amber-100/95 text-sm italic leading-relaxed mb-3 px-3 border-l-2 border-amber-200/30">
-                          「{renderEmphasized(ch.victoryDialogue)}」
-                        </div>
-                        <div className="jp-display text-amber-100/85 text-sm leading-loose whitespace-pre-line">
-                          {renderEmphasized(ch.victoryNarration)}
-                        </div>
-                      </article>
-
-                      {/* Insert narrative interludes at the canonical
-                          points — only when the slot has actually seen
-                          them (so unseen scenes stay spoiler-free even
-                          if some other slot has seen them). */}
-                      {level === 10 && seenSolitude && (
-                        <article className="mt-7 border-t border-amber-300/25 pt-5">
-                          <div className="latin-display italic text-amber-300/65 text-[10px] tracking-[0.35em] uppercase mb-1.5">
-                            {t.storyLogInterludeLabel}
-                          </div>
-                          <h3 className="jp-display text-amber-100 text-base md:text-lg tracking-wider mb-3 leading-snug">
-                            {renderEmphasized(t.story.narrative.solitude.title)}
-                          </h3>
-                          <div className="jp-display text-amber-100/85 text-sm leading-loose whitespace-pre-line">
-                            {renderEmphasized(t.story.narrative.solitude.text)}
-                          </div>
-                        </article>
-                      )}
-                      {level === 15 && seenAllies && (
-                        <article className="mt-7 border-t border-amber-300/25 pt-5">
-                          <div className="latin-display italic text-amber-300/65 text-[10px] tracking-[0.35em] uppercase mb-1.5">
-                            {t.storyLogInterludeLabel}
-                          </div>
-                          <h3 className="jp-display text-amber-100 text-base md:text-lg tracking-wider mb-3 leading-snug">
-                            {renderEmphasized(t.story.narrative.allies.title)}
-                          </h3>
-                          <div className="jp-display text-amber-100/85 text-sm leading-loose whitespace-pre-line">
-                            {renderEmphasized(t.story.narrative.allies.text)}
-                          </div>
-                        </article>
-                      )}
-                      {level === 19 && seenFinal && (
-                        <article className="mt-7 border-t border-amber-300/25 pt-5">
-                          <div className="latin-display italic text-amber-300/65 text-[10px] tracking-[0.35em] uppercase mb-1.5">
-                            {t.storyLogInterludeLabel}
-                          </div>
-                          <h3 className="jp-display text-amber-100 text-base md:text-lg tracking-wider mb-3 leading-snug">
-                            {renderEmphasized(t.story.narrative.final.title)}
-                          </h3>
-                          <div className="jp-display text-amber-100/85 text-sm leading-loose whitespace-pre-line">
-                            {renderEmphasized(t.story.narrative.final.text)}
-                          </div>
-                        </article>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {seenEnding && (
-                  <article className="border-t border-amber-300/35 pt-5">
-                    <div className="latin-display italic text-amber-300/75 text-[10px] tracking-[0.35em] uppercase mb-1.5">
-                      {t.storyLogEndingLabel}
-                    </div>
-                    <h3 className="jp-display text-amber-100 text-base md:text-lg tracking-wider mb-3 leading-snug">
-                      {renderEmphasized(t.story.endingFull.title)}
-                    </h3>
-                    <div className="jp-display text-amber-100/90 text-sm leading-loose whitespace-pre-line">
-                      {renderEmphasized(t.story.endingFull.text)}
-                    </div>
-                  </article>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
       {/* Scene archive modal — lists already-seen story overlays for the
           active slot so the player can re-watch them from the title.
           Renders OUTSIDE the screen gate because the entry-point sits on
           the title screen. */}
-      {archiveOpen && activeSlotId !== null && (() => {
-        const seen = getSeenOverlays(String(activeSlotId));
+      {archiveOpen && (() => {
+        const seen =
+          activeSlotId !== null ? getSeenOverlays(String(activeSlotId)) : [];
         return (
           <div
             className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6"
@@ -5641,26 +5455,32 @@ export default function App() {
                   {t.archiveModalSubtitle}
                 </p>
               </div>
-              <ul className="px-3 py-3 space-y-1.5">
-                {seen.map((key) => (
-                  <li key={key}>
-                    <button
-                      onClick={() => {
-                        setArchiveOpen(false);
-                        setReviewOverlay(key);
-                      }}
-                      className="w-full text-left px-3 py-2.5 border border-amber-200/15 rounded-sm hover:border-amber-200/45 hover:bg-amber-200/[0.04] flex items-center justify-between gap-3"
-                    >
-                      <span className="jp-display text-amber-100/90 text-sm">
-                        {t.archiveSceneLabels[key]}
-                      </span>
-                      <span className="latin-display italic text-amber-200/65 text-[11px] tracking-wider whitespace-nowrap">
-                        {t.archiveReplayLabel} ▸
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              {seen.length === 0 ? (
+                <p className="jp-display italic text-amber-200/65 text-sm leading-relaxed text-center px-5 py-10">
+                  {t.archiveEmpty}
+                </p>
+              ) : (
+                <ul className="px-3 py-3 space-y-1.5">
+                  {seen.map((key) => (
+                    <li key={key}>
+                      <button
+                        onClick={() => {
+                          setArchiveOpen(false);
+                          setReviewOverlay(key);
+                        }}
+                        className="w-full text-left px-3 py-2.5 border border-amber-200/15 rounded-sm hover:border-amber-200/45 hover:bg-amber-200/[0.04] flex items-center justify-between gap-3"
+                      >
+                        <span className="jp-display text-amber-100/90 text-sm">
+                          {t.archiveSceneLabels[key]}
+                        </span>
+                        <span className="latin-display italic text-amber-200/65 text-[11px] tracking-wider whitespace-nowrap">
+                          {t.archiveReplayLabel} ▸
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <div className="px-5 py-3 border-t border-amber-200/15 flex justify-end">
                 <button
                   onClick={() => setArchiveOpen(false)}
