@@ -2082,18 +2082,31 @@ export default function App() {
   function startGame(selection: TitleStartMode) {
     if (selection.mode === 'human') {
       setGameMode('human');
-    } else {
+      reset();
+      setScreen('game');
+      return;
+    }
+    if (selection.sub === 'story') {
       // Story mode requires an active slot; otherwise open the picker
       // and let the user pick before entering the game.
-      if (selection.sub === 'story' && activeSlotId === null) {
+      if (activeSlotId === null) {
         setSlotPickerOpen(true);
         return;
       }
       setGameMode('ai');
-      setAiMode(selection.sub);
+      setAiMode('story');
+      reset();
+      setScreen('game');
+      return;
     }
-    reset();
-    setScreen('game');
+    // Free mode: don't drop the player straight into the coin toss.
+    // Open the setup panel pre-configured for free match so they can
+    // pick opponent / level / first-player preference, then confirm
+    // with "この設定で対局を始める" — the toss runs only after that
+    // explicit start.
+    setGameMode('ai');
+    setAiMode('free');
+    setSettingsOpen(true);
   }
 
   /** Pick (or switch) the active save slot, then jump straight into
@@ -4337,168 +4350,552 @@ export default function App() {
             </div>
           )}
 
-          {/* Settings modal */}
-          {settingsOpen && (
-            <div className="modal-bg fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-2 md:p-6">
-              <div className="modal-card scroll-y w-full max-w-3xl max-h-[95vh] rounded-sm p-5 md:p-8">
+        </div>
+      </div>
+      )}
+
+      {/* Settings modal */}
+      {settingsOpen && (
+        <div className="modal-bg fixed inset-0 z-50 flex items-stretch md:items-center justify-center p-2 md:p-6">
+          <div className="modal-card scroll-y w-full max-w-3xl max-h-[95vh] rounded-sm p-5 md:p-8">
+            {(() => {
+              const fromTitle = screen !== 'game';
+              const heading = fromTitle ? t.matchSetup : t.setup;
+              return (
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <div className="latin-display italic ornament text-[10px] uppercase mb-1">
-                      — {t.setup} —
+                      — {heading} —
                     </div>
                     <h2 className="jp-display text-amber-100 text-2xl md:text-3xl font-bold tracking-[0.15em]">
-                      {t.setup}
+                      {heading}
                     </h2>
                   </div>
                   <button onClick={() => setSettingsOpen(false)} className="btn">
                     {t.close}
                   </button>
                 </div>
+              );
+            })()}
 
-                {/* Language toggle */}
-                <section className="mb-6">
-                  <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    {t.language}
-                  </h3>
-                  <div className="flex gap-2">
+            {/* Language toggle */}
+            <section className="mb-6">
+              <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                {t.language}
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setLocale('ja')}
+                  className={`btn flex-1 ${locale === 'ja' ? 'btn-active' : ''}`}
+                >
+                  日本語
+                </button>
+                <button
+                  onClick={() => setLocale('en')}
+                  className={`btn flex-1 ${locale === 'en' ? 'btn-active' : ''}`}
+                >
+                  English
+                </button>
+              </div>
+            </section>
+
+            {/* Coin animation style — purely cosmetic, applies to
+                the first/second toss overlay shown at game start. */}
+            <section className="mb-6">
+              <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                {t.coinStyleLabel}
+                <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                  — {t.coinStyleSubtitle}
+                </span>
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {(['2d', 'fantasy'] as const).map((style) => {
+                  const active = coinStyle === style;
+                  const label = style === '2d' ? t.coinStyle2D : t.coinStyleFantasy;
+                  const desc = style === '2d' ? t.coinStyle2DDesc : t.coinStyleFantasyDesc;
+                  return (
                     <button
-                      onClick={() => setLocale('ja')}
-                      className={`btn flex-1 ${locale === 'ja' ? 'btn-active' : ''}`}
+                      key={style}
+                      onClick={() => setCoinStyle(style)}
+                      className={`text-left rounded-sm border py-2.5 px-3 transition-all ${
+                        active
+                          ? 'border-amber-200/70 bg-amber-200/[0.06] text-amber-100'
+                          : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02] text-amber-100/85'
+                      }`}
+                      aria-pressed={active}
                     >
-                      日本語
+                      <div className="jp-display text-sm tracking-wider">{label}</div>
+                      <div className="jp-display italic text-amber-200/70 text-[11px] mt-0.5 leading-snug">
+                        {desc}
+                      </div>
                     </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Save slot — story mode only */}
+            {gameMode === 'ai' && aiMode === 'story' && (
+              <section className="mb-6">
+                <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                  {t.slotPickerTitle}
+                  <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                    — {t.slotPickerSubtitle}
+                  </span>
+                </h3>
+                {activeSlot ? (
+                  <div className="px-3 py-2.5 bg-amber-200/[0.04] border border-amber-200/20 rounded-sm flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="jp-display text-amber-100/95 text-sm truncate">
+                        {activeSlot.name}
+                      </div>
+                      <div className="jp-display text-amber-200/65 text-[11px] mt-0.5">
+                        {t.slotProgress(activeSlot.storyProgress)} ・ ♥ {activeSlot.lives}
+                      </div>
+                    </div>
                     <button
-                      onClick={() => setLocale('en')}
-                      className={`btn flex-1 ${locale === 'en' ? 'btn-active' : ''}`}
+                      onClick={() => {
+                        setSettingsOpen(false);
+                        setSlotPickerOpen(true);
+                      }}
+                      className="btn text-xs px-3 py-1.5"
                     >
-                      English
+                      {t.slotSwitch}
                     </button>
                   </div>
-                </section>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      setSlotPickerOpen(true);
+                    }}
+                    className="btn w-full"
+                  >
+                    {t.slotChooseFirst}
+                  </button>
+                )}
+              </section>
+            )}
 
-                {/* Coin animation style — purely cosmetic, applies to
-                    the first/second toss overlay shown at game start. */}
-                <section className="mb-6">
-                  <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    {t.coinStyleLabel}
-                    <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
-                      — {t.coinStyleSubtitle}
-                    </span>
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(['2d', 'fantasy'] as const).map((style) => {
-                      const active = coinStyle === style;
-                      const label = style === '2d' ? t.coinStyle2D : t.coinStyleFantasy;
-                      const desc = style === '2d' ? t.coinStyle2DDesc : t.coinStyleFantasyDesc;
-                      return (
-                        <button
-                          key={style}
-                          onClick={() => setCoinStyle(style)}
-                          className={`text-left rounded-sm border py-2.5 px-3 transition-all ${
-                            active
-                              ? 'border-amber-200/70 bg-amber-200/[0.06] text-amber-100'
-                              : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02] text-amber-100/85'
-                          }`}
-                          aria-pressed={active}
-                        >
-                          <div className="jp-display text-sm tracking-wider">{label}</div>
-                          <div className="jp-display italic text-amber-200/70 text-[11px] mt-0.5 leading-snug">
-                            {desc}
-                          </div>
-                        </button>
-                      );
-                    })}
+            <section className="mb-7">
+              <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                {t.protagonist}
+                <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                  — {t.protagonistSubtitle}
+                </span>
+              </h3>
+              <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
+                {AVATARS.map((a, i) => {
+                  // i === 0: default protagonist, always available.
+                  // i in 1..unlockedCount: a bonus avatar earned via
+                  // a 20-chapter story clear. i > unlockedCount: not
+                  // yet earned.
+                  const isLocked = i > unlockedCount;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => !isLocked && setP1Avatar(i)}
+                      disabled={isLocked}
+                      className={`relative p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                        p1Avatar === i
+                          ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                          : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
+                      } ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    >
+                      <AvatarBadge
+                        kanji={a.kanji}
+                        idx={i}
+                        image={a.image}
+                        size="sm"
+                        dim={isLocked}
+                      />
+                      <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                        {a.name}
+                      </div>
+                      <div
+                        className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
+                          p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
+                        }`}
+                      >
+                        {a.setting}
+                      </div>
+                      {isLocked && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <Lock size={20} strokeWidth={1.4} className="text-amber-200/85" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {unlockedCount < TOTAL_BONUS_AVATARS && (
+                <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
+                  {t.protagonistLockHint(unlockedCount, TOTAL_BONUS_AVATARS)}
+                </p>
+              )}
+              <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
+                <div className="jp-display text-amber-100/85 text-sm">
+                  {AVATARS[p1Avatar].name}
+                  <span className="latin-display italic text-amber-200/65 text-xs ml-2">
+                    — {AVATARS[p1Avatar].setting}
+                  </span>
+                </div>
+                <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
+                  「{AVATARS[p1Avatar].quote}」
+                </div>
+              </div>
+            </section>
+
+            <section className="mb-7">
+              <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                {t.opponent}
+                <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                  — {t.opponentSubtitle}
+                </span>
+              </h3>
+
+              <div className="flex gap-2 mb-5">
+                <button
+                  onClick={() => setGameMode('ai')}
+                  className={`btn flex-1 ${gameMode === 'ai' ? 'btn-active' : ''}`}
+                >
+                  {t.vsAi}
+                </button>
+                <button
+                  onClick={() => setGameMode('human')}
+                  className={`btn flex-1 ${gameMode === 'human' ? 'btn-active' : ''}`}
+                >
+                  {t.vsHuman}
+                </button>
+              </div>
+
+              {gameMode === 'ai' && (
+                <>
+                  <div className="flex gap-2 mb-5">
+                    <button
+                      onClick={() => setAiMode('story')}
+                      className={`btn flex-1 ${aiMode === 'story' ? 'btn-active' : ''}`}
+                    >
+                      {t.storyMode}
+                    </button>
+                    <button
+                      onClick={() => setAiMode('free')}
+                      className={`btn flex-1 ${aiMode === 'free' ? 'btn-active' : ''}`}
+                    >
+                      {t.freeMode}
+                    </button>
                   </div>
-                </section>
 
-                {/* Save slot — story mode only */}
-                {gameMode === 'ai' && aiMode === 'story' && (
-                  <section className="mb-6">
-                    <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                      {t.slotPickerTitle}
-                      <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
-                        — {t.slotPickerSubtitle}
-                      </span>
-                    </h3>
-                    {activeSlot ? (
-                      <div className="px-3 py-2.5 bg-amber-200/[0.04] border border-amber-200/20 rounded-sm flex items-center gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="jp-display text-amber-100/95 text-sm truncate">
-                            {activeSlot.name}
+                  {aiMode === 'story' && (() => {
+                    const isComplete = storyProgress >= 20;
+                    const maxCursor = Math.min(
+                      Math.max(storyProgress + 1, 1),
+                      20,
+                    );
+                    const cursor = Math.min(
+                      Math.max(chapterCursor, 1),
+                      maxCursor,
+                    );
+                    const targetLevel = cursor;
+                    const oppIdx = COMPUTERS.findIndex(
+                      (c) => c.level === targetLevel,
+                    );
+                    const opp = COMPUTERS[oppIdx];
+                    const isFrontier = !isComplete && cursor === storyProgress + 1;
+                    const isPast = cursor <= storyProgress;
+                    const showEnding = isComplete && cursor === 20;
+                    return (
+                      <div className="space-y-4 mb-2">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="latin-display italic text-amber-200/50 text-xs tracking-[0.25em] uppercase">
+                              {t.progress}
+                            </span>
+                            <span className="latin-display text-amber-100 text-base tabular-nums">
+                              {storyProgress} / 20
+                            </span>
                           </div>
-                          <div className="jp-display text-amber-200/65 text-[11px] mt-0.5">
-                            {t.slotProgress(activeSlot.storyProgress)} ・ ♥ {activeSlot.lives}
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: 20 }, (_, i) => (
+                              <div
+                                key={i}
+                                className={`flex-1 h-1.5 rounded-full transition-colors ${
+                                  i < storyProgress ? 'bg-amber-400/90' : 'bg-zinc-800/60'
+                                } ${i + 1 === cursor ? 'ring-1 ring-amber-200/80' : ''}`}
+                              />
+                            ))}
                           </div>
                         </div>
-                        <button
-                          onClick={() => {
-                            setSettingsOpen(false);
-                            setSlotPickerOpen(true);
-                          }}
-                          className="btn text-xs px-3 py-1.5"
-                        >
-                          {t.slotSwitch}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setSettingsOpen(false);
-                          setSlotPickerOpen(true);
-                        }}
-                        className="btn w-full"
-                      >
-                        {t.slotChooseFirst}
-                      </button>
-                    )}
-                  </section>
-                )}
 
-                <section className="mb-7">
-                  <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    {t.protagonist}
-                    <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
-                      — {t.protagonistSubtitle}
-                    </span>
-                  </h3>
+                        {/* Chapter navigation row. Lets the player step
+                            through cleared chapters without disturbing
+                            the saved progress. */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              setChapterCursor((c) => Math.max(1, c - 1))
+                            }
+                            disabled={cursor <= 1}
+                            className="btn text-xs px-3 py-1.5"
+                            title={t.chapterNavPrev}
+                          >
+                            ◀ {t.chapterNavPrev}
+                          </button>
+                          <div className="flex-1 text-center latin-display italic text-amber-200/70 text-xs tracking-wider">
+                            {t.chapterCounter(cursor, maxCursor)}
+                            {isFrontier && (
+                              <span className="text-amber-200/55 ml-1">
+                                {t.chapterCurrentBadge}
+                              </span>
+                            )}
+                            {isPast && (
+                              <span className="text-emerald-300/70 ml-1">
+                                {t.chapterClearedBadge}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() =>
+                              setChapterCursor((c) =>
+                                Math.min(maxCursor, c + 1),
+                              )
+                            }
+                            disabled={cursor >= maxCursor}
+                            className="btn text-xs px-3 py-1.5"
+                            title={t.chapterNavNext}
+                          >
+                            {t.chapterNavNext} ▶
+                          </button>
+                        </div>
+
+                        {cursor !== maxCursor && (
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => setChapterCursor(maxCursor)}
+                              className="btn text-xs"
+                            >
+                              {t.chapterNavLatest}
+                            </button>
+                          </div>
+                        )}
+
+                        {storyProgress === 0 && cursor === 1 && (
+                          <p className="jp-display italic text-amber-200/55 text-xs md:text-sm leading-relaxed whitespace-pre-line">
+                            {t.storyIntro}
+                          </p>
+                        )}
+
+                        <div className="border border-amber-200/30 bg-amber-200/[0.04] rounded-sm p-4">
+                          <div className="latin-display italic ornament text-[10px] uppercase mb-2">
+                            — Chapter {targetLevel} —
+                          </div>
+                          <ChapterArt src={opp.chapterArt} alt={opp.name} />
+                          <div className="flex items-center gap-3 mb-3">
+                            <AvatarBadge
+                              kanji={opp.kanji}
+                              idx={oppIdx + 100}
+                              image={opp.image}
+                              size="md"
+                            />
+                            <div className="min-w-0">
+                              <div className="jp-display text-amber-100 text-base md:text-lg truncate">
+                                {t.footerChapter(targetLevel, opp.name)}
+                              </div>
+                              <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">
+                                Lv.{opp.level} {getLevelLabel(opp.level, t)}
+                              </div>
+                            </div>
+                          </div>
+                          <p className="jp-display text-amber-100/80 text-sm leading-relaxed">
+                            {t.storyChapters[cursor - 1]}
+                          </p>
+                          <p className="jp-display italic text-amber-200/55 text-xs mt-2">
+                            「{opp.quote}」
+                          </p>
+                        </div>
+
+                        {showEnding && (
+                          <div className="border border-amber-400/50 bg-amber-300/[0.06] rounded-sm p-4 text-center">
+                            <div className="latin-display italic ornament text-[10px] uppercase mb-3">
+                              — {t.storyComplete.replace(/—/g, '').trim()} —
+                            </div>
+                            <div className="jp-display text-amber-100 text-xl md:text-2xl mb-3 tracking-wider">
+                              {t.storyEnding}
+                            </div>
+                            <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
+                              {t.storyEndingProse}
+                            </p>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={() =>
+                            startStoryChapter(cursor, isFrontier)
+                          }
+                          className={`btn w-full ${isFrontier ? 'btn-active' : ''}`}
+                        >
+                          {isFrontier
+                            ? t.chapterPlayCurrent
+                            : t.chapterPlayReplay}
+                        </button>
+
+                        <p className="jp-display italic text-amber-200/55 text-[11px] text-center">
+                          {t.firstPlayerStoryHint}
+                        </p>
+
+                        {storyProgress > 0 && (
+                          <div className="flex justify-end">
+                            <button
+                              onClick={resetStoryProgress}
+                              className="btn text-xs opacity-70"
+                            >
+                              {t.retryStoryFromStart}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {aiMode === 'free' && (
+                    <>
+                      <div className="mb-5">
+                        <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
+                          {t.firstPlayerHeading}
+                          <span className="ml-2 normal-case tracking-wider text-amber-200/50">
+                            — {t.firstPlayerSubtitle}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => setFirstPlayerPref('random')}
+                            className={`btn ${firstPlayerPref === 'random' ? 'btn-active' : ''}`}
+                          >
+                            {t.firstPlayerRandom}
+                          </button>
+                          <button
+                            onClick={() => setFirstPlayerPref('first')}
+                            className={`btn ${firstPlayerPref === 'first' ? 'btn-active' : ''}`}
+                          >
+                            {t.firstPlayerFirst}
+                          </button>
+                          <button
+                            onClick={() => setFirstPlayerPref('second')}
+                            className={`btn ${firstPlayerPref === 'second' ? 'btn-active' : ''}`}
+                          >
+                            {t.firstPlayerSecond}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mb-5">
+                        <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
+                          {t.characterGridLabel}
+                        </div>
+                        <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
+                          {COMPUTERS.map((c, i) => (
+                            <button
+                              key={i}
+                              onClick={() => selectCharacter(i)}
+                              className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                                computerChar === i
+                                  ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                                  : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
+                              }`}
+                            >
+                              <AvatarBadge
+                                kanji={c.kanji}
+                                idx={i + 100}
+                                image={c.image}
+                                size="sm"
+                              />
+                              <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                                {c.name}
+                              </div>
+                              <div
+                                className={`latin-display italic text-[10px] tracking-wider ${
+                                  computerChar === i
+                                    ? 'text-amber-200/80'
+                                    : 'text-amber-200/65'
+                                }`}
+                              >
+                                Lv.{c.level}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                        <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
+                          <div className="jp-display text-amber-100/80 text-sm">
+                            {COMPUTERS[computerChar].name}
+                          </div>
+                          <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
+                            「{COMPUTERS[computerChar].quote}」
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <LevelSelector level={level} setLevel={setLevel} t={t} />
+                        <p className="latin-display italic text-amber-200/55 text-[11px] mt-3 leading-relaxed">
+                          {t.aiLevelExplain}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {gameMode === 'human' && (
+                <div>
+                  <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
+                    {t.player2Protagonist}
+                  </div>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
                     {AVATARS.map((a, i) => {
-                      // i === 0: default protagonist, always available.
-                      // i in 1..unlockedCount: a bonus avatar earned via
-                      // a 20-chapter story clear. i > unlockedCount: not
-                      // yet earned.
                       const isLocked = i > unlockedCount;
+                      // Allow both players to share the default avatar
+                      // when no bonus characters are unlocked yet —
+                      // otherwise 2P mode would have no valid p2 pick.
+                      // Once at least one bonus is unlocked there's
+                      // always a different option available.
+                      const collidesWithP1 =
+                        p1Avatar === i && unlockedCount > 0;
+                      const isDisabled = isLocked || collidesWithP1;
                       return (
                         <button
                           key={i}
-                          onClick={() => !isLocked && setP1Avatar(i)}
-                          disabled={isLocked}
+                          onClick={() => !isDisabled && setP2Avatar(i)}
+                          disabled={isDisabled}
                           className={`relative p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                            p1Avatar === i
+                            p2Avatar === i
                               ? 'border-amber-200/70 bg-amber-200/[0.06]'
                               : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                          } ${isLocked ? 'opacity-40 cursor-not-allowed' : ''}`}
+                          } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                         >
                           <AvatarBadge
                             kanji={a.kanji}
-                            idx={i}
+                            idx={i + 50}
                             image={a.image}
                             size="sm"
-                            dim={isLocked}
+                            dim={isDisabled}
                           />
                           <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
                             {a.name}
                           </div>
                           <div
                             className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                              p1Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
+                              p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
                             }`}
                           >
                             {a.setting}
                           </div>
                           {isLocked && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <Lock size={20} strokeWidth={1.4} className="text-amber-200/85" />
+                              <Lock
+                                size={20}
+                                strokeWidth={1.4}
+                                className="text-amber-200/85"
+                              />
                             </div>
                           )}
                         </button>
@@ -4510,416 +4907,39 @@ export default function App() {
                       {t.protagonistLockHint(unlockedCount, TOTAL_BONUS_AVATARS)}
                     </p>
                   )}
-                  <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                    <div className="jp-display text-amber-100/85 text-sm">
-                      {AVATARS[p1Avatar].name}
-                      <span className="latin-display italic text-amber-200/65 text-xs ml-2">
-                        — {AVATARS[p1Avatar].setting}
-                      </span>
-                    </div>
-                    <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
-                      「{AVATARS[p1Avatar].quote}」
-                    </div>
-                  </div>
-                </section>
-
-                <section className="mb-7">
-                  <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                    {t.opponent}
-                    <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
-                      — {t.opponentSubtitle}
-                    </span>
-                  </h3>
-
-                  <div className="flex gap-2 mb-5">
-                    <button
-                      onClick={() => setGameMode('ai')}
-                      className={`btn flex-1 ${gameMode === 'ai' ? 'btn-active' : ''}`}
-                    >
-                      {t.vsAi}
-                    </button>
-                    <button
-                      onClick={() => setGameMode('human')}
-                      className={`btn flex-1 ${gameMode === 'human' ? 'btn-active' : ''}`}
-                    >
-                      {t.vsHuman}
-                    </button>
-                  </div>
-
-                  {gameMode === 'ai' && (
-                    <>
-                      <div className="flex gap-2 mb-5">
-                        <button
-                          onClick={() => setAiMode('story')}
-                          className={`btn flex-1 ${aiMode === 'story' ? 'btn-active' : ''}`}
-                        >
-                          {t.storyMode}
-                        </button>
-                        <button
-                          onClick={() => setAiMode('free')}
-                          className={`btn flex-1 ${aiMode === 'free' ? 'btn-active' : ''}`}
-                        >
-                          {t.freeMode}
-                        </button>
-                      </div>
-
-                      {aiMode === 'story' && (() => {
-                        const isComplete = storyProgress >= 20;
-                        const maxCursor = Math.min(
-                          Math.max(storyProgress + 1, 1),
-                          20,
-                        );
-                        const cursor = Math.min(
-                          Math.max(chapterCursor, 1),
-                          maxCursor,
-                        );
-                        const targetLevel = cursor;
-                        const oppIdx = COMPUTERS.findIndex(
-                          (c) => c.level === targetLevel,
-                        );
-                        const opp = COMPUTERS[oppIdx];
-                        const isFrontier = !isComplete && cursor === storyProgress + 1;
-                        const isPast = cursor <= storyProgress;
-                        const showEnding = isComplete && cursor === 20;
-                        return (
-                          <div className="space-y-4 mb-2">
-                            <div>
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="latin-display italic text-amber-200/50 text-xs tracking-[0.25em] uppercase">
-                                  {t.progress}
-                                </span>
-                                <span className="latin-display text-amber-100 text-base tabular-nums">
-                                  {storyProgress} / 20
-                                </span>
-                              </div>
-                              <div className="flex gap-0.5">
-                                {Array.from({ length: 20 }, (_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`flex-1 h-1.5 rounded-full transition-colors ${
-                                      i < storyProgress ? 'bg-amber-400/90' : 'bg-zinc-800/60'
-                                    } ${i + 1 === cursor ? 'ring-1 ring-amber-200/80' : ''}`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Chapter navigation row. Lets the player step
-                                through cleared chapters without disturbing
-                                the saved progress. */}
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() =>
-                                  setChapterCursor((c) => Math.max(1, c - 1))
-                                }
-                                disabled={cursor <= 1}
-                                className="btn text-xs px-3 py-1.5"
-                                title={t.chapterNavPrev}
-                              >
-                                ◀ {t.chapterNavPrev}
-                              </button>
-                              <div className="flex-1 text-center latin-display italic text-amber-200/70 text-xs tracking-wider">
-                                {t.chapterCounter(cursor, maxCursor)}
-                                {isFrontier && (
-                                  <span className="text-amber-200/55 ml-1">
-                                    {t.chapterCurrentBadge}
-                                  </span>
-                                )}
-                                {isPast && (
-                                  <span className="text-emerald-300/70 ml-1">
-                                    {t.chapterClearedBadge}
-                                  </span>
-                                )}
-                              </div>
-                              <button
-                                onClick={() =>
-                                  setChapterCursor((c) =>
-                                    Math.min(maxCursor, c + 1),
-                                  )
-                                }
-                                disabled={cursor >= maxCursor}
-                                className="btn text-xs px-3 py-1.5"
-                                title={t.chapterNavNext}
-                              >
-                                {t.chapterNavNext} ▶
-                              </button>
-                            </div>
-
-                            {cursor !== maxCursor && (
-                              <div className="flex justify-center">
-                                <button
-                                  onClick={() => setChapterCursor(maxCursor)}
-                                  className="btn text-xs"
-                                >
-                                  {t.chapterNavLatest}
-                                </button>
-                              </div>
-                            )}
-
-                            {storyProgress === 0 && cursor === 1 && (
-                              <p className="jp-display italic text-amber-200/55 text-xs md:text-sm leading-relaxed whitespace-pre-line">
-                                {t.storyIntro}
-                              </p>
-                            )}
-
-                            <div className="border border-amber-200/30 bg-amber-200/[0.04] rounded-sm p-4">
-                              <div className="latin-display italic ornament text-[10px] uppercase mb-2">
-                                — Chapter {targetLevel} —
-                              </div>
-                              <ChapterArt src={opp.chapterArt} alt={opp.name} />
-                              <div className="flex items-center gap-3 mb-3">
-                                <AvatarBadge
-                                  kanji={opp.kanji}
-                                  idx={oppIdx + 100}
-                                  image={opp.image}
-                                  size="md"
-                                />
-                                <div className="min-w-0">
-                                  <div className="jp-display text-amber-100 text-base md:text-lg truncate">
-                                    {t.footerChapter(targetLevel, opp.name)}
-                                  </div>
-                                  <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">
-                                    Lv.{opp.level} {getLevelLabel(opp.level, t)}
-                                  </div>
-                                </div>
-                              </div>
-                              <p className="jp-display text-amber-100/80 text-sm leading-relaxed">
-                                {t.storyChapters[cursor - 1]}
-                              </p>
-                              <p className="jp-display italic text-amber-200/55 text-xs mt-2">
-                                「{opp.quote}」
-                              </p>
-                            </div>
-
-                            {showEnding && (
-                              <div className="border border-amber-400/50 bg-amber-300/[0.06] rounded-sm p-4 text-center">
-                                <div className="latin-display italic ornament text-[10px] uppercase mb-3">
-                                  — {t.storyComplete.replace(/—/g, '').trim()} —
-                                </div>
-                                <div className="jp-display text-amber-100 text-xl md:text-2xl mb-3 tracking-wider">
-                                  {t.storyEnding}
-                                </div>
-                                <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
-                                  {t.storyEndingProse}
-                                </p>
-                              </div>
-                            )}
-
-                            <button
-                              onClick={() =>
-                                startStoryChapter(cursor, isFrontier)
-                              }
-                              className={`btn w-full ${isFrontier ? 'btn-active' : ''}`}
-                            >
-                              {isFrontier
-                                ? t.chapterPlayCurrent
-                                : t.chapterPlayReplay}
-                            </button>
-
-                            <p className="jp-display italic text-amber-200/55 text-[11px] text-center">
-                              {t.firstPlayerStoryHint}
-                            </p>
-
-                            {storyProgress > 0 && (
-                              <div className="flex justify-end">
-                                <button
-                                  onClick={resetStoryProgress}
-                                  className="btn text-xs opacity-70"
-                                >
-                                  {t.retryStoryFromStart}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-
-                      {aiMode === 'free' && (
-                        <>
-                          <div className="mb-5">
-                            <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
-                              {t.firstPlayerHeading}
-                              <span className="ml-2 normal-case tracking-wider text-amber-200/50">
-                                — {t.firstPlayerSubtitle}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2">
-                              <button
-                                onClick={() => setFirstPlayerPref('random')}
-                                className={`btn ${firstPlayerPref === 'random' ? 'btn-active' : ''}`}
-                              >
-                                {t.firstPlayerRandom}
-                              </button>
-                              <button
-                                onClick={() => setFirstPlayerPref('first')}
-                                className={`btn ${firstPlayerPref === 'first' ? 'btn-active' : ''}`}
-                              >
-                                {t.firstPlayerFirst}
-                              </button>
-                              <button
-                                onClick={() => setFirstPlayerPref('second')}
-                                className={`btn ${firstPlayerPref === 'second' ? 'btn-active' : ''}`}
-                              >
-                                {t.firstPlayerSecond}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="mb-5">
-                            <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
-                              {t.characterGridLabel}
-                            </div>
-                            <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                              {COMPUTERS.map((c, i) => (
-                                <button
-                                  key={i}
-                                  onClick={() => selectCharacter(i)}
-                                  className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                                    computerChar === i
-                                      ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                                      : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                                  }`}
-                                >
-                                  <AvatarBadge
-                                    kanji={c.kanji}
-                                    idx={i + 100}
-                                    image={c.image}
-                                    size="sm"
-                                  />
-                                  <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                                    {c.name}
-                                  </div>
-                                  <div
-                                    className={`latin-display italic text-[10px] tracking-wider ${
-                                      computerChar === i
-                                        ? 'text-amber-200/80'
-                                        : 'text-amber-200/65'
-                                    }`}
-                                  >
-                                    Lv.{c.level}
-                                  </div>
-                                </button>
-                              ))}
-                            </div>
-                            <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
-                              <div className="jp-display text-amber-100/80 text-sm">
-                                {COMPUTERS[computerChar].name}
-                              </div>
-                              <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
-                                「{COMPUTERS[computerChar].quote}」
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <LevelSelector level={level} setLevel={setLevel} t={t} />
-                            <p className="latin-display italic text-amber-200/55 text-[11px] mt-3 leading-relaxed">
-                              {t.aiLevelExplain}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                    </>
+                  {p1Avatar === p2Avatar && unlockedCount > 0 && (
+                    <p className="jp-display text-amber-200/65 text-xs mt-2 italic">
+                      {t.cannotChooseSelf}
+                    </p>
                   )}
+                </div>
+              )}
+            </section>
 
-                  {gameMode === 'human' && (
-                    <div>
-                      <div className="latin-display italic text-amber-200/70 text-xs tracking-[0.25em] uppercase mb-2">
-                        {t.player2Protagonist}
-                      </div>
-                      <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                        {AVATARS.map((a, i) => {
-                          const isLocked = i > unlockedCount;
-                          // Allow both players to share the default avatar
-                          // when no bonus characters are unlocked yet —
-                          // otherwise 2P mode would have no valid p2 pick.
-                          // Once at least one bonus is unlocked there's
-                          // always a different option available.
-                          const collidesWithP1 =
-                            p1Avatar === i && unlockedCount > 0;
-                          const isDisabled = isLocked || collidesWithP1;
-                          return (
-                            <button
-                              key={i}
-                              onClick={() => !isDisabled && setP2Avatar(i)}
-                              disabled={isDisabled}
-                              className={`relative p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                                p2Avatar === i
-                                  ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                                  : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                              } ${isDisabled ? 'opacity-40 cursor-not-allowed' : ''}`}
-                            >
-                              <AvatarBadge
-                                kanji={a.kanji}
-                                idx={i + 50}
-                                image={a.image}
-                                size="sm"
-                                dim={isDisabled}
-                              />
-                              <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                                {a.name}
-                              </div>
-                              <div
-                                className={`jp-display text-[9px] md:text-[10px] leading-tight tracking-wide text-center ${
-                                  p2Avatar === i ? 'text-amber-200/70' : 'text-amber-200/65'
-                                }`}
-                              >
-                                {a.setting}
-                              </div>
-                              {isLocked && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                  <Lock
-                                    size={20}
-                                    strokeWidth={1.4}
-                                    className="text-amber-200/85"
-                                  />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {unlockedCount < TOTAL_BONUS_AVATARS && (
-                        <p className="jp-display italic text-amber-200/55 text-[11px] mt-2">
-                          {t.protagonistLockHint(unlockedCount, TOTAL_BONUS_AVATARS)}
-                        </p>
-                      )}
-                      {p1Avatar === p2Avatar && unlockedCount > 0 && (
-                        <p className="jp-display text-amber-200/65 text-xs mt-2 italic">
-                          {t.cannotChooseSelf}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </section>
-
-                {/* Bottom action row — only meaningful for free / two-
-                    player setups. In story mode the chapter card already
-                    has its own "この章で対局を始める" button (frontier or
-                    replay), and a top-right close button covers "just
-                    look around". A duplicate "新しい対局" button here was
-                    confusing because the chapter cursor isn't a real
-                    setting — it's a viewer — so users couldn't tell what
-                    cursor + bottom button would do. */}
-                {!(gameMode === 'ai' && aiMode === 'story') && (
-                  <div className="flex justify-end gap-2 pt-2 border-t border-amber-200/15">
-                    <button
-                      onClick={() => {
-                        reset();
-                        setSettingsOpen(false);
-                        setScreen('game');
-                      }}
-                      className="btn btn-active"
-                    >
-                      {t.startNewGame}
-                    </button>
-                  </div>
-                )}
+            {/* Bottom action row — only meaningful for free / two-
+                player setups. In story mode the chapter card already
+                has its own "この章で対局を始める" button (frontier or
+                replay), and a top-right close button covers "just
+                look around". A duplicate "新しい対局" button here was
+                confusing because the chapter cursor isn't a real
+                setting — it's a viewer — so users couldn't tell what
+                cursor + bottom button would do. */}
+            {!(gameMode === 'ai' && aiMode === 'story') && (
+              <div className="flex justify-end gap-2 pt-2 border-t border-amber-200/15">
+                <button
+                  onClick={() => {
+                    reset();
+                    setSettingsOpen(false);
+                    setScreen('game');
+                  }}
+                  className="btn btn-active"
+                >
+                  {t.startNewGame}
+                </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       <SlotPicker

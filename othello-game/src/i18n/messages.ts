@@ -123,6 +123,9 @@ export interface Messages {
 
   // Settings modal
   setup: string;
+  /** Same panel, but reframed as "match setup" when opened from the
+   *  title screen (free-mode entry) instead of mid-game. */
+  matchSetup: string;
   protagonist: string;
   protagonistSubtitle: string;
   opponent: string;
@@ -285,7 +288,7 @@ export const ja: Messages = {
   titleFreeDesc: '20体の対戦相手と1〜20の難易度を自由に組み合わせて。',
   titleTwoPlayersDesc: '一台の端末を共有して、二人で交互に打つ。',
   titleFooterHint: '— Tap a mode to begin —',
-  titleFreeMeta: 'キャラクター ・ レベル ・ アバター 自由設定',
+  titleFreeMeta: '次に設定 → 対戦相手・レベル・先攻後攻を選んで対局',
   titleTwoPlayersMeta: '黒 ・ 白 それぞれにキャラクター',
   titleStoryFreshStart: (name) => `第1章 ・ ${name} から始まる`,
   titleStoryContinue: (n) => `第${n}章から続きを`,
@@ -379,6 +382,7 @@ export const ja: Messages = {
   drawShort: '引分',
 
   setup: '設定',
+  matchSetup: '対戦設定',
   protagonist: '主人公',
   protagonistSubtitle: 'Choose your protagonist',
   opponent: '対戦相手',
@@ -563,7 +567,7 @@ export const en: Messages = {
   titleFreeDesc: 'Mix any of the 20 opponents with difficulty levels 1 through 20.',
   titleTwoPlayersDesc: 'Share one device and take turns playing each other.',
   titleFooterHint: '— Tap a mode to begin —',
-  titleFreeMeta: 'Character · Level · Avatar all configurable',
+  titleFreeMeta: 'Next: set up — pick opponent, level, and first move',
   titleTwoPlayersMeta: 'Pick a character for Black and White',
   titleStoryFreshStart: (name) => `Chapter 1 · starts with ${name}`,
   titleStoryContinue: (n) => `Resume from Chapter ${n}`,
@@ -657,6 +661,7 @@ export const en: Messages = {
   drawShort: 'Draw',
 
   setup: 'Settings',
+  matchSetup: 'Match Setup',
   protagonist: 'Protagonist',
   protagonistSubtitle: 'Choose your protagonist',
   opponent: 'Opponent',

@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.28.2)
+Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.29.0)
 
 ---
 
@@ -66,6 +66,23 @@ Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.28.2)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **フリーモードを「タイトル → 対戦設定 → コイントス → 対局」の
+      順に並べ直す** — completed: 2026-05-04 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      ユーザーフィードバック「フリーの場合は、いきなりコイントスから
+      対決が始まるのではなく、フリー対決の設定にいって、そこからフリー
+      へというフロー」。`startGame` を再構成して `selection.sub === 'free'`
+      の場合は `setSettingsOpen(true)` だけ呼んで `setScreen('game')`
+      しない（`reset()` も呼ばない）→ コイントスはトリガーされず、ユー
+      ザーが対戦設定を確認・調整してから明示的に「この設定で対局を始める」
+      で開始。設定モーダルは構造的にゲーム画面の中にネストされていた
+      ため、`screen === 'title'` でも render できるよう App 直下に
+      持ち上げた（小さい Python スクリプトで 587 行を一括移動して再
+      インデント）。タイトルから開いた時はモーダル見出しを「対戦設定 /
+      Match Setup」に切替（`t.matchSetup` を新設）、Free カードの meta
+      を `次に設定 → 対戦相手・レベル・先攻後攻を選んで対局` に更新して
+      二段階フローを示唆。Story モード/Human モードの挙動は据え置き。
+      `v0.29.0`
 - [x] **2D コインの白面を金族から本来のオフホワイトに戻す** —
       completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — ユーザーフィードバック「白が金と同化する
