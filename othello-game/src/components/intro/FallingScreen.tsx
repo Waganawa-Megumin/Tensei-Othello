@@ -76,10 +76,15 @@ export function FallingScreen({ t, onNext }: Props) {
         }}
       />
 
-      {/* Phase B: voice line overlaid above the bottom tap hint. */}
+      {/* Phase B: voice line overlaid above the bottom tap hint.
+          Roughly vertically-centred (slightly above middle so the
+          line doesn't fight with the cosmic core of the
+          composition) — the previous near-bottom placement felt
+          like a footer caption rather than the voice from the
+          heavens it's meant to be. */}
       {hasRevealed && (
         <div
-          className="absolute inset-x-0 bottom-20 px-6 max-w-2xl mx-auto z-10"
+          className="absolute inset-x-0 top-[42%] -translate-y-1/2 px-6 max-w-2xl mx-auto z-10"
           style={{ animation: 'textFadeIn 0.6s ease-out' }}
         >
           <p

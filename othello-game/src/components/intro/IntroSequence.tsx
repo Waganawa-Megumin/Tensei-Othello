@@ -22,7 +22,6 @@ import { ArrivalScreen } from './ArrivalScreen';
 import { ChapterIntroScreen } from './ChapterIntroScreen';
 
 interface Opponent {
-  kanji: string;
   name: string;
   name_en: string;
   level: number;

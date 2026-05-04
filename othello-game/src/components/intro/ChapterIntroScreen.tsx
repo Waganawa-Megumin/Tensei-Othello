@@ -19,7 +19,6 @@ import { renderEmphasized } from '../../i18n/story/render';
 import { TapHint } from './TapHint';
 
 interface Opponent {
-  kanji: string;
   name: string;
   name_en: string;
   level: number;
@@ -89,7 +88,10 @@ export function ChapterIntroScreen({
 
       {/* Top-pinned chapter ornament — visible in both phases so the
           player knows *which* chapter they're about to enter even
-          before reading the prose. */}
+          before reading the prose. The single-kanji handle (e.g. 苺
+          for いちか) is a compact UI shorthand used on avatar badges
+          and the like; on a full-screen chapter card it just floats
+          there without context, so we omit it. */}
       <div className="absolute top-0 left-0 right-0 text-center pt-7 pointer-events-none">
         <div className="latin-display italic text-amber-200/75 text-[11px] tracking-[0.4em] uppercase">
           — {t.intro.chapterLabel(chapter)} —
@@ -100,12 +102,6 @@ export function ChapterIntroScreen({
         >
           {oppName}
         </h2>
-        <div
-          className="jp-display italic text-amber-200/75 text-xs md:text-sm mt-1"
-          style={{ textShadow: '0 0 12px rgba(0,0,0,0.85)' }}
-        >
-          {opponent.kanji}
-        </div>
       </div>
 
       {!hasRevealed && <TapHint label={t.intro.tapToContinue} />}
