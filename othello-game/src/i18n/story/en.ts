@@ -25,21 +25,21 @@ export const STORY_EN: StoryContent = {
     startButton: 'Begin as the Outer Hand',
     title: 'Prologue: After-School Reversal',
     text: `Fifth period: classical literature pop quiz. Name written. Nothing else.
-Haruki stared at the sunset bleeding through the classroom window, mentally preparing for his low score.
+Haruki stared at the **sunset** bleeding through the classroom window, mentally bracing for the inevitable failing grade.
 
 — That's when it happened.
 
-**The floor tilted.** No, not tilted. Each floor tile was turning, one by one, into stark **black and white**. The entire classroom was transforming into a colossal othello board.
+**A white flash filled his vision.**
+The sound came late. **An impact.** Something shattering, deep behind his ears.
+Before pain could even register, Haruki's **consciousness was draining away**.
 
-"Wait. Wait, what — no, hold on—"
+*(Ah... I think this is the part where I die—)*
 
-The floor shattered. Desks took flight. Textbook pages ripped open and every single page filled with **game records**.
+In the cold dark, a strangely calm voice reached him from somewhere far off.
 
-Falling through space, Haruki heard a strangely calm voice:
+*"Outer Hand. The Board World has inherited your soul."*
 
-*"Outer Hand. The Board World has awaited you."*
-
-"Yeah, no — I haven't been awaiting you! At least let me eat lunch first—"
+"... wait, hold on—"
 
 Haruki's consciousness was swallowed by a **vortex of black and white**.`,
   },
@@ -516,10 +516,10 @@ The seat that opened at the Council of Stones was already calling for **the next
 The **first candidate** — in a corner of modern Japan, **a single girl**.
 Her name: **Mikoto**. A girl who had grown bored of logic's limits and **yearned for magic**.
 
-— After her, **18 more Outer Hands** would be summoned in turn.
+— After her, **18 more Outer Hands** would be reincarnated in turn.
 And when **all their journeys end** — the gods will perform one final **special experiment**.
 
-*"Reintegrate the soul of the first hero Haruki with the memories of all 19 cycles, and summon him once more."*
+*"Reintegrate the soul of the first hero Haruki with the memories of all 19 cycles, and reincarnate him once more."*
 
 — That will be **the 21st hero**. — **The Second Haruki**.
 
