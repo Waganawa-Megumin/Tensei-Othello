@@ -54,6 +54,7 @@ import {
 import { useAiWorker } from './hooks/useAiWorker';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { PrologueOverlay } from './components/PrologueOverlay';
+import { NarrativeOverlay } from './components/NarrativeOverlay';
 import {
   hasSeenOverlay,
   markOverlaySeen,
@@ -1199,6 +1200,29 @@ function PlayerPanel({
  * dropping a file at the configured path makes the art appear without
  * any code change.
  */
+/** Small ending-finale illustration shown inside the GameOver modal
+ *  when the player clears chapter 20. Mirrors ChapterArt's LS/PT
+ *  picking + onError fallback. */
+function EndingArt() {
+  const [ok, setOk] = useState(true);
+  const isLandscape = useMediaQuery('(orientation: landscape)');
+  if (!ok) return null;
+  const src = `${import.meta.env.BASE_URL}illustrations/ending-${
+    isLandscape ? 'landscape' : 'portrait'
+  }.png`;
+  const aspect = isLandscape ? 'aspect-[16/9]' : 'aspect-[9/16]';
+  return (
+    <img
+      src={src}
+      alt=""
+      aria-hidden
+      loading="lazy"
+      onError={() => setOk(false)}
+      className={`w-full ${aspect} object-cover rounded-sm border border-amber-300/40 mb-4`}
+    />
+  );
+}
+
 function ChapterArt({ srcBase, alt }: { srcBase?: string; alt: string }) {
   const [ok, setOk] = useState(true);
   const isLandscape = useMediaQuery('(orientation: landscape)');
@@ -3230,6 +3254,55 @@ export default function App() {
             }}
           />
         )}
+        {/* Mid-route narrative inserts. Triggered from the GameOver
+            "next chapter" button when storyProgress just hit 10 / 15 /
+            19. On dismiss, mark seen and run the deferred reset() so
+            the user proceeds to the next chapter setup. */}
+        {storyOverlay === 'narrative:solitude' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.solitude}
+            imageBaseName="solitude"
+            tone={locale === 'ja' ? '幕間' : 'Interlude'}
+            dismissLabel={t.nextChapter}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(String(activeSlotId), 'narrative:solitude');
+              }
+              setStoryOverlay(null);
+              reset();
+            }}
+          />
+        )}
+        {storyOverlay === 'narrative:allies' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.allies}
+            imageBaseName="allies"
+            tone={locale === 'ja' ? '幕間' : 'Interlude'}
+            dismissLabel={t.nextChapter}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(String(activeSlotId), 'narrative:allies');
+              }
+              setStoryOverlay(null);
+              reset();
+            }}
+          />
+        )}
+        {storyOverlay === 'narrative:final' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.final}
+            imageBaseName="final"
+            tone={locale === 'ja' ? '幕間' : 'Interlude'}
+            dismissLabel={t.nextChapter}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(String(activeSlotId), 'narrative:final');
+              }
+              setStoryOverlay(null);
+              reset();
+            }}
+          />
+        )}
         {/* First/second coin-flip overlay. Mounted while
             `firstPlayerRoll` is set; auto-dismisses itself after 2s. */}
         <FirstPlayerRoll
@@ -3813,9 +3886,16 @@ export default function App() {
                   </h2>
 
                   {justCompletedStory && (
-                    <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line text-left">
-                      {renderEmphasized(t.story.endingFull.text)}
-                    </p>
+                    <>
+                      {/* Ending illustration — pairs with the finale
+                          prose. Falls back silently if the asset isn't
+                          present (image variant decided by viewport
+                          orientation, like ChapterArt). */}
+                      <EndingArt />
+                      <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line text-left">
+                        {renderEmphasized(t.story.endingFull.text)}
+                      </p>
+                    </>
                   )}
                   {/* Chapter-clear scenario beats (master's victory line +
                       Haruki's inner thought + brief narration bridging
@@ -4019,7 +4099,32 @@ export default function App() {
                         {t.retryStory}
                       </button>
                     ) : showNextChapter ? (
-                      <button onClick={reset} className="btn btn-active">
+                      <button
+                        onClick={() => {
+                          // Decide whether a mid-route narrative
+                          // insert should appear before the next
+                          // chapter. After clearing Ch.10 / 15 / 19
+                          // we fire solitude / allies / final as a
+                          // full-screen overlay; the overlay's
+                          // onDismiss runs reset() to advance.
+                          let pending: OverlayKey | null = null;
+                          if (storyProgress === 10) pending = 'narrative:solitude';
+                          else if (storyProgress === 15) pending = 'narrative:allies';
+                          else if (storyProgress === 19) pending = 'narrative:final';
+                          const slotKey =
+                            activeSlotId !== null ? String(activeSlotId) : null;
+                          if (
+                            pending &&
+                            slotKey &&
+                            !hasSeenOverlay(slotKey, pending)
+                          ) {
+                            setStoryOverlay(pending);
+                          } else {
+                            reset();
+                          }
+                        }}
+                        className="btn btn-active"
+                      >
                         {t.nextChapter}
                       </button>
                     ) : (

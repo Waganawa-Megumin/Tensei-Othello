@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.30.1)
+Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.31.0)
 
 ---
 
@@ -23,14 +23,6 @@ Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.30.1)
 
 ### P2 — 重要な機能改善
 
-- [ ] **章ごとの本格的な物語・エピソード執筆** — 現状 `storyChapters[]`
-      は 1 行のキャラ＋戦法紹介のみ。プロローグ（progress=0）と
-      エンディング（クリア後）はそれぞれ短文プローズあり。各章に
-      対局前後のミニシナリオ（出会い・会話・敗北後/勝利後の余韻）を
-      足すと章ブラウザーが本物の "ストーリービューワー" になる。
-      i18n の `storyChapters` を構造化し（intro / pre-battle dialogue /
-      post-victory / post-defeat）、設定の章カード + GameOver モーダル
-      で表示。
 - [ ] **棋譜リプレイ追加 UX（v0.21.0 で見送り）**
   - プログレスバー上を tap/drag で任意手数へジャンプ
   - 盤上の last-move セルに小さく `12` のような手数ラベル
@@ -66,6 +58,48 @@ Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.30.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **PLR00 デフォルト一本道のシナリオ + 挿絵を統合** —
+      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — ユーザーから 6 pack で受領した完成版
+      シナリオ (~4200 行 ja/en ペア) と挿絵 52 PNG (タイトル 2 +
+      ナラティブ 10 + 章 40、LS/PT ペア) をアプリに統合。
+      4 commit に分割:
+      (1) `feat(i18n): structured chapter stories + prologue + narrative
+      scenes` (`ecfd5f0`) — `src/i18n/story/{types,ja,en,index,render}.ts`
+      新設、章 4 ブロック構造 (intro/bossPre/bossPost/victoryDialogue/
+      victoryNarration) + プロローグ + 5 ナラティブ + endingFull +
+      epilogueHook を 200+ 文字列で読み込み。messages.ts は `story`
+      フィールド 1 行追加のみで 2000 行肥大を回避。`**bold**` の
+      Markdown 強調は `renderEmphasized()` で `<strong>` 化。
+      (2) `feat(art): wire title-bg + chapter-art with LS/PT variants`
+      (`15a463d`) — `useMediaQuery('(orientation: landscape)')` 新設、
+      `<ChapterArt>` を `chapterArtBase` + LS/PT 切替に書き換え、
+      COMPUTERS_DATA 20 体のパスを `avatars/chapters/chapter_NN_name`
+      新形式に。TitleScreen に LS/PT 背景画像 + 新タグライン
+      (「石をひっくり返せ。世界も、ひっくり返せ。」) + Story カードに
+      新 CTA「異邦の打ち手として、はじめる」を追加。
+      (3) `feat(story): prologue overlay + 4-block chapter cards +
+      game-over dialogue` (`b09b03f`) — `<PrologueOverlay>` 新設、
+      `storyOverlays` ストレージで既読管理 (`othello:overlay_seen:
+      {slot}:{key}`)、章カード本文を 4 ブロック構造表示
+      (クリア済章のみ outro 追記、ネタバレ防止)、GameOver モーダルに
+      章クリア時の victoryDialogue + bossPost + victoryNarration、
+      Ch.20 クリア時に endingFull を表示。
+      (4) `feat(story): narrative inserts + ending finale + v0.31.0`
+      — `<NarrativeOverlay>` 新設、Ch.10 → solitude / Ch.15 → allies /
+      Ch.19 → final を「次の章へ」ボタン経由で全画面挿入、
+      `<EndingArt>` で Ch.20 GameOver に ending 挿絵。BUILD_TAG
+      `v0.31.0 · default-route-finished`。
+      スコープ外 (次フェーズ): PLR01-PLR20 アンロック分岐、
+      `03_dynamic_gameplay_dialogue.md` の動的ゲーム中セリフ。
+      `v0.31.0`
+- [x] **アセット保全 (Pack 1-6 を repo にインポート)** —
+      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: `63d74e1` — ユーザー指示「無くさないように統合して、
+      githubリポジトリにも保存」。シナリオ md 8 ファイル
+      (~4200 行) を `othello-game/docs/scenario/`、画像 52 PNG を
+      `public/{title-bg-{LS,PT}.png, illustrations/, avatars/chapters/}`
+      に配置。コードは未変更、純粋にアセット保全のみ。
 - [x] **LLM キャラ実況のみ残し、Edax / エンジン選択を撤回** —
       completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — ユーザー判断「クラウド側で完結して欲しかった
