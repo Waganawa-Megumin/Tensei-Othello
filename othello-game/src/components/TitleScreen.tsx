@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.32.3 · prologue-rewritten-as-reincarnation';
+const BUILD_TAG = 'v0.32.4 · pivot-from-reincarnation-to-summoning';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -120,13 +120,13 @@ export function TitleScreen({
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
         <div className="latin-display italic ornament text-amber-200/50 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1">
-          — Reincarnated as an Othello Player —
+          — Summoned as an Othello Player —
         </div>
         <h1
           className="jp-display text-amber-100 text-3xl max-lg:landscape:text-xl md:text-5xl font-bold tracking-[0.15em] mb-3 max-lg:landscape:mb-1 leading-tight"
           style={{ textShadow: '0 0 24px rgba(201, 169, 97, 0.25)' }}
         >
-          転生したら<br className="md:hidden max-lg:landscape:hidden" />オセロ世界でした！
+          召喚されたら<br className="md:hidden max-lg:landscape:hidden" />オセロ世界でした！
         </h1>
         <p className="jp-display italic text-amber-200/60 text-sm md:text-base tracking-wider max-lg:landscape:hidden">
           {t.titleSubhead}

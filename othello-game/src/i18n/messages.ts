@@ -353,8 +353,8 @@ export interface Messages {
 }
 
 export const ja: Messages = {
-  appTitle: '転生したらオセロ世界でした！',
-  appSubtitle: 'Reincarnated as an Othello Player',
+  appTitle: '召喚されたらオセロ世界でした！',
+  appSubtitle: 'Summoned as an Othello Player',
   worldName: '盤上世界',
 
   titleSubhead: '異界『盤上世界』で、20人の達人を打ち破れ',
@@ -364,7 +364,7 @@ export const ja: Messages = {
   titleStoryHeading: 'ストーリー',
   titleFreeHeading: 'フリー対戦',
   titleTwoPlayersHeading: '二人対戦',
-  titleStoryDesc: '異世界『盤上世界』に転生し、20人の達人を順に打ち破る物語。',
+  titleStoryDesc: '異世界『盤上世界』に召喚され、20人の達人を順に打ち破る物語。',
   titleFreeDesc: '20体の対戦相手と1〜20の難易度を自由に組み合わせて。',
   titleTwoPlayersDesc: '一台の端末を共有して、二人で交互に打つ。',
   titleFooterHint: '— Tap a mode to begin —',
@@ -521,7 +521,7 @@ export const ja: Messages = {
 そこは異界『盤上世界』。黒と白の石が舞い、20人の達人が住むという。
 「すべての達人を打ち破った者だけが、元の世界へ還れる」
 そう告げる声が、盤の上から響いた。
-転生したらオセロ世界でした——君の物語が、いま始まる。`,
+召喚されたらオセロ世界でした——君の物語が、いま始まる。`,
 
   storyEndingProse: `君は20人すべての達人を打ち破った。
 盤上世界の扉が開き、現実への光が差し込む——
@@ -644,7 +644,7 @@ export const ja: Messages = {
   intro: {
     prologueLabel: '序章',
     fallingLabel: '転落',
-    fallingVoice: '異邦の打ち手よ。汝の魂を、盤上世界が継いだ。',
+    fallingVoice: '異邦の打ち手よ。盤上世界が、汝を呼んだ。',
     arrivalLabel: '到着',
     arrivalText: `気がつくと、ハルキはステージの真ん中に立っていた。
 ピンク色のスポットライト。ハートと星のバルーン。観客席はない。
@@ -688,8 +688,8 @@ export const ja: Messages = {
 };
 
 export const en: Messages = {
-  appTitle: 'Reincarnated as an Othello Player',
-  appSubtitle: '転生したらオセロ世界でした！',
+  appTitle: 'Summoned as an Othello Player',
+  appSubtitle: '召喚されたらオセロ世界でした！',
   worldName: 'Bansho Sekai',
 
   titleSubhead: 'Defeat the 20 masters of the board world.',
@@ -699,7 +699,7 @@ export const en: Messages = {
   titleStoryHeading: 'Story',
   titleFreeHeading: 'Free Match',
   titleTwoPlayersHeading: 'Two Players',
-  titleStoryDesc: 'Reincarnate into Bansho Sekai and defeat 20 masters one chapter at a time.',
+  titleStoryDesc: 'Summoned into Bansho Sekai, you must defeat 20 masters one chapter at a time.',
   titleFreeDesc: 'Mix any of the 20 opponents with difficulty levels 1 through 20.',
   titleTwoPlayersDesc: 'Share one device and take turns playing each other.',
   titleFooterHint: '— Tap a mode to begin —',
@@ -856,7 +856,7 @@ export const en: Messages = {
 This is the otherworld of Bansho Sekai. Black and white stones dance here, and twenty masters dwell within.
 "Only one who defeats every master may return to the world they came from."
 A voice from above the board declared it.
-Reincarnated as an Othello Player — your story begins now.`,
+Summoned as an Othello Player — your story begins now.`,
 
   storyEndingProse: `You have defeated all twenty masters.
 The gates of Bansho Sekai open, and light from your own world streams through —
@@ -982,7 +982,7 @@ your journey on the board reaches its close.`,
   intro: {
     prologueLabel: 'Prologue',
     fallingLabel: 'Falling',
-    fallingVoice: 'Outer Hand. The Board World has inherited your soul.',
+    fallingVoice: 'Outer Hand. The Board World has called for you.',
     arrivalLabel: 'Arrival',
     arrivalText: `When Haruki regained his senses, he was standing in the centre of a stage.
 Pink spotlights. Heart-and-star balloons. No audience seats.

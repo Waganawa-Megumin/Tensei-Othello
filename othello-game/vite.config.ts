@@ -17,9 +17,9 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
       manifest: {
-        name: '転生したらオセロ世界でした！',
-        short_name: '転生オセロ',
-        description: '異界『盤上世界』に挑む20章のオセロアドベンチャー',
+        name: '召喚されたらオセロ世界でした！',
+        short_name: '召喚オセロ',
+        description: '異界『盤上世界』に召喚され、20人の達人を打ち破るオセロアドベンチャー',
         lang: 'ja',
         start_url: '.',
         scope: '.',

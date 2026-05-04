@@ -152,7 +152,7 @@ function moveToNotation(row: number, col: number): string {
 /* ---------------- System prompt ---------------- */
 
 const SYSTEM_JA = `あなたはオセロの上級者で、終局後の対局解説を担当します。
-プレイヤーは盤上世界という異界に転生した主人公（黒番）で、20人の達人と順に対戦しています。
+プレイヤーは盤上世界という異界に召喚された主人公（黒番）で、20人の達人と順に対戦しています。
 
 ユーザーは長文を読みません。コメントは盤面の各手にバッジとして表示されるので、**1 手につき 1〜2 文の短い日本語コメント**で十分です。
 
@@ -171,7 +171,7 @@ quality の使い分け:
 出力: 必ず annotate_othello_game ツールで返してください。テキスト返答は禁止。`;
 
 const SYSTEM_EN = `You are a strong Othello commentator providing a post-game review.
-The player is the protagonist (Black) reincarnated into Bansho Sekai, dueling 20 masters in turn.
+The player is the protagonist (Black) summoned into Bansho Sekai, dueling 20 masters in turn.
 
 The user does not read long text. Comments are surfaced as inline badges on the board next to the move, so **1–2 short sentences per move is enough**.
 

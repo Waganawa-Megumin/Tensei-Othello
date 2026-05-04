@@ -1,4 +1,4 @@
-# Development Backlog — 転生したらオセロ世界でした！
+# Development Backlog — 召喚されたらオセロ世界でした！
 
 > 2 つの Claude Code セッション（`claude/othello-game-sHVBZ` と
 > `claude/review-othello-mock-HTX9b`）が共有する作業ボード。

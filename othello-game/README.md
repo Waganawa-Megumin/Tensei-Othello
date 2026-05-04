@@ -1,12 +1,12 @@
 # othello-game
 
-`Tensei-Othello/othello-game/` — 転生したらオセロ世界でした！の Vite + React 18 + TypeScript + Tailwind 3 フロントエンドサブプロジェクト。スマホ完結の運用方針はリポジトリルートの `README.md` を参照。
+`Tensei-Othello/othello-game/` — 召喚されたらオセロ世界でした！の Vite + React 18 + TypeScript + Tailwind 3 フロントエンドサブプロジェクト。スマホ完結の運用方針はリポジトリルートの `README.md` を参照。
 
 ## タイトル・呼称ルール
 
 | 用途 | 表記 |
 |---|---|
-| アプリ／作品タイトル | 転生したらオセロ世界でした！ |
+| アプリ／作品タイトル | 召喚されたらオセロ世界でした！ |
 | 作中異界の名前 | 盤上世界 / Bansho Sekai |
 
 詳細は `CLAUDE.md` の Section 0.5 を参照。
