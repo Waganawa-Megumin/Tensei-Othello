@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.29.1)
+Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.30.0)
 
 ---
 
@@ -66,7 +66,40 @@ Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.29.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
-- [x] **対戦設定: 「キャラ標準 Lv.」と「対決レベル」の関係を明示** —
+- [x] **フリー対戦に AI エンジン選択 + LLM キャラ実況** —
+      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — ユーザー要望「フリーは色々できるのが
+      売りなので、いくつか既存エンジンを選べると良い」「キャラ感は
+      Claude/ChatGPT に任せるのがよい」。
+      二系統で対応:
+      (1) **エンジン選択**: `EngineId = 'tensei-classic' | 'edax'` を
+      導入。`src/engine/engines/` に型と registry、`src/workers/engines/
+      edaxAdapter.ts` に Edax-WASM 用の lazy-loader (artifact 不在時は
+      Tensei Classic に自動フォールバック)。`ai.worker.ts` を
+      engine フィールドで dispatch、`useAiWorker.requestMove` に
+      `engine?` 引数を追加。フリー設定パネルに 2-card grid の
+      エンジンセレクター (LevelSelector の下)。`othello:ai_engine`
+      で永続化。Story モードはレベル進行の比較性を保つため
+      Tensei Classic に固定。`toggleHint` も非同期化して選択中
+      エンジンに追従、ロード中はスピナー (`hintLoading`)。
+      Edax 本体 (~1MB WASM) はライセンス (GPL-3.0) と PWA バンドル
+      肥大化を避けるため事前ビルド配布。`scripts/build-edax-wasm.sh`
+      と `scripts/edax_shim.c` を同梱、手順は `docs/EDAX_WASM.md`。
+      実行すると emsdk → abulmo/edax-reversi → emcc で
+      `othello-game/public/edax/edax.{js,wasm}` を生成、即座に
+      Edax 選択時の対局で利用される。
+      (2) **LLM キャラ実況**: 既存の Cloudflare Workers proxy +
+      `services/claude.ts` パターンを再利用。`prompts/commentary.ts`
+      に tool schema (`character_commentary` で `{text, tone}` を
+      返す)、`services/commentary.ts` で fire-and-forget な API 呼び出し
+      (Haiku 4.5 + プロンプトキャッシング)。`data/personas.ts` に
+      20 キャラ分の口調ヒント (1〜2 文の voice cue、ja/en)。
+      `components/CommentaryBubble.tsx` で AI 側 PlayerPanel 上に
+      フロート、tone (taunt/thoughtful/shock/cheer/neutral) で淵色を
+      切替、4.6s で自動フェード。設定モーダルに ON/OFF トグル
+      (`othello:commentary_enabled`、デフォルト OFF)。Trigger は AI
+      側着手後のみ、開幕 6 手はスキップ、ネット失敗はサイレント。
+      `v0.30.0`
       completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — ユーザーフィードバック「対戦相手のレベルは
       デフォルトではあの順で良いのですが、下のゲージで設定できるので

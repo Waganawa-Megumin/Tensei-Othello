@@ -39,7 +39,8 @@ import {
   createInitialBoard,
   getValidMoves,
 } from './engine/board';
-import { pickAIMove } from './engine/ai';
+import { ENGINES } from './engine/engines/registry';
+import type { EngineId } from './engine/engines/types';
 import {
   BLACK,
   EMPTY,
@@ -52,6 +53,12 @@ import {
   type ValidMove,
 } from './engine/types';
 import { useAiWorker } from './hooks/useAiWorker';
+import { loadAiEngine, saveAiEngine } from './storage/aiEngine';
+import { loadCommentaryEnabled, saveCommentaryEnabled } from './storage/commentary';
+import { fetchCharacterCommentary } from './services/commentary';
+import type { CommentaryResult } from './prompts/commentary';
+import { getPersona } from './data/personas';
+import { CommentaryBubble } from './components/CommentaryBubble';
 import {
   deleteSlot as storageDeleteSlot,
   listSlots,
@@ -1307,6 +1314,37 @@ export default function App() {
     saveCoinStyle(style);
   }, []);
 
+  // Free-mode AI engine. Story mode is locked to Tensei Classic so the
+  // story progression remains comparable across save slots; only free
+  // mode reads `aiEngine` for actual move generation (see the AI useEffect
+  // and toggleHint below).
+  const [aiEngine, setAiEngineState] = useState<EngineId>(loadAiEngine);
+  const setAiEngine = useCallback((engine: EngineId) => {
+    setAiEngineState(engine);
+    saveAiEngine(engine);
+  }, []);
+
+  // Opt-in LLM character commentary. Each match makes a few dozen
+  // Anthropic API calls when ON, so this defaults OFF and is only
+  // changed via the Settings panel.
+  const [commentaryEnabled, setCommentaryEnabledState] = useState<boolean>(
+    loadCommentaryEnabled,
+  );
+  const setCommentaryEnabled = useCallback((enabled: boolean) => {
+    setCommentaryEnabledState(enabled);
+    saveCommentaryEnabled(enabled);
+  }, []);
+  // The currently-displayed bubble. `key` increments on every new
+  // commentary so the CSS animation restarts even when the same string
+  // would be assigned twice in a row.
+  const [commentary, setCommentary] = useState<
+    (CommentaryResult & { key: number }) | null
+  >(null);
+  const commentaryKeyRef = useRef(0);
+  // Tracks the last move index we've already commentary-fetched, so a
+  // re-render of the AI effect doesn't double-fire on the same move.
+  const lastCommentaryMoveRef = useRef(-1);
+
   // Settings state
   const [gameMode, setGameMode] = useState<GameMode>('ai');
   // Both default to index 0 (the always-available default avatar).
@@ -1416,6 +1454,10 @@ export default function App() {
 
   // UI state
   const [hintMove, setHintMove] = useState<Move | null>(null);
+  // True while a hint is being computed via the worker. Edax can take
+  // 100–300ms to load WASM on first use; a tiny spinner on the hint
+  // button avoids the appearance of a missed click.
+  const [hintLoading, setHintLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>('title');
 
@@ -1663,9 +1705,13 @@ export default function App() {
     const delay = 450 + Math.min(level * 35, 700);
     let cancelled = false;
     const aiColor = opponent(playerColor);
+    // Story mode is locked to Tensei Classic so progression remains
+    // comparable across save slots. Only free mode honors the engine
+    // the user picked in Settings.
+    const engine: EngineId = aiMode === 'story' ? 'tensei-classic' : aiEngine;
     const timer = window.setTimeout(() => {
       ai
-        .requestMove(board, aiColor, level)
+        .requestMove(board, aiColor, level, engine)
         .then((move) => {
           if (cancelled || !move) return;
           doMoveRef.current(move.row, move.col);
@@ -1684,7 +1730,82 @@ export default function App() {
       setAiThinking(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo, playerColor, firstPlayerRoll]);
+  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo, playerColor, firstPlayerRoll, aiEngine, aiMode]);
+
+  // Fire-and-forget LLM character commentary after the AI side's
+  // moves. Strictly opt-in (commentaryEnabled), AI-mode only, and
+  // gated by some skip rules to keep cost predictable:
+  //  - skip the first 6 moves (opening is generic, nothing to react to)
+  //  - skip pass-driven side switches (no actual move was placed)
+  //  - skip on game-over (post-game review handles the close-out)
+  //  - skip while reviewing a saved kifu (no live opponent thinking)
+  // Failures are silent (`null` from the service) so commentary outage
+  // never affects the actual match.
+  useEffect(() => {
+    if (!commentaryEnabled) return;
+    if (gameMode !== 'ai') return;
+    if (gameOver || loadedKifuView) return;
+    if (kifu.length <= 6) return;
+    const last = kifu[kifu.length - 1];
+    const aiColor = opponent(playerColor);
+    if (last.color !== aiColor) return;
+    const moveIndex = kifu.length - 1;
+    if (lastCommentaryMoveRef.current === moveIndex) return;
+    lastCommentaryMoveRef.current = moveIndex;
+
+    const character = COMPUTERS[computerChar];
+    const persona = getPersona(character.kanji);
+    const isCorner =
+      (last.row === 0 || last.row === 7) && (last.col === 0 || last.col === 7);
+    const aiCount = aiColor === BLACK ? counts.black : counts.white;
+    const playerCount = playerColor === BLACK ? counts.black : counts.white;
+    const standing: 'leading' | 'trailing' | 'even' =
+      aiCount > playerCount ? 'leading' : aiCount < playerCount ? 'trailing' : 'even';
+    const notation = `${String.fromCharCode(97 + last.col)}${last.row + 1}`;
+
+    const handle = fetchCharacterCommentary(
+      {
+        characterName: locale === 'ja' ? character.name : character.name_en,
+        persona,
+        movePlayed: {
+          by: 'ai',
+          notation,
+          // We don't track per-move flip count, but the model can
+          // reason about the move from coordinate + corner flag alone.
+          // Passing 0 here is honest and unobtrusive.
+          flipsCount: 0,
+          isCornerCapture: isCorner,
+        },
+        context: {
+          moveNumber: kifu.length,
+          blackCount: counts.black,
+          whiteCount: counts.white,
+          standing,
+        },
+      },
+      locale === 'ja' ? 'ja' : 'en',
+    );
+    let cancelled = false;
+    handle.result.then((res) => {
+      if (cancelled || !res) return;
+      commentaryKeyRef.current += 1;
+      setCommentary({ ...res, key: commentaryKeyRef.current });
+    });
+    return () => {
+      cancelled = true;
+      handle.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kifu.length, commentaryEnabled, gameMode, loadedKifuView, gameOver]);
+
+  // Reset commentary state on kifu reset / new game so a stale bubble
+  // doesn't bleed into the next match.
+  useEffect(() => {
+    if (kifu.length === 0) {
+      lastCommentaryMoveRef.current = -1;
+      setCommentary(null);
+    }
+  }, [kifu.length]);
 
   // Record the result once gameOver fires. Story matches update the
   // active slot (advancing progress on a win, deducting a life on a
@@ -2303,10 +2424,31 @@ export default function App() {
       setHintMove(null);
       return;
     }
-    if (!isHumanTurn || aiThinking || gameOver || noCurrent || passInfo !== null) return;
+    if (
+      !isHumanTurn ||
+      aiThinking ||
+      hintLoading ||
+      gameOver ||
+      noCurrent ||
+      passInfo !== null
+    )
+      return;
     const strongLevel = Math.min(20, Math.max(level + 4, 16));
-    const move = pickAIMove(board, validMoves, strongLevel, currentColor);
-    if (move) setHintMove({ row: move.row, col: move.col });
+    // Hint follows the engine the user picked for the match, with the
+    // same story-mode override as the AI move effect. Story mode keeps
+    // the classic engine; free mode delegates to whatever's selected
+    // (Edax or Tensei Classic).
+    const engine: EngineId = aiMode === 'story' ? 'tensei-classic' : aiEngine;
+    setHintLoading(true);
+    void ai
+      .requestMove(board, currentColor, strongLevel, engine)
+      .then((move) => {
+        if (move) setHintMove({ row: move.row, col: move.col });
+      })
+      .catch(() => {
+        /* worker may have been cancelled by an AI move starting; ignore */
+      })
+      .finally(() => setHintLoading(false));
   }
 
   function selectCharacter(idx: number) {
@@ -2722,6 +2864,20 @@ export default function App() {
           50% { transform: scale(1.18); opacity: 1; }
         }
 
+        /* Commentary bubble — fades in, holds, fades out. A new line
+           restarts the animation via a remount on the React side. */
+        .commentary-bubble {
+          animation: commentary-fade 4.6s ease-in-out forwards;
+          opacity: 0;
+          max-width: 22rem;
+        }
+        @keyframes commentary-fade {
+          0%   { opacity: 0; transform: translateY(4px); }
+          12%  { opacity: 1; transform: translateY(0); }
+          82%  { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-2px); }
+        }
+
         /* Outward ripple drawn on the just-placed cell. Goes through
            one cycle then sticks at opacity 0 — the React re-mount via
            key={kifu.length} replays it on the next move. */
@@ -3108,7 +3264,18 @@ export default function App() {
 
           {/* Score panels + board */}
           <div className="grid md:grid-cols-[1fr_auto_1fr] landscape:grid-cols-[1fr_auto_1fr] gap-5 md:gap-6 landscape:gap-4 max-lg:landscape:gap-6 items-center max-lg:landscape:items-stretch">
-            <div className="md:order-1">
+            <div className="md:order-1 relative">
+              {/* Commentary bubble lives on whichever side is the AI.
+                  Anchored above the panel; the keyed remount restarts
+                  the fade-in animation for each new line. */}
+              {commentary && gameMode === 'ai' && playerColor === WHITE && (
+                <div
+                  key={commentary.key}
+                  className="absolute -top-2 left-2 right-2 z-10 -translate-y-full"
+                >
+                  <CommentaryBubble text={commentary.text} tone={commentary.tone} />
+                </div>
+              )}
               <PlayerPanel
                 color={BLACK}
                 count={animatedBlack}
@@ -3249,7 +3416,15 @@ export default function App() {
               </div>
             </div>
 
-            <div className="md:order-3">
+            <div className="md:order-3 relative">
+              {commentary && gameMode === 'ai' && playerColor === BLACK && (
+                <div
+                  key={commentary.key}
+                  className="absolute -top-2 left-2 right-2 z-10 -translate-y-full"
+                >
+                  <CommentaryBubble text={commentary.text} tone={commentary.tone} />
+                </div>
+              )}
               <PlayerPanel
                 color={WHITE}
                 count={animatedWhite}
@@ -4449,6 +4624,37 @@ export default function App() {
               </div>
             </section>
 
+            {/* LLM character commentary — opt-in. Each match triggers
+                a few dozen Anthropic API calls when ON, so the default
+                is OFF and we surface the cost note inline. */}
+            <section className="mb-6">
+              <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                {t.commentaryLabel}
+                <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                  — {t.commentarySubtitle}
+                </span>
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCommentaryEnabled(false)}
+                  className={`btn flex-1 ${!commentaryEnabled ? 'btn-active' : ''}`}
+                  aria-pressed={!commentaryEnabled}
+                >
+                  {t.commentaryOff}
+                </button>
+                <button
+                  onClick={() => setCommentaryEnabled(true)}
+                  className={`btn flex-1 ${commentaryEnabled ? 'btn-active' : ''}`}
+                  aria-pressed={commentaryEnabled}
+                >
+                  {t.commentaryOn}
+                </button>
+              </div>
+              <p className="jp-display italic text-amber-200/55 text-[11px] mt-2 leading-relaxed">
+                {t.commentaryHint}
+              </p>
+            </section>
+
             {/* Save slot — story mode only */}
             {gameMode === 'ai' && aiMode === 'story' && (
               <section className="mb-6">
@@ -4878,6 +5084,55 @@ export default function App() {
                         <p className="jp-display italic text-amber-200/55 text-[11px] mt-1.5 leading-relaxed">
                           {t.aiComputeNote}
                         </p>
+                      </div>
+
+                      {/* AI engine picker. The whole `aiMode === 'free'`
+                          branch we're in already excludes story mode,
+                          which is locked to Tensei Classic at the
+                          worker dispatch site. */}
+                      <div className="mt-5">
+                        <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
+                          {t.aiEngineLabel}
+                          <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
+                            — {t.aiEngineSubtitle}
+                          </span>
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          {ENGINES.map((eng) => {
+                            const active = aiEngine === eng.id;
+                            const desc =
+                              eng.descriptionKey === 'tenseiClassicDesc'
+                                ? t.tenseiClassicDesc
+                                : t.edaxDesc;
+                            return (
+                              <button
+                                key={eng.id}
+                                onClick={() => setAiEngine(eng.id)}
+                                className={`text-left rounded-sm border py-2.5 px-3 transition-all ${
+                                  active
+                                    ? 'border-amber-200/70 bg-amber-200/[0.06] text-amber-100'
+                                    : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02] text-amber-100/85'
+                                }`}
+                                aria-pressed={active}
+                              >
+                                <div className="latin-display italic text-sm tracking-wider">
+                                  {eng.displayName}
+                                </div>
+                                <div className="jp-display italic text-amber-200/70 text-[11px] mt-0.5 leading-snug">
+                                  {desc}
+                                </div>
+                                <div className="latin-display italic text-amber-200/45 text-[10px] mt-1 tracking-wider">
+                                  {eng.attribution}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {aiEngine === 'edax' && (
+                          <p className="jp-display italic text-amber-200/55 text-[11px] mt-2 leading-relaxed">
+                            {t.edaxMissingNote}
+                          </p>
+                        )}
                       </div>
                     </>
                   )}
