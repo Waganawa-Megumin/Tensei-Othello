@@ -1,5 +1,7 @@
 export type Locale = 'ja' | 'en';
 
+import { getStory, type StoryContent } from './story';
+
 export interface Messages {
   // App identity
   appTitle: string;
@@ -295,6 +297,10 @@ export interface Messages {
 
   // Auto-save / auto-attach indicators
   kifuLibraryHint: string;
+
+  // Default-route story (PLR00 Haruki). Lives in src/i18n/story/{ja,en}.ts
+  // to keep this file from growing by ~2000 lines per locale.
+  story: StoryContent;
 }
 
 export const ja: Messages = {
@@ -588,6 +594,8 @@ export const ja: Messages = {
   gameOverViewKifu: '対戦棋譜を読み込む',
 
   kifuLibraryHint: '対局終了時に自動保存されます。レビューを生成すると同じ棋譜に紐付きます。',
+
+  story: getStory('ja'),
 };
 
 export const en: Messages = {
@@ -882,6 +890,8 @@ will you try again, or walk a different path?`,
   gameOverViewKifu: 'View saved kifu',
 
   kifuLibraryHint: 'Matches are auto-saved when they end. Generating a review attaches it to the same kifu.',
+
+  story: getStory('en'),
 };
 
 export const messages: Record<Locale, Messages> = { ja, en };
