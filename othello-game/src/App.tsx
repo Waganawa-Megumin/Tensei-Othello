@@ -53,6 +53,13 @@ import {
 } from './engine/types';
 import { useAiWorker } from './hooks/useAiWorker';
 import { useMediaQuery } from './hooks/useMediaQuery';
+import { PrologueOverlay } from './components/PrologueOverlay';
+import {
+  hasSeenOverlay,
+  markOverlaySeen,
+  type OverlayKey,
+} from './storage/storyOverlays';
+import { renderEmphasized } from './i18n/story/render';
 import { loadCommentaryEnabled, saveCommentaryEnabled } from './storage/commentary';
 import { fetchCharacterCommentary } from './services/commentary';
 import type { CommentaryResult } from './prompts/commentary';
@@ -1453,6 +1460,9 @@ export default function App() {
   const [hintMove, setHintMove] = useState<Move | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>('title');
+  // Story overlay (prologue / narrative inserts / ending). Active key is
+  // the OverlayKey we're currently displaying; null when none.
+  const [storyOverlay, setStoryOverlay] = useState<OverlayKey | null>(null);
 
   // Post-game review state
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -1656,6 +1666,22 @@ export default function App() {
       }
     }
   }, [aiMode, storyProgress, gameMode, loadedKifuView]);
+
+  // Auto-show the prologue overlay the first time a save slot enters
+  // story mode at chapter 1. Once dismissed, `markOverlaySeen` records
+  // it so refreshes / further chapters don't re-trigger.
+  useEffect(() => {
+    if (screen !== 'game') return;
+    if (gameMode !== 'ai' || aiMode !== 'story') return;
+    if (loadedKifuView) return;
+    if (storyProgress !== 0) return;
+    if (activeSlotId === null) return;
+    if (storyOverlay !== null) return;
+    const slotKey = String(activeSlotId);
+    if (hasSeenOverlay(slotKey, 'prologue')) return;
+    setStoryOverlay('prologue');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, gameMode, aiMode, loadedKifuView, storyProgress, activeSlotId]);
 
   // Auto-pass — passInfo intentionally NOT in deps: including it would
   // trigger the cleanup function on every state change and clear our own
@@ -3189,6 +3215,21 @@ export default function App() {
 
       {screen === 'game' && (
       <div key="game" className="screen-fade stage-bg min-h-screen w-full relative">
+        {/* Story prologue overlay — fires once per save slot when
+            entering story mode at chapter 1. Wraps the finished
+            scenario prologue prose + illustration. */}
+        {storyOverlay === 'prologue' && (
+          <PrologueOverlay
+            prologue={t.story.prologue}
+            dismissLabel={t.story.prologue.startButton}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(String(activeSlotId), 'prologue');
+              }
+              setStoryOverlay(null);
+            }}
+          />
+        )}
         {/* First/second coin-flip overlay. Mounted while
             `firstPlayerRoll` is set; auto-dismisses itself after 2s. */}
         <FirstPlayerRoll
@@ -3772,10 +3813,32 @@ export default function App() {
                   </h2>
 
                   {justCompletedStory && (
-                    <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line">
-                      {t.storyEndingProse}
+                    <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line text-left">
+                      {renderEmphasized(t.story.endingFull.text)}
                     </p>
                   )}
+                  {/* Chapter-clear scenario beats (master's victory line +
+                      Haruki's inner thought + brief narration bridging
+                      to the next chapter). Only shown for non-final
+                      chapter wins; the final chapter uses endingFull
+                      above which already covers everything. */}
+                  {justAdvanced && !justCompletedStory && (() => {
+                    const story = t.story.chapterStories[playedChapter - 1];
+                    if (!story) return null;
+                    return (
+                      <div className="space-y-3 mb-5 text-left">
+                        <p className="jp-display italic text-amber-200/85 text-sm leading-relaxed">
+                          「{renderEmphasized(story.victoryDialogue)}」
+                        </p>
+                        <p className="jp-display italic text-amber-100/70 text-xs leading-relaxed">
+                          {renderEmphasized(story.bossPost)}
+                        </p>
+                        <p className="jp-display text-amber-100/80 text-xs leading-relaxed whitespace-pre-line pt-2 border-t border-amber-200/15">
+                          {renderEmphasized(story.victoryNarration)}
+                        </p>
+                      </div>
+                    );
+                  })()}
                   {/* New protagonist unlocked! Surface the avatar that
                        just joined the roster. AVATARS[unlockedThisRun]
                        was already auto-selected as p1Avatar — the
@@ -4870,7 +4933,7 @@ export default function App() {
 
                         {storyProgress === 0 && cursor === 1 && (
                           <p className="jp-display italic text-amber-200/55 text-xs md:text-sm leading-relaxed whitespace-pre-line">
-                            {t.storyIntro}
+                            {renderEmphasized(t.story.prologue.text)}
                           </p>
                         )}
 
@@ -4895,12 +4958,32 @@ export default function App() {
                               </div>
                             </div>
                           </div>
-                          <p className="jp-display text-amber-100/80 text-sm leading-relaxed">
-                            {t.storyChapters[cursor - 1]}
-                          </p>
-                          <p className="jp-display italic text-amber-200/55 text-xs mt-2">
-                            「{opp.quote}」
-                          </p>
+                          {/* New 4-block scenario content. `intro` is
+                              the chapter setup narration, `bossPre` is
+                              the master's pre-match line. `victoryNarration`
+                              is appended only after the chapter is
+                              cleared (cursor <= storyProgress) so it
+                              doesn't spoil the bridge to the next master
+                              for unexplored chapters. */}
+                          {(() => {
+                            const story = t.story.chapterStories[cursor - 1];
+                            const cleared = cursor <= storyProgress;
+                            return (
+                              <div className="space-y-3">
+                                <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
+                                  {renderEmphasized(story.intro)}
+                                </p>
+                                <p className="jp-display italic text-amber-200/85 text-sm leading-relaxed">
+                                  「{renderEmphasized(story.bossPre)}」
+                                </p>
+                                {cleared && (
+                                  <p className="jp-display italic text-amber-200/60 text-xs leading-relaxed whitespace-pre-line pt-2 border-t border-amber-200/15">
+                                    {renderEmphasized(story.victoryNarration)}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {showEnding && (
