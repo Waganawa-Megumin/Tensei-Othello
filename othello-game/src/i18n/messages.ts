@@ -294,6 +294,30 @@ export interface Messages {
   unlockResetDesc: (current: number) => string;
   unlockResetConfirm: string;
 
+  // Multi-step story intro flow (PrologueScreen / FallingScreen /
+  // ArrivalScreen / ChapterIntroScreen). Ja keys mirror the spec in
+  // handoff_intro_v2/README_INTRO_FLOW_INSTRUCTIONS.md.
+  intro: {
+    /** Step 1 ornament label (above prologue title). */
+    prologueLabel: string;
+    /** Step 2 ornament label. */
+    fallingLabel: string;
+    /** Step 2 voice line (god-of-this-world speaking in 『 』). */
+    fallingVoice: string;
+    /** Step 3 ornament label. */
+    arrivalLabel: string;
+    /** Step 3 narration (rebirth onto the stage). */
+    arrivalText: string;
+    /** Step 4 ornament label (above chapter heading). */
+    chapterLabel: (n: number) => string;
+    /** "Tap to continue" hint shown during art-only phase. */
+    tapToContinue: string;
+    /** "→ next" caption on the bottom-right step button. */
+    nextStepLabel: string;
+    /** Final step CTA — "start the match". */
+    startBattleLabel: string;
+  };
+
   // Scene archive (title-screen "replay past story scenes" UI)
   archiveOpenLabel: string;
   archiveModalTitle: string;
@@ -614,6 +638,23 @@ export const ja: Messages = {
   unlockResetConfirm:
     '解放済みのキャラクターをすべてロックし、選択中のアバターも初期 (ハルキ) に戻します。よろしいですか？',
 
+  intro: {
+    prologueLabel: '序章',
+    fallingLabel: '転落',
+    fallingVoice: '異邦の打ち手よ。盤上世界は、汝を待っていた。',
+    arrivalLabel: '到着',
+    arrivalText: `気がつくと、ハルキはステージの真ん中に立っていた。
+ピンク色のスポットライト。ハートと星のバルーン。観客席はない。
+代わりに、オセロ盤が一台。
+
+——ここが、盤上世界。
+20人の達人を打ち破った者だけが、現代へと還れる場所。`,
+    chapterLabel: (n) => `第 ${n} 章`,
+    tapToContinue: 'タップして読む',
+    nextStepLabel: '続きを読む →',
+    startBattleLabel: '対局を始める →',
+  },
+
   archiveOpenLabel: '▸ これまでのシーンを再生する',
   archiveModalTitle: 'シーン回想',
   archiveModalSubtitle: 'これまでに通り過ぎたお話を、もう一度。',
@@ -933,6 +974,23 @@ your journey on the board reaches its close.`,
     `${current} bonus characters are currently unlocked. Tap to relock everyone except Haruki.`,
   unlockResetConfirm:
     'This will relock every bonus character and reset your selected avatars to Haruki. Continue?',
+
+  intro: {
+    prologueLabel: 'Prologue',
+    fallingLabel: 'Falling',
+    fallingVoice: 'Outer Hand. The Board World has awaited you.',
+    arrivalLabel: 'Arrival',
+    arrivalText: `When Haruki regained his senses, he was standing in the centre of a stage.
+Pink spotlights. Heart-and-star balloons. No audience seats.
+Instead — a single othello board.
+
+— This is the Board World.
+A place where only those who defeat all twenty masters may return to the modern world.`,
+    chapterLabel: (n) => `Chapter ${n}`,
+    tapToContinue: 'tap to continue',
+    nextStepLabel: 'continue →',
+    startBattleLabel: 'begin the match →',
+  },
 
   archiveOpenLabel: '▸ Replay past scenes',
   archiveModalTitle: 'Scene Archive',

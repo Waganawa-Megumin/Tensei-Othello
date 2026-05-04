@@ -81,6 +81,7 @@ import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
 import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
 import { SlotPicker } from './components/SlotPicker';
+import { IntroSequence } from './components/intro/IntroSequence';
 import {
   fetchStructuredReview,
   type StructuredReviewHandle,
@@ -100,7 +101,7 @@ import {
   type SaveSlot,
 } from './storage/saveSlots';
 
-type Screen = 'title' | 'game';
+type Screen = 'title' | 'intro' | 'game';
 
 /* ============================================================
    Static data
@@ -1488,6 +1489,11 @@ export default function App() {
   const [hintMove, setHintMove] = useState<Move | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>('title');
+  /** Chapter (1-indexed = opponent level) the IntroSequence is
+   *  currently building toward. Set just before flipping to the
+   *  'intro' screen and consumed by the on-start callback to hand
+   *  the right chapter to `reset()` + the storyProgress sync. */
+  const [introChapter, setIntroChapter] = useState(1);
   // Story overlay (prologue / narrative inserts / ending). Active key is
   // the OverlayKey we're currently displaying; null when none.
   const [storyOverlay, setStoryOverlay] = useState<OverlayKey | null>(null);
@@ -1701,23 +1707,12 @@ export default function App() {
     }
   }, [aiMode, storyProgress, gameMode, loadedKifuView]);
 
-  // Auto-show the prologue overlay until the slot has actually committed
-  // a match. Reading-and-dismissing alone doesn't lock it out — the user
-  // asked for the prologue to remain accessible until they've finished
-  // their first game so they can re-read it as part of getting into the
-  // story. Once `totalGames > 0` the prologue stops auto-firing and is
-  // only reachable from the title-screen archive link.
-  useEffect(() => {
-    if (screen !== 'game') return;
-    if (gameMode !== 'ai' || aiMode !== 'story') return;
-    if (loadedKifuView) return;
-    if (storyProgress !== 0) return;
-    if (activeSlotId === null) return;
-    if (storyOverlay !== null) return;
-    if (activeSlot && activeSlot.totalGames > 0) return;
-    setStoryOverlay('prologue');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, gameMode, aiMode, loadedKifuView, storyProgress, activeSlotId, activeSlot]);
+  // (The legacy in-game `<PrologueOverlay>` auto-trigger was removed
+  //  in v0.32: the new multi-step `<IntroSequence>` runs BEFORE the
+  //  game screen and includes the prologue as Step 1. The overlay
+  //  component itself still ships for the title-screen scene archive
+  //  ("re-watch any scene I've already passed"), but it no longer
+  //  fires automatically inside the match flow.)
 
   // Auto-pass — passInfo intentionally NOT in deps: including it would
   // trigger the cleanup function on every state change and clear our own
@@ -2307,10 +2302,16 @@ export default function App() {
         setSlotPickerOpen(true);
         return;
       }
-      setGameMode('ai');
-      setAiMode('story');
-      reset({ gameMode: 'ai', aiMode: 'story' });
-      setScreen('game');
+      // Route through the multi-step intro instead of dropping the
+      // player onto the board. `reset()` and the screen flip to 'game'
+      // happen in `onIntroComplete` once the player taps "begin the
+      // match →" at the end of the chapter card.
+      const targetChapter = Math.min(
+        Math.max((activeSlot?.storyProgress ?? 0) + 1, 1),
+        20,
+      );
+      setIntroChapter(targetChapter);
+      setScreen('intro');
       return;
     }
     // Free mode: don't drop the player straight into the coin toss.
@@ -2329,10 +2330,17 @@ export default function App() {
     setActiveSlotIdState(id);
     void setActiveSlotId(id);
     setSlotPickerOpen(false);
-    setGameMode('ai');
-    setAiMode('story');
-    reset({ gameMode: 'ai', aiMode: 'story' });
-    setScreen('game');
+    // Route through the intro flow. `slots` already contains the
+    // freshly-selected slot, so we look up its storyProgress directly
+    // (avoid relying on the in-flight `activeSlot` derivation, which
+    // is keyed off the stale `activeSlotId` until React re-renders).
+    const picked = slots.find((s) => s.id === id);
+    const targetChapter = Math.min(
+      Math.max((picked?.storyProgress ?? 0) + 1, 1),
+      20,
+    );
+    setIntroChapter(targetChapter);
+    setScreen('intro');
   }
 
   /** Wipes the active slot back to defaults (keeps name + avatar). */
@@ -3282,6 +3290,33 @@ export default function App() {
         </div>
       )}
 
+      {/* Story-mode multi-step intro flow. Walks through prologue →
+          falling → arrival → chapter card on first run, or just the
+          chapter card on every subsequent chapter. `onStart` performs
+          the actual mode switch + board reset and flips to 'game'. */}
+      {screen === 'intro' && (
+        <IntroSequence
+          t={t}
+          locale={locale}
+          firstTime={(activeSlot?.storyProgress ?? 0) === 0}
+          chapter={introChapter}
+          opponent={
+            COMPUTERS.find((c) => c.level === introChapter) ?? COMPUTERS[0]
+          }
+          onPrologueSeen={() => {
+            if (activeSlotId !== null) {
+              markOverlaySeen(String(activeSlotId), 'prologue');
+            }
+          }}
+          onStart={() => {
+            setGameMode('ai');
+            setAiMode('story');
+            reset({ gameMode: 'ai', aiMode: 'story' });
+            setScreen('game');
+          }}
+        />
+      )}
+
       {screen === 'game' && (
       <div key="game" className="screen-fade stage-bg min-h-screen w-full relative">
         {/* Story prologue overlay — fires once per save slot when
@@ -3314,7 +3349,8 @@ export default function App() {
                 markOverlaySeen(String(activeSlotId), 'narrative:solitude');
               }
               setStoryOverlay(null);
-              reset();
+              setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
+              setScreen('intro');
             }}
           />
         )}
@@ -3329,7 +3365,8 @@ export default function App() {
                 markOverlaySeen(String(activeSlotId), 'narrative:allies');
               }
               setStoryOverlay(null);
-              reset();
+              setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
+              setScreen('intro');
             }}
           />
         )}
@@ -3344,7 +3381,8 @@ export default function App() {
                 markOverlaySeen(String(activeSlotId), 'narrative:final');
               }
               setStoryOverlay(null);
-              reset();
+              setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
+              setScreen('intro');
             }}
           />
         )}
@@ -4150,8 +4188,10 @@ export default function App() {
                           // insert should appear before the next
                           // chapter. After clearing Ch.10 / 15 / 19
                           // we fire solitude / allies / final as a
-                          // full-screen overlay; the overlay's
-                          // onDismiss runs reset() to advance.
+                          // full-screen overlay; on its dismiss the
+                          // intro flow takes over for the next
+                          // chapter card. Without an interlude we
+                          // jump straight to the intro flow.
                           let pending: OverlayKey | null = null;
                           if (storyProgress === 10) pending = 'narrative:solitude';
                           else if (storyProgress === 15) pending = 'narrative:allies';
@@ -4165,7 +4205,10 @@ export default function App() {
                           ) {
                             setStoryOverlay(pending);
                           } else {
-                            reset();
+                            setIntroChapter(
+                              Math.min(Math.max(storyProgress + 1, 1), 20),
+                            );
+                            setScreen('intro');
                           }
                         }}
                         className="btn btn-active"
