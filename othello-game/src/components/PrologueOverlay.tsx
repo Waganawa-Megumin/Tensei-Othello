@@ -28,7 +28,7 @@ export function PrologueOverlay({ prologue, dismissLabel, onDismiss }: PrologueO
 
   return (
     <div
-      className="fixed inset-0 z-[60] overflow-y-auto"
+      className="fixed inset-0 z-[70] overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-label={prologue.title}

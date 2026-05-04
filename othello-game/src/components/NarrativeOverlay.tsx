@@ -41,7 +41,7 @@ export function NarrativeOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[60] overflow-y-auto"
+      className="fixed inset-0 z-[70] overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-label={scene.title}
