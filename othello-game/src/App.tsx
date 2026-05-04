@@ -1202,16 +1202,31 @@ interface LevelSelectorProps {
   level: number;
   setLevel: (n: number) => void;
   t: Messages;
+  /** When provided, renders a "↺ 標準に戻す" mini-button next to the
+   *  level read-out whenever `level !== defaultLevel`. This is how the
+   *  free-mode setup signals "you've moved off the character's natural
+   *  difficulty — tap to snap back". */
+  defaultLevel?: number;
 }
 
-function LevelSelector({ level, setLevel, t }: LevelSelectorProps) {
+function LevelSelector({ level, setLevel, t, defaultLevel }: LevelSelectorProps) {
+  const isOverridden = defaultLevel !== undefined && level !== defaultLevel;
   return (
     <div>
-      <div className="flex items-baseline justify-between mb-2">
-        <div className="latin-display italic text-amber-200/50 tracking-[0.25em] text-xs uppercase">
-          Level
+      <div className="flex items-baseline justify-between mb-2 gap-2 flex-wrap">
+        <div className="latin-display italic text-amber-200/70 tracking-[0.25em] text-xs uppercase">
+          {t.matchLevelLabel}
         </div>
         <div className="flex items-baseline gap-3">
+          {isOverridden && (
+            <button
+              onClick={() => setLevel(defaultLevel!)}
+              className="latin-display italic text-[10px] tracking-wider text-amber-200/75 hover:text-amber-100 border border-amber-200/30 hover:border-amber-200/60 rounded-sm px-2 py-1 transition-colors"
+              title={`${t.matchLevelResetToDefault} (Lv.${defaultLevel})`}
+            >
+              ↺ {t.matchLevelResetToDefault}
+            </button>
+          )}
           <div className="latin-display text-amber-100 text-3xl tabular-nums leading-none">
             {level}
           </div>
@@ -4812,6 +4827,11 @@ export default function App() {
                               <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
                                 {c.name}
                               </div>
+                              {/* "標準 Lv.X / Default Lv.X" — labelled this
+                                  way so the user understands the number
+                                  is the character's natural strength,
+                                  not the active match difficulty (set by
+                                  the slider below). */}
                               <div
                                 className={`latin-display italic text-[10px] tracking-wider ${
                                   computerChar === i
@@ -4819,7 +4839,7 @@ export default function App() {
                                     : 'text-amber-200/65'
                                 }`}
                               >
-                                Lv.{c.level}
+                                {t.defaultLevelLabel(c.level)}
                               </div>
                             </button>
                           ))}
@@ -4827,6 +4847,9 @@ export default function App() {
                         <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                           <div className="jp-display text-amber-100/80 text-sm">
                             {COMPUTERS[computerChar].name}
+                            <span className="latin-display italic text-amber-200/55 text-xs ml-2 tracking-wider">
+                              · {t.defaultLevelLabel(COMPUTERS[computerChar].level)}
+                            </span>
                           </div>
                           <div className="jp-display italic text-amber-200/55 text-xs mt-0.5">
                             「{COMPUTERS[computerChar].quote}」
@@ -4834,10 +4857,26 @@ export default function App() {
                         </div>
                       </div>
 
+                      {/* Bridge between the character grid and the level
+                          slider — explicitly tells the user that the
+                          number under each face is just a default and
+                          the slider sets the actual match difficulty. */}
+                      <p className="jp-display italic text-amber-200/70 text-xs leading-relaxed mb-3">
+                        {t.matchLevelHint}
+                      </p>
+
                       <div>
-                        <LevelSelector level={level} setLevel={setLevel} t={t} />
+                        <LevelSelector
+                          level={level}
+                          setLevel={setLevel}
+                          t={t}
+                          defaultLevel={COMPUTERS[computerChar].level}
+                        />
                         <p className="latin-display italic text-amber-200/55 text-[11px] mt-3 leading-relaxed">
                           {t.aiLevelExplain}
+                        </p>
+                        <p className="jp-display italic text-amber-200/55 text-[11px] mt-1.5 leading-relaxed">
+                          {t.aiComputeNote}
                         </p>
                       </div>
                     </>

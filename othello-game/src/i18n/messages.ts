@@ -144,6 +144,24 @@ export interface Messages {
   characterGridLabel: string;
   aiLevelExplain: string;
 
+  /** Suffix shown under each character card to label the character's
+   *  canonical/default difficulty (e.g. "標準 Lv.5"). Distinct from the
+   *  active match level set via the slider below. */
+  defaultLevelLabel: (n: number) => string;
+  /** Heading on the level slider — "対決レベル / Match Level" — to make
+   *  clear it sets the *active* difficulty, not just a display. */
+  matchLevelLabel: string;
+  /** Bridge text between the character grid and the level slider:
+   *  explains that each character has a default Lv. and the slider
+   *  overrides the active difficulty. */
+  matchLevelHint: string;
+  /** Mini button on the slider; appears when active level !== the
+   *  selected character's default level. */
+  matchLevelResetToDefault: string;
+  /** Footnote under the slider explaining where the AI runs and what
+   *  the high-level compute cost is. */
+  aiComputeNote: string;
+
   // Common
   close: string;
   delete: string;
@@ -402,6 +420,13 @@ export const ja: Messages = {
   characterGridLabel: 'Character — 二十人の対戦相手',
   aiLevelExplain:
     'Lv.1–5 random / greedy ・ Lv.6–9 positional ・ Lv.10–14 1–2-ply search ・ Lv.15–17 3-ply ・ Lv.18–20 4-ply minimax with mobility & disc parity.',
+  defaultLevelLabel: (n) => `標準 Lv.${n}`,
+  matchLevelLabel: '対決レベル',
+  matchLevelHint:
+    'キャラクター直下の数字は「標準 Lv.」（その人物の素の強さ）。下のゲージを動かすと、その対戦相手と任意のレベルで対局できます。',
+  matchLevelResetToDefault: '標準に戻す',
+  aiComputeNote:
+    '思考はあなたの端末内（Web Worker）で計算しています。Lv.18〜20 は深さ 4 の minimax 探索なので、1 手につき少し時間がかかります。',
 
   close: '閉じる',
   delete: '削除',
@@ -681,6 +706,13 @@ export const en: Messages = {
   characterGridLabel: 'Character — twenty opponents',
   aiLevelExplain:
     'Lv.1–5 random / greedy · Lv.6–9 positional · Lv.10–14 1–2-ply search · Lv.15–17 3-ply · Lv.18–20 4-ply minimax with mobility & disc parity.',
+  defaultLevelLabel: (n) => `Default Lv.${n}`,
+  matchLevelLabel: 'Match Level',
+  matchLevelHint:
+    'The number under each character is its Default Lv. — that opponent\'s natural strength. Move the slider below to play that character at any difficulty you like.',
+  matchLevelResetToDefault: 'Reset to default',
+  aiComputeNote:
+    'Thinking happens on your device (Web Worker). Lv.18–20 runs depth-4 minimax, so each move takes a moment.',
 
   close: 'Close',
   delete: 'Delete',

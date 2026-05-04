@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.29.0)
+Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.29.1)
 
 ---
 
@@ -66,6 +66,24 @@ Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.29.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **対戦設定: 「キャラ標準 Lv.」と「対決レベル」の関係を明示** —
+      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — ユーザーフィードバック「対戦相手のレベルは
+      デフォルトではあの順で良いのですが、下のゲージで設定できるので
+      アバター付近は default lv. で、下の変更するとそのレベルで対決する
+      仕組みになってることがわかるように」。
+      キャラカード下の「Lv.X」表記を `t.defaultLevelLabel(n)` 経由で
+      「標準 Lv.X / Default Lv.X」に。選択カード直下のサマリ枠にも
+      「・ 標準 Lv.X」を追記。
+      キャラグリッドとレベルゲージの間に橋渡しテキストを追加（`t.matchLevelHint`）:
+      「キャラクター直下の数字は『標準 Lv.』。下のゲージを動かすと、その
+      対戦相手と任意のレベルで対局できます」。
+      `LevelSelector` を改修: 見出しを `Level` → `t.matchLevelLabel`（対決
+      レベル / Match Level）、`defaultLevel` プロップを追加して `level !==
+      defaultLevel` の時だけ `↺ 標準に戻す` ミニボタンを表示。
+      ゲージ下に `t.aiComputeNote` を追加（思考は端末内 Web Worker で計算、
+      Lv.18〜20 は深さ 4 minimax で時間が掛かる旨）。
+      `v0.29.1`
 - [x] **フリーモードを「タイトル → 対戦設定 → コイントス → 対局」の
       順に並べ直す** — completed: 2026-05-04 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
