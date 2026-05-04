@@ -286,6 +286,26 @@ export interface Messages {
   livesLabel: string;
   livesGameOverWarning: string;
 
+  // Story-data section in settings (story log + character unlocks reset)
+  storyDataLabel: string;
+  storyLogOpenLabel: string;
+  storyLogDesc: string;
+  storyLogTitle: string;
+  storyLogSubtitle: string;
+  storyLogChapterHeading: (n: number, oppName: string) => string;
+  storyLogIntroLabel: string;
+  storyLogPreLabel: string;
+  storyLogPostLabel: string;
+  storyLogVictoryLabel: string;
+  storyLogClosingLabel: string;
+  storyLogPrologueLabel: string;
+  storyLogInterludeLabel: string;
+  storyLogEndingLabel: string;
+  storyLogEmpty: string;
+  unlockResetLabel: string;
+  unlockResetDesc: (current: number) => string;
+  unlockResetConfirm: string;
+
   // Scene archive (title-screen "replay past story scenes" UI)
   archiveOpenLabel: string;
   archiveModalTitle: string;
@@ -597,6 +617,27 @@ export const ja: Messages = {
   livesLabel: '残機',
   livesGameOverWarning: '残機がありません。次に勝つと 1 機回復します。',
 
+  storyDataLabel: 'ストーリーデータ',
+  storyLogOpenLabel: 'ストーリーログを開く',
+  storyLogDesc: 'これまでに歩いた章のあらすじとセリフを、時系列で読み返せます。',
+  storyLogTitle: 'ストーリーログ',
+  storyLogSubtitle: '盤上世界での歩みを、もう一度なぞる。',
+  storyLogChapterHeading: (n, oppName) => `第${n}章 vs ${oppName}`,
+  storyLogIntroLabel: '序景',
+  storyLogPreLabel: '対局前',
+  storyLogPostLabel: '対局直後',
+  storyLogVictoryLabel: '勝利',
+  storyLogClosingLabel: '幕引き',
+  storyLogPrologueLabel: '序章',
+  storyLogInterludeLabel: '幕間',
+  storyLogEndingLabel: '終章',
+  storyLogEmpty: 'まだ章をクリアしていません。最初の対局を終えるとログに記録されます。',
+  unlockResetLabel: 'キャラクター解放を初期化',
+  unlockResetDesc: (current) =>
+    `現在 ${current} 体の追加キャラクターが解放されています。タップでハルキ以外をすべてロックし直します。`,
+  unlockResetConfirm:
+    '解放済みのキャラクターをすべてロックし、選択中のアバターも初期 (ハルキ) に戻します。よろしいですか？',
+
   archiveOpenLabel: '▸ これまでのシーンを再生する',
   archiveModalTitle: 'シーン回想',
   archiveModalSubtitle: 'これまでに通り過ぎたお話を、もう一度。',
@@ -905,6 +946,29 @@ your journey on the board reaches its close.`,
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
   livesGameOverWarning: 'No lives left. Win the next match to recover one.',
+
+  storyDataLabel: 'Story Data',
+  storyLogOpenLabel: 'Open story log',
+  storyLogDesc:
+    'Re-read the prose and dialogue of every chapter you’ve cleared, in order.',
+  storyLogTitle: 'Story Log',
+  storyLogSubtitle: 'Trace your steps through Bansho Sekai once more.',
+  storyLogChapterHeading: (n, oppName) => `Chapter ${n} · vs ${oppName}`,
+  storyLogIntroLabel: 'Setup',
+  storyLogPreLabel: 'Before the match',
+  storyLogPostLabel: 'Just after the match starts',
+  storyLogVictoryLabel: 'Victory',
+  storyLogClosingLabel: 'Closing',
+  storyLogPrologueLabel: 'Prologue',
+  storyLogInterludeLabel: 'Interlude',
+  storyLogEndingLabel: 'Ending',
+  storyLogEmpty:
+    'No chapters cleared yet. Win your first match to start recording the log.',
+  unlockResetLabel: 'Reset character unlocks',
+  unlockResetDesc: (current) =>
+    `${current} bonus characters are currently unlocked. Tap to relock everyone except Haruki.`,
+  unlockResetConfirm:
+    'This will relock every bonus character and reset your selected avatars to Haruki. Continue?',
 
   archiveOpenLabel: '▸ Replay past scenes',
   archiveModalTitle: 'Scene Archive',

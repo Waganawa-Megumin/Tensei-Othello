@@ -382,12 +382,12 @@ export async function recordFreeResult(input: {
  * only the default protagonist is available; 20 means the entire
  * roster (including the special "first hero" Haruki at the end of
  * AVATARS_DATA) has been earned. Each full 20-chapter story clear
- * increments this by 1.
- *
- * On first read the function migrates older saves: if any save slot
- * has already reached storyProgress >= 20 (the previous "all bonus
- * chars unlocked at once" state), we seed the counter at 20 so
- * existing players don't lose their earned roster.
+ * increments this by 1 via `setCharacterUnlocks` from the game-over
+ * effect — there is no auto-seed from existing slots, so a returning
+ * player who only ever cleared the route once still owns just the
+ * single character that clear earned them. (An earlier seed that
+ * granted all 20 at once on any cleared slot has been removed; users
+ * who got hit by it can hit "キャラクター解放を初期化" in settings.)
  */
 export async function getCharacterUnlocks(): Promise<number> {
   try {
@@ -396,12 +396,8 @@ export async function getCharacterUnlocks(): Promise<number> {
       const n = parseInt(raw, 10);
       if (!isNaN(n) && n >= 0 && n <= TOTAL_BONUS_AVATARS) return n;
     }
-    // Backward-compat: pull seed from any slot that already cleared.
-    const slots = await getSlots();
-    const cleared = slots.some((s) => s.storyProgress >= 20);
-    const seed = cleared ? TOTAL_BONUS_AVATARS : 0;
-    window.localStorage.setItem(CHARACTER_UNLOCKS_KEY, String(seed));
-    return seed;
+    window.localStorage.setItem(CHARACTER_UNLOCKS_KEY, '0');
+    return 0;
   } catch {
     return 0;
   }
