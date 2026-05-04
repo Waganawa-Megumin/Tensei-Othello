@@ -8,7 +8,19 @@ import type { Board, Color, ValidMove } from '../engine/types';
 interface PendingResolver {
   resolve: (move: ValidMove | null) => void;
   reject: (err: Error) => void;
+  timeoutId: number;
 }
+
+/**
+ * Hard cap on a single move-request. Mobile browsers occasionally kill
+ * Web Workers under memory pressure without firing the 'error' event,
+ * which leaves the Promise pending forever and the UI stuck in
+ * `aiThinking=true`. If a request hasn't returned within this window we
+ * assume the worker is dead, terminate it, respin a fresh one, and reject
+ * the pending caller so the React layer can recover instead of freezing
+ * the board on the human's next turn.
+ */
+const REQUEST_TIMEOUT_MS = 15000;
 
 export interface UseAiWorker {
   /**
@@ -27,7 +39,7 @@ export function useAiWorker(): UseAiWorker {
   const pendingRef = useRef<Map<number, PendingResolver>>(new Map());
   const counterRef = useRef(0);
 
-  useEffect(() => {
+  const spawnWorker = useCallback((): Worker => {
     const worker = new Worker(
       new URL('../workers/ai.worker.ts', import.meta.url),
       { type: 'module' },
@@ -37,27 +49,35 @@ export function useAiWorker(): UseAiWorker {
       const pending = pendingRef.current.get(requestId);
       if (!pending) return;
       pendingRef.current.delete(requestId);
+      window.clearTimeout(pending.timeoutId);
       pending.resolve(move);
     });
     worker.addEventListener('error', (event) => {
       for (const pending of pendingRef.current.values()) {
+        window.clearTimeout(pending.timeoutId);
         pending.reject(new Error(event.message || 'AI worker error'));
       }
       pendingRef.current.clear();
     });
-    workerRef.current = worker;
+    return worker;
+  }, []);
+
+  useEffect(() => {
+    workerRef.current = spawnWorker();
     return () => {
       for (const pending of pendingRef.current.values()) {
+        window.clearTimeout(pending.timeoutId);
         pending.reject(new Error('AI worker terminated'));
       }
       pendingRef.current.clear();
-      worker.terminate();
+      workerRef.current?.terminate();
       workerRef.current = null;
     };
-  }, []);
+  }, [spawnWorker]);
 
   const cancel = useCallback(() => {
     for (const pending of pendingRef.current.values()) {
+      window.clearTimeout(pending.timeoutId);
       pending.reject(new Error('Cancelled by newer request'));
     }
     pendingRef.current.clear();
@@ -73,7 +93,18 @@ export function useAiWorker(): UseAiWorker {
         }
         cancel();
         const requestId = ++counterRef.current;
-        pendingRef.current.set(requestId, { resolve, reject });
+        const timeoutId = window.setTimeout(() => {
+          // Worker hasn't responded — assume it died silently (mobile
+          // memory pressure is the usual culprit). Tear it down, respin
+          // a fresh one for the next request, and reject this caller so
+          // the AI effect's `.finally` clears `aiThinking`.
+          if (!pendingRef.current.has(requestId)) return;
+          pendingRef.current.delete(requestId);
+          workerRef.current?.terminate();
+          workerRef.current = spawnWorker();
+          reject(new Error('AI worker timeout'));
+        }, REQUEST_TIMEOUT_MS);
+        pendingRef.current.set(requestId, { resolve, reject, timeoutId });
         const request: PickMoveRequest = {
           type: 'pickMove',
           requestId,
@@ -83,7 +114,7 @@ export function useAiWorker(): UseAiWorker {
         };
         worker.postMessage(request);
       }),
-    [cancel],
+    [cancel, spawnWorker],
   );
 
   return { requestMove, cancel };

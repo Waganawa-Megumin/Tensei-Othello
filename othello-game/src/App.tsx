@@ -1315,6 +1315,9 @@ export default function App() {
   const [currentColor, setCurrentColor] = useState<Color>(BLACK);
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
+  /** Bumped after an AI worker timeout so the AI useEffect re-fires
+   *  with a fresh worker and retries the request. */
+  const [aiRetryNonce, setAiRetryNonce] = useState(0);
   const [passInfo, setPassInfo] = useState<Color | null>(null);
   const [flipping, setFlipping] = useState<Record<string, Color>>({});
   const [history, setHistory] = useState<HistorySnapshot[]>([]);
@@ -1747,6 +1750,7 @@ export default function App() {
     setAiThinking(true);
     const delay = 450 + Math.min(level * 35, 700);
     let cancelled = false;
+    let timedOut = false;
     const aiColor = opponent(playerColor);
     const timer = window.setTimeout(() => {
       ai
@@ -1755,11 +1759,22 @@ export default function App() {
           if (cancelled || !move) return;
           doMoveRef.current(move.row, move.col);
         })
-        .catch(() => {
-          /* cancelled by a newer request */
+        .catch((err: unknown) => {
+          // Distinguish hook-level worker timeouts (silent worker death)
+          // from a normal cancellation. On timeout we bump the retry
+          // nonce so this effect re-fires against the fresh worker the
+          // hook just respawned, instead of leaving the human stuck on
+          // their next turn waiting for a move that will never come.
+          const message = err instanceof Error ? err.message : '';
+          if (message === 'AI worker timeout') {
+            timedOut = true;
+          }
         })
         .finally(() => {
           if (!cancelled) setAiThinking(false);
+          if (!cancelled && timedOut) {
+            setAiRetryNonce((n) => n + 1);
+          }
         });
     }, delay);
     return () => {
@@ -1769,7 +1784,7 @@ export default function App() {
       setAiThinking(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo, playerColor, firstPlayerRoll]);
+  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo, playerColor, firstPlayerRoll, aiRetryNonce]);
 
   // Fire-and-forget LLM character commentary after the AI side's
   // moves. Strictly opt-in (commentaryEnabled), AI-mode only, and

@@ -19,7 +19,14 @@ Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.31.0)
 
 ### P1 — バグ・ブロッカー
 
-なし。
+- [ ] **対局中フリーズの再発確認** — 2026-05-04 ユーザー報告、Ch.1 vs
+      いちか、46W vs 17B、残り 1 マスで盤タップが効かない状態が発生。
+      AI Worker が無音で死に `aiThinking` が `true` のまま固まった、
+      が最有力仮説（モバイル時のメモリ圧迫で worker が `error` イベント
+      も飛ばさず黙って死ぬパス）。`useAiWorker` に 15s 応答タイムアウト
+      ＋ App.tsx に retry nonce を入れて自動回復するようにした。
+      次回プレイで同症状が出ないか要確認。owner:
+      `claude/othello-ui-autosave-bPnmY`
 
 ### P2 — 重要な機能改善
 
