@@ -14,8 +14,8 @@
 **en**: "Flip the stones. Flip the world."
 
 ### `title.subtitle`
-**ja**: 〜転生したらオセロ世界でした！〜
-**en**: ~ I Got Reincarnated into an Othello World! ~
+**ja**: 〜召喚されたらオセロ世界でした！〜
+**en**: ~ I Got Summoned into an Othello World! ~
 
 ### `title.start_button`
 **ja**: 異邦の打ち手として、はじめる
@@ -42,13 +42,19 @@
 >
 > 床が崩れる。机が宙を舞う。教科書のページがめくれて、その全ページが**棋譜**になっていく。
 >
-> 落ちながら、ハルキは妙に冷静な声を聞いた。
+> （**えっ、これ死ぬやつ?! 青春時代の青さ故の憂鬱死ですか?!**）
 >
-> 『**異邦の打ち手よ。盤上世界は、汝を待っていた。**』
+> ── 落ちる、落ちる、落ちる。
 >
-> 「待ってない待ってない、こっちは待ってない！ せめて昼飯食べてから ──」
+> （…………あれ、**でも全然死んでないな**。むしろなんか元気だぞ?）
 >
-> ハルキの意識は、**白と黒の渦**に呑まれていった。
+> 落下しながら、ハルキは妙に冷静な声を聞いた。
+>
+> 『**異邦の打ち手よ。盤上世界が、汝を召喚した。**』
+>
+> 「**召喚?! 死んでない感じ?!** ── あ、ありがてぇ! …………いや待って、**呼ぶならせめて昼飯後にしてくれ ──**」
+>
+> ハルキの身体は、**白と黒の渦**に呑み込まれていった。
 
 **en**:
 > Fifth period: classical literature pop quiz. Name written. Nothing else.
@@ -62,13 +68,19 @@
 >
 > The floor shattered. Desks took flight. Textbook pages ripped open and every single page filled with **game records**.
 >
+> *(Wait — am I dying?! Is this Death by Adolescent Angst?!)*
+>
+> — Falling, falling, falling.
+>
+> *(...Actually, I feel **totally fine** somehow. Kinda energized, even?)*
+>
 > Falling through space, Haruki heard a strangely calm voice:
 >
-> *"Outer Hand. The Board World has awaited you."*
+> *"Outer Hand. The Board World has summoned you."*
 >
-> "Yeah, no — I haven't been awaiting you! At least let me eat lunch first—"
+> "**Summoned?! So I'm not dying?!** — Oh thank god! ……No wait, **at least summon me AFTER lunch—**"
 >
-> Haruki's consciousness was swallowed by a **vortex of black and white**.
+> Haruki's body was swallowed by the **vortex of black and white**.
 
 ---
 
@@ -76,8 +88,10 @@
 
 ### `chapter01.intro`
 **ja**:
-> 気がつくと、ハルキは**ステージの真ん中**に立っていた。
+> 扉を抜けると、ハルキは**ステージの真ん中**に立っていた。
 > ピンク色のスポットライト。ハートと星のバルーン。観客席はない。代わりに**オセロ盤が一台**。
+>
+> （**召喚先がアイドルステージって、神々のセンスどうなってる?!**）
 >
 > ── そして、目の前には。
 >
@@ -85,17 +99,21 @@
 >
 > 桃色ツインテールのアイドル少女が、ウィンクしながらマイクを差し出してきた。
 >
-> （**異世界初日からアイドル戦かよ。**）
+> （**召喚初日からアイドル戦かよ。**）
 
 **en**:
-> When Haruki regained his senses, he was standing in the center of **a stage**.
+> Stepping through the door, Haruki found himself standing in the center of **a stage**.
 > Pink spotlights. Heart and star balloons. No audience seats. Instead — **a single othello board**.
+>
+> *(Whose idea was it to summon me onto an idol stage?! What's wrong with the gods' taste?!)*
 >
 > — And in front of him.
 >
 > *"Nice to meet you ♡ Outer Hand Haruki ♪"*
 >
 > A pink-twintailed idol girl winked, holding out a microphone like an offering.
+>
+> *(Day one of being summoned, and I'm already in an idol battle.)*
 >
 > *(Day one in the isekai and I'm already in an idol battle.)*
 

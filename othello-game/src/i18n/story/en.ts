@@ -44,13 +44,15 @@ A **vortex of black and white** erupted upward from beneath Haruki's feet, repai
       `When Haruki regained his senses, he was standing in the center of **a stage**.
 Pink spotlights. Heart and star balloons. No audience seats. Instead — **a single othello board**.
 
+*(Whose idea was it to summon me onto an idol stage?! What's wrong with the gods' taste?!)*
+
 — And in front of him.
 
 *"Nice to meet you ♡ Outer Hand Haruki ♪"*
 
 A pink-twintailed idol girl winked, holding out a microphone like an offering.
 
-*(Day one in the isekai and I'm already in an idol battle.)*`,
+*(Day one of being summoned, and I'm already in an idol battle.)*`,
       `"A player who makes everyone smile is *definitely* strong ♪ Haruki, will you play with me?"`,
       `*(Playing othello in this much pink is genuinely eroding my soul.)*`,
       `"Wow~! Haruki, you're really *good*! Heehee, this just became the **opening duel of my first crush** ♡"`,
@@ -496,6 +498,10 @@ Haruki laughed through tears.
 The door of light closed.
 
 — Next moment, Haruki woke up at his **classroom desk**.
+Outside the window, the sunset was at the same angle. The bell hadn't rung yet.
+
+*(...Was time **frozen** the whole time?)*
+
 The classical lit teacher held his answer sheet, wearing a wry smile.
 
 "You've got... **only your name written here**."

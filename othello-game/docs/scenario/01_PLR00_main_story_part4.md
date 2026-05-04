@@ -389,6 +389,10 @@
 > 光の扉が閉じた。
 >
 > ── 次の瞬間、ハルキは **教室の机**で目を覚ました。
+> 窓の外、夕陽はまだ同じ角度。チャイムも鳴っていない。
+>
+> （……**時間、止まってた**?）
+>
 > 古典の教師が、ハルキの答案用紙を持って、苦笑していた。
 >
 > 「お前、**名前しか書いてないぞ**」
@@ -425,6 +429,10 @@
 > The door of light closed.
 >
 > — Next moment, Haruki woke up at his **classroom desk**.
+> Outside the window, the sunset was at the same angle. The bell hadn't rung yet.
+>
+> *(...Was time **frozen** the whole time?)*
+>
 > The classical lit teacher held his answer sheet, wearing a wry smile.
 >
 > "You've got... **only your name written here**."
