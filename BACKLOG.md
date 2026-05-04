@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.28.0)
+Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.28.1)
 
 ---
 
@@ -66,6 +66,21 @@ Last updated: 2026-05-03 by `claude/othello-ui-autosave-bPnmY` (v0.28.0)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **ファンタジーコインを「シンプル板」に差し替え（魔法陣下グロー
+      撤去）+ 新フレーム16枚に更新** — completed: 2026-05-04 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
+      ユーザーフィードバック「コイン下の光が邪魔」。納品 v2 パック
+      （`othello_turn_coin_complete_pack.zip`、黒8 + 白8 + 共通エッジ1）
+      を `public/assets/othello/turn-coin/{black,white,common}/` に
+      配置。`FantasyCoinRoll` から `<img className="fantasy-coin-ring">`
+      と `.fantasy-coin-ring*` / `@keyframes fantasy-ring-pulse` を削除。
+      回転シーケンスを「結果側へ向かって落ち着いていく」一方向に整理:
+      `FANTASY_SPIN_TO_BLACK`（白前→白傾き→白縁→水平縁→黒縁→黒傾き→黒前）
+      / `FANTASY_SPIN_TO_WHITE`（黒前→黒傾き→...→白前）。最終静止フレーム
+      は `black_00_front.png` / `white_02_front_a.png`。素材処理は前回と
+      同じ Pillow パイプライン（フラッドフィル → 2px 羽化 → 512×512
+      LANCZOS）で 25.7 MiB → 3.2 MiB に圧縮。旧 `turn-coin-*.png` 10 枚
+      は不要なので削除。`v0.28.1`
 - [x] **先攻後攻コイン演出にファンタジー版のオプション追加** —
       completed: 2026-05-03 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (next push) — ユーザー納品の銀縁紋様コイン素材 8 種＋

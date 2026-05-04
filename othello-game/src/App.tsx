@@ -859,27 +859,49 @@ function TwoDCoinRoll({ active, result, playerName, onComplete, t }: FirstPlayer
 }
 
 /**
- * Fantasy variant of the coin toss: silver-rimmed engraved coins on a
- * dim violet magic ring, image-swapped at staggered intervals so it
- * reads as a slow tumble rather than a strobe. Falls back gracefully
- * if a PNG fails to load (the surrounding ornament + result text still
- * communicate the outcome).
+ * Fantasy variant of the coin toss: silver-rimmed engraved coins
+ * image-swapped through a black-→edge-→white tumble. The earlier draft
+ * placed a violet magic-ring under the coin; user feedback was that
+ * the under-glow was distracting, so we now show only the coin —
+ * floating on the dimmed page-blur backdrop.
  *
  * Schedule (total 3.7s, matches the 2D variant so callers don't need
- * to special-case timing): 8 frames over 1.8s with light easing, then
- * lock onto the result face, then 1.5s reveal hold.
+ * to special-case timing): 9 frames over 1.8s with light easing, then
+ * lock onto the chosen front face, then 1.5s reveal hold.
+ *
+ * Frames are taken from the v2 turn-coin pack
+ * (public/assets/othello/turn-coin/{black,white,common}/...). The
+ * sequence walks through one direction of the manifest's recommended
+ * loop — front-→tilt-→edge-→tilt-→front — so the eye reads it as a
+ * single coin rotating, not a flicker between two coins.
  */
 const FANTASY_ASSET_BASE = `${import.meta.env.BASE_URL}assets/othello/turn-coin/`;
 
-const FANTASY_FRAME_SEQUENCE = [
-  'turn-coin-black-front.png',
-  'turn-coin-black-tilt.png',
-  'turn-coin-edge.png',
-  'turn-coin-white-tilt.png',
-  'turn-coin-white-front.png',
-  'turn-coin-white-tilt-2.png',
-  'turn-coin-edge.png',
-  'turn-coin-black-tilt-2.png',
+// Spinning sequence: black face fading through the edge to white.
+// We branch by result for the *last* slot so the toss is always
+// settling toward the announced side rather than reversing direction.
+const FANTASY_SPIN_TO_WHITE = [
+  'black/black_00_front.png',
+  'black/black_01_tilt_soft.png',
+  'black/black_02_tilt_mid.png',
+  'black/black_04_edge_vertical.png',
+  'common/coin_edge_horizontal.png',
+  'white/white_00_edge_vertical.png',
+  'white/white_06_tilt_mid_b.png',
+  'white/white_05_tilt_soft_b.png',
+  'white/white_02_front_a.png',
+];
+
+const FANTASY_SPIN_TO_BLACK = [
+  'white/white_02_front_a.png',
+  'white/white_05_tilt_soft_b.png',
+  'white/white_06_tilt_mid_b.png',
+  'white/white_00_edge_vertical.png',
+  'common/coin_edge_horizontal.png',
+  'black/black_04_edge_vertical.png',
+  'black/black_02_tilt_mid.png',
+  'black/black_01_tilt_soft.png',
+  'black/black_00_front.png',
 ];
 
 function FantasyCoinRoll({ active, result, playerName, onComplete, t }: FirstPlayerRollProps) {
@@ -916,10 +938,9 @@ function FantasyCoinRoll({ active, result, playerName, onComplete, t }: FirstPla
 
   if (!active || result === null) return null;
   const isFirst = result === BLACK;
-  const spinningFrame =
-    FANTASY_FRAME_SEQUENCE[frameIdx % FANTASY_FRAME_SEQUENCE.length];
-  const settledFrame =
-    isFirst ? 'turn-coin-black-result.png' : 'turn-coin-white-result.png';
+  const sequence = isFirst ? FANTASY_SPIN_TO_BLACK : FANTASY_SPIN_TO_WHITE;
+  const spinningFrame = sequence[Math.min(frameIdx, sequence.length - 1)];
+  const settledFrame = isFirst ? 'black/black_00_front.png' : 'white/white_02_front_a.png';
   const frame = phase === 'reveal' ? settledFrame : spinningFrame;
 
   return (
@@ -929,13 +950,6 @@ function FantasyCoinRoll({ active, result, playerName, onComplete, t }: FirstPla
           — {t.firstPlayerRollLabel} —
         </div>
         <div className="fantasy-coin-stage mx-auto mb-5">
-          <img
-            src={`${FANTASY_ASSET_BASE}turn-coin-magic-ring.png`}
-            alt=""
-            className={`fantasy-coin-ring ${phase === 'reveal' ? 'is-settled' : 'is-spinning'}`}
-            draggable={false}
-            aria-hidden="true"
-          />
           <img
             src={`${FANTASY_ASSET_BASE}${frame}`}
             alt=""
@@ -2811,44 +2825,16 @@ export default function App() {
           to   { opacity: 1; }
         }
 
-        /* Fantasy coin variant. The stage is a square that holds an
-           overlay magic ring (z=1) under the coin face (z=2). The ring
-           breathes softly while the coin spins, then bursts on settle.
-           Sized to fit comfortably on a phone in either orientation —
-           caps at 280px on tall viewports and shrinks to 56vmin on the
-           narrow side so it never crowds the side margins. */
+        /* Fantasy coin variant. Just the coin — the earlier magic-ring
+           underglow was removed at user request ("コイン下の光が邪魔").
+           Sized to fit comfortably on a phone in either orientation:
+           caps at 280px on tall viewports, 56vmin on the narrow side. */
         .fantasy-coin-stage {
           position: relative;
           width: min(56vmin, 280px);
           aspect-ratio: 1 / 1;
           display: grid;
           place-items: center;
-        }
-        .fantasy-coin-ring {
-          position: absolute;
-          inset: -8%;
-          width: 116%;
-          height: 116%;
-          object-fit: contain;
-          pointer-events: none;
-          opacity: 0;
-          transform: scale(0.85);
-          transition: opacity 0.45s ease, transform 0.65s ease;
-          filter: drop-shadow(0 0 18px rgba(170, 165, 235, 0.32));
-          z-index: 1;
-        }
-        .fantasy-coin-ring.is-spinning {
-          opacity: 0.65;
-          transform: scale(1);
-        }
-        .fantasy-coin-ring.is-settled {
-          opacity: 0.95;
-          transform: scale(1.06);
-          animation: fantasy-ring-pulse 1.6s ease-in-out infinite;
-        }
-        @keyframes fantasy-ring-pulse {
-          0%, 100% { opacity: 0.78; transform: scale(1.04); }
-          50%      { opacity: 1.00; transform: scale(1.10); }
         }
         .fantasy-coin-face {
           position: relative;
