@@ -319,6 +319,16 @@ export interface Messages {
     nextStepLabel: string;
     /** Final step CTA — "start the match". */
     startBattleLabel: string;
+    /** Step 4 — gateway-closed (mysterious door appears in the
+     *  floating space between arrival and the chapter card). */
+    gatewayClosedLabel: string;
+    gatewayClosedText: string;
+    gatewayClosedButton: string;
+    /** Step 5 — gateway-open (door bursts open, light + faint
+     *  audience cheers + idol-pop teaser). */
+    gatewayOpenLabel: string;
+    gatewayOpenText: string;
+    gatewayOpenButton: string;
   };
 
   // Scene archive (title-screen "replay past story scenes" UI)
@@ -646,17 +656,38 @@ export const ja: Messages = {
     fallingLabel: '転落',
     fallingVoice: '異邦の打ち手よ。盤上世界が、汝を求む。',
     arrivalLabel: '到着',
-    arrivalText: `気がつくと、ハルキはステージの真ん中に立っていた。
-ピンク色のスポットライト。ハートと星のバルーン。観客席はない。
-代わりに、オセロ盤が一台。
+    arrivalText: `気がつくと、ハルキは見知らぬ空間に立っていた。
+足元には**光るオセロ盤の床**。頭上には**黒と白の星々**が舞う夜空。
+遠くには**小さな浮島**がいくつも漂っている。
 
-——ここが、盤上世界。
-20人の達人を打ち破った者だけが、現代へと還れる場所。`,
+（はい、生きてる。指 10 本、ある。問題なし。）
+（……てかこれ、本当にどこ?）
+
+——ここが、**盤上世界**。
+ハルキを召喚した、**もうひとつの世界**。`,
     chapterLabel: (n) => `第 ${n} 章`,
     tapToContinue: 'タップして読む',
     tapToAdvance: 'タップして進む',
     nextStepLabel: '続きを読む →',
     startBattleLabel: '対局を始める →',
+    gatewayClosedLabel: '謎の扉',
+    gatewayClosedText: `── ふと気配を感じて振り返ると、目の前に、忽然と**一枚の扉**が現れていた。
+
+金の縁取り、**ハート型の取手**、ピンクの薔薇の彫刻。
+……いやどう見ても怪しい。
+
+（**召喚しといてここで放置**?? せめてエスコート役を寄越せよ神様……）
+
+ともあれ、ここを通らなければ、先には進めなさそうだ。`,
+    gatewayClosedButton: '扉を開ける →',
+    gatewayOpenLabel: '光の向こう',
+    gatewayOpenText: `ハルキが取手に手をかけた瞬間、扉は内側から**弾けるように**開いた。
+
+溢れ出す眩い光。降り注ぐ薔薇の花びら。
+遠くから聞こえる**歓声**と —— **きらびやかなアイドルソング**?
+
+（**召喚先がアイドルステージって、神々のセンスどうなってんの**??）`,
+    gatewayOpenButton: '光の中へ →',
   },
 
   archiveOpenLabel: '▸ これまでのシーンを再生する',
@@ -984,17 +1015,38 @@ your journey on the board reaches its close.`,
     fallingLabel: 'Falling',
     fallingVoice: 'Outer Hand. The Board World demands you.',
     arrivalLabel: 'Arrival',
-    arrivalText: `When Haruki regained his senses, he was standing in the centre of a stage.
-Pink spotlights. Heart-and-star balloons. No audience seats.
-Instead — a single othello board.
+    arrivalText: `When Haruki regained his senses, he was standing in an unfamiliar space.
+A **glowing othello-tile floor** beneath his feet. A night sky of **black and white stars** overhead.
+**Small floating islands** drifting in the distance.
 
-— This is the Board World.
-A place where only those who defeat all twenty masters may return to the modern world.`,
+*(Okay — alive. Ten fingers, present. All good.)*
+*(...But seriously, where the hell IS this?)*
+
+— This is the **Board World**.
+The other realm that **summoned** Haruki here.`,
     chapterLabel: (n) => `Chapter ${n}`,
     tapToContinue: 'tap to continue',
     tapToAdvance: 'tap to advance',
     nextStepLabel: 'continue →',
     startBattleLabel: 'begin the match →',
+    gatewayClosedLabel: 'Mysterious Door',
+    gatewayClosedText: `— Sensing something, Haruki turned around. Out of nowhere, **a single door** had appeared before him.
+
+Gold filigree trim. A **heart-shaped handle**. Pink rose carvings.
+…Yeah, this looks suspicious any way you slice it.
+
+*(They **summoned** me and just left me here?? Could the gods at least send an escort or something…)*
+
+Either way, it doesn't look like he can go further without passing through.`,
+    gatewayClosedButton: 'Open the Door →',
+    gatewayOpenLabel: 'Threshold',
+    gatewayOpenText: `The moment Haruki touched the handle, the door **burst open from within**.
+
+A flood of brilliant light. A cascade of rose petals.
+Distant **cheers** — and what sounded suspiciously like a **glittering idol song**?
+
+*(Whose idea was it to **summon** me onto an idol stage?? What is wrong with the gods' taste??)*`,
+    gatewayOpenButton: 'Step into the Light →',
   },
 
   archiveOpenLabel: '▸ Replay past scenes',

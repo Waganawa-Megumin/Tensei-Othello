@@ -41,10 +41,8 @@ A **vortex of black and white** erupted upward from beneath Haruki's feet, repai
   chapterStories: [
     // Ch.1 Ichika
     ch(
-      `When Haruki regained his senses, he was standing in the center of **a stage**.
+      `**Stepping through the door**, Haruki found himself standing in the center of **a stage**.
 Pink spotlights. Heart and star balloons. No audience seats. Instead — **a single othello board**.
-
-*(Whose idea was it to summon me onto an idol stage?! What's wrong with the gods' taste?!)*
 
 — And in front of him.
 

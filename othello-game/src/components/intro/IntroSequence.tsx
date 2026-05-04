@@ -19,6 +19,8 @@ import type { Messages, Locale } from '../../i18n/messages';
 import { PrologueScreen } from './PrologueScreen';
 import { FallingScreen } from './FallingScreen';
 import { ArrivalScreen } from './ArrivalScreen';
+import { GatewayClosedScreen } from './GatewayClosedScreen';
+import { GatewayOpenScreen } from './GatewayOpenScreen';
 import { ChapterIntroScreen } from './ChapterIntroScreen';
 
 interface Opponent {
@@ -28,7 +30,13 @@ interface Opponent {
   chapterArtBase?: string;
 }
 
-type Step = 'prologue' | 'falling' | 'arrival' | 'chapter';
+type Step =
+  | 'prologue'
+  | 'falling'
+  | 'arrival'
+  | 'gateway-closed'
+  | 'gateway-open'
+  | 'chapter';
 
 interface Props {
   t: Messages;
@@ -72,7 +80,15 @@ export function IntroSequence({
     case 'falling':
       return <FallingScreen t={t} onNext={() => setStep('arrival')} />;
     case 'arrival':
-      return <ArrivalScreen t={t} onNext={() => setStep('chapter')} />;
+      return <ArrivalScreen t={t} onNext={() => setStep('gateway-closed')} />;
+    case 'gateway-closed':
+      return (
+        <GatewayClosedScreen t={t} onNext={() => setStep('gateway-open')} />
+      );
+    case 'gateway-open':
+      return (
+        <GatewayOpenScreen t={t} onNext={() => setStep('chapter')} />
+      );
     case 'chapter':
       return (
         <ChapterIntroScreen
