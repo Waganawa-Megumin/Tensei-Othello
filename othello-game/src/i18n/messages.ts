@@ -312,6 +312,9 @@ export interface Messages {
     chapterLabel: (n: number) => string;
     /** "Tap to continue" hint shown during art-only phase. */
     tapToContinue: string;
+    /** Phase-B equivalent: shown after the voice / prose has been
+     *  revealed when the screen is tap-anywhere-to-advance. */
+    tapToAdvance: string;
     /** "→ next" caption on the bottom-right step button. */
     nextStepLabel: string;
     /** Final step CTA — "start the match". */
@@ -651,6 +654,7 @@ export const ja: Messages = {
 20人の達人を打ち破った者だけが、現代へと還れる場所。`,
     chapterLabel: (n) => `第 ${n} 章`,
     tapToContinue: 'タップして読む',
+    tapToAdvance: 'タップして進む',
     nextStepLabel: '続きを読む →',
     startBattleLabel: '対局を始める →',
   },
@@ -988,6 +992,7 @@ Instead — a single othello board.
 A place where only those who defeat all twenty masters may return to the modern world.`,
     chapterLabel: (n) => `Chapter ${n}`,
     tapToContinue: 'tap to continue',
+    tapToAdvance: 'tap to advance',
     nextStepLabel: 'continue →',
     startBattleLabel: 'begin the match →',
   },
