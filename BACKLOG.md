@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.28.1)
+Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.28.2)
 
 ---
 
@@ -66,6 +66,14 @@ Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.28.1)
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **2D コインの白面を金族から本来のオフホワイトに戻す** —
+      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (next push) — ユーザーフィードバック「白が金と同化する
+      ぐらい黄色」。`coin-2d-w` の背景が `#b8a36a`（アンティークゴー
+      ルド寄り）になっており、`#c9a961` の rim/pip と同系色で「白」
+      として読めなくなっていた。盤面の白石グラデ `#ebe2cc → #c5b89c`
+      の最も明るい段である `#ebe2cc` に揃えて、白面と金アクセントが
+      明確に別物として読めるように。`v0.28.2`
 - [x] **ファンタジーコインを「シンプル板」に差し替え（魔法陣下グロー
       撤去）+ 新フレーム16枚に更新** — completed: 2026-05-04 — by:
       `claude/othello-ui-autosave-bPnmY` — commit: (next push) —

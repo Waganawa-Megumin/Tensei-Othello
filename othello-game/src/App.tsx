@@ -2781,12 +2781,15 @@ export default function App() {
         .coin-2d-b {
           background: #1f1d18;
         }
-        /* Matte aged-paper / antique-gold off-white. Pulled toward
-           yellow and down in luminance so the flip toss stays calm
-           against the dark backdrop while still reading as the
-           "white" side of the coin. */
+        /* Off-white face — ivory in the same family as the white
+           pieces on the board (#ebe2cc → #c5b89c gradient). Earlier
+           passes pulled this toward antique gold (#b8a36a) to soften
+           the flip strobe, but at that luminance/hue it merged with
+           the gold rim and pip and stopped reading as "white" at all.
+           Sit at the white-piece's lightest tone so the coin's two
+           sides remain unambiguously dark vs. light. */
         .coin-2d-w {
-          background: #b8a36a;
+          background: #ebe2cc;
         }
         /* Pip is gold on both faces (matches the rim) so the rim and
            centre form a single visual family. The contrast that
