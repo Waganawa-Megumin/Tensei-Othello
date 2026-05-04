@@ -25,6 +25,19 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+/* Slower, smoother variant used for the FallingScreen voice. The
+ * regular textFadeIn was 0.6s ease-out; on a parent with a static
+ * Tailwind transform (e.g. -translate-y-1/2 for vertical centering)
+ * the animated transform overrode the parent's transform during
+ * the animation and snapped back to it on the final frame, which
+ * read as a jerky "gakku". This variant is meant to be applied to
+ * an *inner* element that has no static transform, so the snap
+ * doesn't happen, and the longer ease-in-out reads as a slow
+ * envelope rather than a quick reveal. */
+@keyframes voiceReveal {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @keyframes slowZoomFirst {
   from { transform: scale(0.95); opacity: 0.6; }
   to   { transform: scale(1.00); opacity: 1.0; }

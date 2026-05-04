@@ -79,17 +79,22 @@ export function FallingScreen({ t, onNext }: Props) {
       {/* Phase B: voice line overlaid above the bottom tap hint.
           Roughly vertically-centred (slightly above middle so the
           line doesn't fight with the cosmic core of the
-          composition) — the previous near-bottom placement felt
-          like a footer caption rather than the voice from the
-          heavens it's meant to be. */}
+          composition).
+          The animation lives on the *inner* <p>, not on the
+          positioning wrapper. The wrapper carries `-translate-y-1/2`
+          for centring; if we put the animation here the keyframe's
+          transform would override that for the duration and snap
+          back to `-50%` on the final frame, reading as a sharp
+          "gakku". Splitting it lets the wrapper hold the static
+          transform and the inner element fade in smoothly. */}
       {hasRevealed && (
-        <div
-          className="absolute inset-x-0 top-[42%] -translate-y-1/2 px-6 max-w-2xl mx-auto z-10"
-          style={{ animation: 'textFadeIn 0.6s ease-out' }}
-        >
+        <div className="absolute inset-x-0 top-[42%] -translate-y-1/2 px-6 max-w-2xl mx-auto z-10">
           <p
             className="jp-display text-center text-amber-100 text-base md:text-xl italic leading-relaxed"
-            style={{ textShadow: '0 0 18px rgba(0,0,0,0.85), 0 0 4px rgba(0,0,0,0.95)' }}
+            style={{
+              textShadow: '0 0 18px rgba(0,0,0,0.85), 0 0 4px rgba(0,0,0,0.95)',
+              animation: 'voiceReveal 1.4s ease-in-out both',
+            }}
           >
             『{t.intro.fallingVoice}』
           </p>
