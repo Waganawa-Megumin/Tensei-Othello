@@ -16,6 +16,14 @@ const CHARACTER_UNLOCKS_KEY = 'othello:character_unlocks';
 
 export const MAX_SLOTS = 10;
 export const INITIAL_LIVES = 5;
+/**
+ * Hard ceiling on `slot.lives`. Wins past this point don't accumulate —
+ * a single-digit cap keeps the UI clean (♥ N), keeps the lives mechanic
+ * tense (a streak of free-mode wins on a hard story chapter shouldn't
+ * grant infinite retries), and acts as a clamp for legacy saves that
+ * accumulated unbounded lives before this cap existed.
+ */
+export const MAX_LIVES = 9;
 export const TOTAL_BONUS_AVATARS = 20;
 export const SCHEMA_VERSION = 1 as const;
 
@@ -132,7 +140,9 @@ function migrateSlot(raw: unknown, id: number): SaveSlot {
         ? raw.storyProgress
         : base.storyProgress,
     lives:
-      typeof raw.lives === 'number' && raw.lives >= 0 ? raw.lives : base.lives,
+      typeof raw.lives === 'number' && raw.lives >= 0
+        ? Math.min(raw.lives, MAX_LIVES)
+        : base.lives,
     totalGames: typeof raw.totalGames === 'number' ? raw.totalGames : 0,
     wins: typeof raw.wins === 'number' ? raw.wins : 0,
     losses: typeof raw.losses === 'number' ? raw.losses : 0,
@@ -277,7 +287,7 @@ export async function recordSlotResult(input: RecordSlotResultInput): Promise<Sa
 
   if (result === 'win') {
     slot.wins += 1;
-    slot.lives += 1;
+    slot.lives = Math.min(MAX_LIVES, slot.lives + 1);
     if (isStory && slot.storyProgress < 20) {
       slot.storyProgress += 1;
     }

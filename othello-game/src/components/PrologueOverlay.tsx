@@ -28,12 +28,16 @@ export function PrologueOverlay({ prologue, dismissLabel, onDismiss }: PrologueO
 
   return (
     <div
-      className="fixed inset-0 z-[70] overflow-y-auto"
+      className="fixed inset-0 z-[70] overflow-y-auto bg-[#0a0805]"
       role="dialog"
       aria-modal="true"
       aria-label={prologue.title}
     >
-      {/* Background — illustration if present, falls back to dark stage */}
+      {/* Background — illustration if present, falls back to dark stage.
+          The wrapper above is solid `#0a0805` so the game board, coin
+          toss, and any other behind-the-overlay UI are fully occluded —
+          earlier the overlay let the stage bleed through and broke the
+          prologue's immersion. */}
       {imgOk && (
         <img
           src={imgSrc}
@@ -41,14 +45,14 @@ export function PrologueOverlay({ prologue, dismissLabel, onDismiss }: PrologueO
           aria-hidden
           onError={() => setImgOk(false)}
           className="fixed inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ opacity: 0.5 }}
+          style={{ opacity: 0.75 }}
         />
       )}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           background:
-            'linear-gradient(180deg, rgba(10,8,5,0.85) 0%, rgba(10,8,5,0.7) 40%, rgba(10,8,5,0.92) 100%)',
+            'linear-gradient(180deg, rgba(10,8,5,0.55) 0%, rgba(10,8,5,0.35) 40%, rgba(10,8,5,0.7) 100%)',
         }}
       />
 

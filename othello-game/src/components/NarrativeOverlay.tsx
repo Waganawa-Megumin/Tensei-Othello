@@ -41,7 +41,7 @@ export function NarrativeOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[70] overflow-y-auto"
+      className="fixed inset-0 z-[70] overflow-y-auto bg-[#0a0805]"
       role="dialog"
       aria-modal="true"
       aria-label={scene.title}
@@ -53,14 +53,14 @@ export function NarrativeOverlay({
           aria-hidden
           onError={() => setImgOk(false)}
           className="fixed inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ opacity: 0.5 }}
+          style={{ opacity: 0.75 }}
         />
       )}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           background:
-            'linear-gradient(180deg, rgba(10,8,5,0.88) 0%, rgba(10,8,5,0.68) 40%, rgba(10,8,5,0.94) 100%)',
+            'linear-gradient(180deg, rgba(10,8,5,0.55) 0%, rgba(10,8,5,0.35) 40%, rgba(10,8,5,0.7) 100%)',
         }}
       />
 
