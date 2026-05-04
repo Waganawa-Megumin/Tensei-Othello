@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.31.2 · lives-cap-and-prologue-occlusion';
+const BUILD_TAG = 'v0.31.3 · prologue-keep-and-archive';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -26,6 +26,11 @@ interface TitleScreenProps {
   activeSlot: { name: string; lives: number; storyProgress: number } | null;
   /** Opens the slot picker so the user can switch save. */
   onSwitchSlot: () => void;
+  /** True iff the active slot has at least one previously-seen story
+   *  scene. Gates whether the "回想 / Replay scenes" link renders. */
+  archiveAvailable: boolean;
+  /** Opens the scene-archive modal. */
+  onOpenArchive: () => void;
 }
 
 export function TitleScreen({
@@ -37,6 +42,8 @@ export function TitleScreen({
   onLocaleChange,
   activeSlot,
   onSwitchSlot,
+  archiveAvailable,
+  onOpenArchive,
 }: TitleScreenProps) {
   const hasProgress = storyProgress > 0 && storyProgress < 20;
   const completed = storyProgress >= 20;
@@ -171,6 +178,31 @@ export function TitleScreen({
               </span>
               <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">
                 {t.slotSwitch} ▸
+              </span>
+            </div>
+          )}
+          {archiveAvailable && (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenArchive();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenArchive();
+                }
+              }}
+              className="mb-3 px-2.5 py-1.5 border border-amber-200/15 rounded-sm flex items-center justify-between gap-2 hover:border-amber-200/40 hover:bg-amber-200/[0.04]"
+            >
+              <span className="jp-display italic text-amber-200/75 text-[11px]">
+                {t.archiveOpenLabel}
+              </span>
+              <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
+                ▸
               </span>
             </div>
           )}

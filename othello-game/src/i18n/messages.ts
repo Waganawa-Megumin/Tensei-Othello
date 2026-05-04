@@ -286,6 +286,20 @@ export interface Messages {
   livesLabel: string;
   livesGameOverWarning: string;
 
+  // Scene archive (title-screen "replay past story scenes" UI)
+  archiveOpenLabel: string;
+  archiveModalTitle: string;
+  archiveModalSubtitle: string;
+  archiveSceneLabels: {
+    prologue: string;
+    'narrative:solitude': string;
+    'narrative:allies': string;
+    'narrative:final': string;
+    ending: string;
+  };
+  archiveReplayLabel: string;
+  archiveCloseLabel: string;
+
   // Game over (lives = 0) screen
   gameOverScreenLabel: string;
   gameOverScreenTitle: string;
@@ -583,6 +597,19 @@ export const ja: Messages = {
   livesLabel: '残機',
   livesGameOverWarning: '残機がありません。次に勝つと 1 機回復します。',
 
+  archiveOpenLabel: '▸ これまでのシーンを再生する',
+  archiveModalTitle: 'シーン回想',
+  archiveModalSubtitle: 'これまでに通り過ぎたお話を、もう一度。',
+  archiveSceneLabels: {
+    prologue: '序章 「放課後、世界が転換する」',
+    'narrative:solitude': '幕間 「孤独な打ち手」',
+    'narrative:allies': '幕間 「同行者たちの影」',
+    'narrative:final': '幕間 「決戦の前夜」',
+    ending: '終章 「盤上世界、その先へ」',
+  },
+  archiveReplayLabel: '再生',
+  archiveCloseLabel: '閉じる',
+
   gameOverScreenLabel: 'Game Over',
   gameOverScreenTitle: 'ゲームオーバー',
   gameOverScreenProse: `残機が尽きた。
@@ -878,6 +905,19 @@ your journey on the board reaches its close.`,
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
   livesGameOverWarning: 'No lives left. Win the next match to recover one.',
+
+  archiveOpenLabel: '▸ Replay past scenes',
+  archiveModalTitle: 'Scene Archive',
+  archiveModalSubtitle: 'Re-watch the beats you’ve already passed.',
+  archiveSceneLabels: {
+    prologue: 'Prologue · After School, the World Turns',
+    'narrative:solitude': 'Interlude · The Solitary Player',
+    'narrative:allies': 'Interlude · Shadows of Companions',
+    'narrative:final': 'Interlude · The Eve of the Final Match',
+    ending: 'Ending · Beyond Bansho Sekai',
+  },
+  archiveReplayLabel: 'Play',
+  archiveCloseLabel: 'Close',
 
   gameOverScreenLabel: 'Game Over',
   gameOverScreenTitle: 'GAME OVER',

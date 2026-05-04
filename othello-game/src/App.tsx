@@ -56,6 +56,7 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { PrologueOverlay } from './components/PrologueOverlay';
 import { NarrativeOverlay } from './components/NarrativeOverlay';
 import {
+  getSeenOverlays,
   hasSeenOverlay,
   markOverlaySeen,
   type OverlayKey,
@@ -1490,6 +1491,12 @@ export default function App() {
   // Story overlay (prologue / narrative inserts / ending). Active key is
   // the OverlayKey we're currently displaying; null when none.
   const [storyOverlay, setStoryOverlay] = useState<OverlayKey | null>(null);
+  /** Re-watch a previously-seen story scene from the title-screen
+   *  archive. Distinct from `storyOverlay` because dismiss must NOT
+   *  call `reset()` — there's no chapter advance to chain into. */
+  const [reviewOverlay, setReviewOverlay] = useState<OverlayKey | null>(null);
+  /** Title-screen "scene archive" modal toggle. */
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   // Post-game review state
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -1694,9 +1701,12 @@ export default function App() {
     }
   }, [aiMode, storyProgress, gameMode, loadedKifuView]);
 
-  // Auto-show the prologue overlay the first time a save slot enters
-  // story mode at chapter 1. Once dismissed, `markOverlaySeen` records
-  // it so refreshes / further chapters don't re-trigger.
+  // Auto-show the prologue overlay until the slot has actually committed
+  // a match. Reading-and-dismissing alone doesn't lock it out — the user
+  // asked for the prologue to remain accessible until they've finished
+  // their first game so they can re-read it as part of getting into the
+  // story. Once `totalGames > 0` the prologue stops auto-firing and is
+  // only reachable from the title-screen archive link.
   useEffect(() => {
     if (screen !== 'game') return;
     if (gameMode !== 'ai' || aiMode !== 'story') return;
@@ -1704,11 +1714,10 @@ export default function App() {
     if (storyProgress !== 0) return;
     if (activeSlotId === null) return;
     if (storyOverlay !== null) return;
-    const slotKey = String(activeSlotId);
-    if (hasSeenOverlay(slotKey, 'prologue')) return;
+    if (activeSlot && activeSlot.totalGames > 0) return;
     setStoryOverlay('prologue');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, gameMode, aiMode, loadedKifuView, storyProgress, activeSlotId]);
+  }, [screen, gameMode, aiMode, loadedKifuView, storyProgress, activeSlotId, activeSlot]);
 
   // Auto-pass — passInfo intentionally NOT in deps: including it would
   // trigger the cleanup function on every state change and clear our own
@@ -3248,6 +3257,11 @@ export default function App() {
               : null
           }
           onSwitchSlot={() => setSlotPickerOpen(true)}
+          archiveAvailable={
+            activeSlotId !== null &&
+            getSeenOverlays(String(activeSlotId)).length > 0
+          }
+          onOpenArchive={() => setArchiveOpen(true)}
         />
         </div>
       )}
@@ -5367,6 +5381,116 @@ export default function App() {
         onSlotsChanged={setSlots}
         t={t}
       />
+
+      {/* Scene archive modal — lists already-seen story overlays for the
+          active slot so the player can re-watch them from the title.
+          Renders OUTSIDE the screen gate because the entry-point sits on
+          the title screen. */}
+      {archiveOpen && activeSlotId !== null && (() => {
+        const seen = getSeenOverlays(String(activeSlotId));
+        return (
+          <div
+            className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6"
+            onClick={() => setArchiveOpen(false)}
+          >
+            <div
+              className="bg-zinc-950/95 border border-amber-200/30 rounded-sm w-full max-w-md max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label={t.archiveModalTitle}
+            >
+              <div className="px-5 py-4 border-b border-amber-200/15">
+                <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.4em] uppercase mb-1">
+                  Archive
+                </div>
+                <h2 className="jp-display text-amber-100 text-lg tracking-wider">
+                  {t.archiveModalTitle}
+                </h2>
+                <p className="jp-display italic text-amber-200/65 text-xs mt-1">
+                  {t.archiveModalSubtitle}
+                </p>
+              </div>
+              <ul className="px-3 py-3 space-y-1.5">
+                {seen.map((key) => (
+                  <li key={key}>
+                    <button
+                      onClick={() => {
+                        setArchiveOpen(false);
+                        setReviewOverlay(key);
+                      }}
+                      className="w-full text-left px-3 py-2.5 border border-amber-200/15 rounded-sm hover:border-amber-200/45 hover:bg-amber-200/[0.04] flex items-center justify-between gap-3"
+                    >
+                      <span className="jp-display text-amber-100/90 text-sm">
+                        {t.archiveSceneLabels[key]}
+                      </span>
+                      <span className="latin-display italic text-amber-200/65 text-[11px] tracking-wider whitespace-nowrap">
+                        {t.archiveReplayLabel} ▸
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="px-5 py-3 border-t border-amber-200/15 flex justify-end">
+                <button
+                  onClick={() => setArchiveOpen(false)}
+                  className="px-4 py-1.5 border border-amber-200/40 hover:border-amber-200 text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display text-xs tracking-wider"
+                >
+                  {t.archiveCloseLabel}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Review-mode story overlays. Mounted OUTSIDE the screen gate so
+          the player can re-watch a scene from the title screen without
+          first entering a match. Dismiss closes; we don't re-mark seen
+          (already seen) and we don't run reset() (no chapter to chain). */}
+      {reviewOverlay === 'prologue' && (
+        <PrologueOverlay
+          prologue={t.story.prologue}
+          dismissLabel={t.archiveCloseLabel}
+          onDismiss={() => setReviewOverlay(null)}
+        />
+      )}
+      {reviewOverlay === 'narrative:solitude' && (
+        <NarrativeOverlay
+          scene={t.story.narrative.solitude}
+          imageBaseName="solitude"
+          tone={locale === 'ja' ? '幕間' : 'Interlude'}
+          dismissLabel={t.archiveCloseLabel}
+          onDismiss={() => setReviewOverlay(null)}
+        />
+      )}
+      {reviewOverlay === 'narrative:allies' && (
+        <NarrativeOverlay
+          scene={t.story.narrative.allies}
+          imageBaseName="allies"
+          tone={locale === 'ja' ? '幕間' : 'Interlude'}
+          dismissLabel={t.archiveCloseLabel}
+          onDismiss={() => setReviewOverlay(null)}
+        />
+      )}
+      {reviewOverlay === 'narrative:final' && (
+        <NarrativeOverlay
+          scene={t.story.narrative.final}
+          imageBaseName="final"
+          tone={locale === 'ja' ? '幕間' : 'Interlude'}
+          dismissLabel={t.archiveCloseLabel}
+          onDismiss={() => setReviewOverlay(null)}
+        />
+      )}
+      {reviewOverlay === 'ending' && (
+        <NarrativeOverlay
+          scene={t.story.endingFull}
+          imageBaseName="ending"
+          tone={locale === 'ja' ? '終章' : 'Finale'}
+          dismissLabel={t.archiveCloseLabel}
+          onDismiss={() => setReviewOverlay(null)}
+        />
+      )}
     </>
   );
 }

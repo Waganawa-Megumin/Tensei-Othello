@@ -40,6 +40,27 @@ export function markOverlaySeen(slotId: string, overlay: OverlayKey): void {
 }
 
 /**
+ * Enumerate the overlays the slot has ever seen. Used by the title-
+ * screen archive UI to show only the scenes the player has unlocked,
+ * preserving "go back and re-read past beats" without spoiling future
+ * ones.
+ *
+ * Returned in canonical story order (prologue → narrative inserts →
+ * ending) regardless of localStorage iteration order.
+ */
+const OVERLAY_ORDER: readonly OverlayKey[] = [
+  'prologue',
+  'narrative:solitude',
+  'narrative:allies',
+  'narrative:final',
+  'ending',
+];
+
+export function getSeenOverlays(slotId: string): OverlayKey[] {
+  return OVERLAY_ORDER.filter((key) => hasSeenOverlay(slotId, key));
+}
+
+/**
  * Drop all overlay-seen flags for a slot. Used when the user resets
  * a save slot or starts a brand-new one, so the prologue + narrative
  * beats fire fresh on the next playthrough.
