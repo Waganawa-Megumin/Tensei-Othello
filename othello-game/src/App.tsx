@@ -39,8 +39,7 @@ import {
   createInitialBoard,
   getValidMoves,
 } from './engine/board';
-import { ENGINES } from './engine/engines/registry';
-import type { EngineId } from './engine/engines/types';
+import { pickAIMove } from './engine/ai';
 import {
   BLACK,
   EMPTY,
@@ -53,7 +52,6 @@ import {
   type ValidMove,
 } from './engine/types';
 import { useAiWorker } from './hooks/useAiWorker';
-import { loadAiEngine, saveAiEngine } from './storage/aiEngine';
 import { loadCommentaryEnabled, saveCommentaryEnabled } from './storage/commentary';
 import { fetchCharacterCommentary } from './services/commentary';
 import type { CommentaryResult } from './prompts/commentary';
@@ -1314,16 +1312,6 @@ export default function App() {
     saveCoinStyle(style);
   }, []);
 
-  // Free-mode AI engine. Story mode is locked to Tensei Classic so the
-  // story progression remains comparable across save slots; only free
-  // mode reads `aiEngine` for actual move generation (see the AI useEffect
-  // and toggleHint below).
-  const [aiEngine, setAiEngineState] = useState<EngineId>(loadAiEngine);
-  const setAiEngine = useCallback((engine: EngineId) => {
-    setAiEngineState(engine);
-    saveAiEngine(engine);
-  }, []);
-
   // Opt-in LLM character commentary. Each match makes a few dozen
   // Anthropic API calls when ON, so this defaults OFF and is only
   // changed via the Settings panel.
@@ -1454,10 +1442,6 @@ export default function App() {
 
   // UI state
   const [hintMove, setHintMove] = useState<Move | null>(null);
-  // True while a hint is being computed via the worker. Edax can take
-  // 100–300ms to load WASM on first use; a tiny spinner on the hint
-  // button avoids the appearance of a missed click.
-  const [hintLoading, setHintLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screen, setScreen] = useState<Screen>('title');
 
@@ -1705,13 +1689,9 @@ export default function App() {
     const delay = 450 + Math.min(level * 35, 700);
     let cancelled = false;
     const aiColor = opponent(playerColor);
-    // Story mode is locked to Tensei Classic so progression remains
-    // comparable across save slots. Only free mode honors the engine
-    // the user picked in Settings.
-    const engine: EngineId = aiMode === 'story' ? 'tensei-classic' : aiEngine;
     const timer = window.setTimeout(() => {
       ai
-        .requestMove(board, aiColor, level, engine)
+        .requestMove(board, aiColor, level)
         .then((move) => {
           if (cancelled || !move) return;
           doMoveRef.current(move.row, move.col);
@@ -1730,7 +1710,7 @@ export default function App() {
       setAiThinking(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo, playerColor, firstPlayerRoll, aiEngine, aiMode]);
+  }, [currentColor, gameMode, board, level, gameOver, noCurrent, passInfo, playerColor, firstPlayerRoll]);
 
   // Fire-and-forget LLM character commentary after the AI side's
   // moves. Strictly opt-in (commentaryEnabled), AI-mode only, and
@@ -2424,31 +2404,10 @@ export default function App() {
       setHintMove(null);
       return;
     }
-    if (
-      !isHumanTurn ||
-      aiThinking ||
-      hintLoading ||
-      gameOver ||
-      noCurrent ||
-      passInfo !== null
-    )
-      return;
+    if (!isHumanTurn || aiThinking || gameOver || noCurrent || passInfo !== null) return;
     const strongLevel = Math.min(20, Math.max(level + 4, 16));
-    // Hint follows the engine the user picked for the match, with the
-    // same story-mode override as the AI move effect. Story mode keeps
-    // the classic engine; free mode delegates to whatever's selected
-    // (Edax or Tensei Classic).
-    const engine: EngineId = aiMode === 'story' ? 'tensei-classic' : aiEngine;
-    setHintLoading(true);
-    void ai
-      .requestMove(board, currentColor, strongLevel, engine)
-      .then((move) => {
-        if (move) setHintMove({ row: move.row, col: move.col });
-      })
-      .catch(() => {
-        /* worker may have been cancelled by an AI move starting; ignore */
-      })
-      .finally(() => setHintLoading(false));
+    const move = pickAIMove(board, validMoves, strongLevel, currentColor);
+    if (move) setHintMove({ row: move.row, col: move.col });
   }
 
   function selectCharacter(idx: number) {
@@ -5084,55 +5043,6 @@ export default function App() {
                         <p className="jp-display italic text-amber-200/55 text-[11px] mt-1.5 leading-relaxed">
                           {t.aiComputeNote}
                         </p>
-                      </div>
-
-                      {/* AI engine picker. The whole `aiMode === 'free'`
-                          branch we're in already excludes story mode,
-                          which is locked to Tensei Classic at the
-                          worker dispatch site. */}
-                      <div className="mt-5">
-                        <h3 className="jp-display text-amber-100/90 text-sm md:text-base tracking-[0.25em] mb-3 pb-2 border-b border-amber-200/15">
-                          {t.aiEngineLabel}
-                          <span className="latin-display italic text-amber-200/65 text-xs ml-2 normal-case tracking-wider">
-                            — {t.aiEngineSubtitle}
-                          </span>
-                        </h3>
-                        <div className="grid grid-cols-2 gap-2">
-                          {ENGINES.map((eng) => {
-                            const active = aiEngine === eng.id;
-                            const desc =
-                              eng.descriptionKey === 'tenseiClassicDesc'
-                                ? t.tenseiClassicDesc
-                                : t.edaxDesc;
-                            return (
-                              <button
-                                key={eng.id}
-                                onClick={() => setAiEngine(eng.id)}
-                                className={`text-left rounded-sm border py-2.5 px-3 transition-all ${
-                                  active
-                                    ? 'border-amber-200/70 bg-amber-200/[0.06] text-amber-100'
-                                    : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02] text-amber-100/85'
-                                }`}
-                                aria-pressed={active}
-                              >
-                                <div className="latin-display italic text-sm tracking-wider">
-                                  {eng.displayName}
-                                </div>
-                                <div className="jp-display italic text-amber-200/70 text-[11px] mt-0.5 leading-snug">
-                                  {desc}
-                                </div>
-                                <div className="latin-display italic text-amber-200/45 text-[10px] mt-1 tracking-wider">
-                                  {eng.attribution}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {aiEngine === 'edax' && (
-                          <p className="jp-display italic text-amber-200/55 text-[11px] mt-2 leading-relaxed">
-                            {t.edaxMissingNote}
-                          </p>
-                        )}
                       </div>
                     </>
                   )}

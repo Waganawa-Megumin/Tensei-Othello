@@ -3,7 +3,6 @@ import type {
   AiWorkerResponse,
   PickMoveRequest,
 } from '../workers/ai.worker';
-import type { EngineId } from '../engine/engines/types';
 import type { Board, Color, ValidMove } from '../engine/types';
 
 interface PendingResolver {
@@ -16,15 +15,9 @@ export interface UseAiWorker {
    * Ask the worker to pick a move. Returns a Promise that resolves with the
    * chosen `ValidMove`, or `null` when there are no legal moves. If a newer
    * request comes in before the previous one resolves, the older one is
-   * cancelled (rejected). `engine` selects which back-end the worker uses;
-   * omit it to keep the legacy Tensei Classic behaviour.
+   * cancelled (rejected).
    */
-  requestMove: (
-    board: Board,
-    color: Color,
-    level: number,
-    engine?: EngineId,
-  ) => Promise<ValidMove | null>;
+  requestMove: (board: Board, color: Color, level: number) => Promise<ValidMove | null>;
   /** Cancel any in-flight request without sending a new one. */
   cancel: () => void;
 }
@@ -71,7 +64,7 @@ export function useAiWorker(): UseAiWorker {
   }, []);
 
   const requestMove = useCallback<UseAiWorker['requestMove']>(
-    (board, color, level, engine) =>
+    (board, color, level) =>
       new Promise<ValidMove | null>((resolve, reject) => {
         const worker = workerRef.current;
         if (!worker) {
@@ -84,7 +77,6 @@ export function useAiWorker(): UseAiWorker {
         const request: PickMoveRequest = {
           type: 'pickMove',
           requestId,
-          engine,
           board,
           color,
           level,

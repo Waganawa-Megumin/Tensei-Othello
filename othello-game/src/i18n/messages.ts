@@ -94,15 +94,6 @@ export interface Messages {
   coinStyleFantasy: string;
   coinStyleFantasyDesc: string;
 
-  // Free-mode AI engine selector
-  aiEngineLabel: string;
-  aiEngineSubtitle: string;
-  tenseiClassicDesc: string;
-  edaxDesc: string;
-  /** Tiny note shown under the Edax card when the WASM artifact is
-   *  missing (i.e. dev hasn't built it yet). */
-  edaxMissingNote: string;
-
   // Settings → commentary toggle
   commentaryLabel: string;
   commentarySubtitle: string;
@@ -389,12 +380,6 @@ export const ja: Messages = {
   coinStyle2DDesc: 'シンプルな白黒の円盤がくるりと回る',
   coinStyleFantasy: 'ファンタジー',
   coinStyleFantasyDesc: '銀縁に紋様、淡い魔法陣でゆっくり着地',
-
-  aiEngineLabel: 'AI エンジン',
-  aiEngineSubtitle: '思考ロジックを切替',
-  tenseiClassicDesc: '内蔵のハイブリッド AI。レベル連動で軽量・即応。',
-  edaxDesc: '上級者向けの WASM 製エンジン (~2400 ELO)。初回のみ約1MBをロードします。',
-  edaxMissingNote: '※ ローカルビルド要 (scripts/build-edax-wasm.sh)。未配置時は Tensei Classic にフォールバック。',
 
   commentaryLabel: 'AI キャラ実況',
   commentarySubtitle: 'キャラが LLM で口調をつけて反応',
@@ -688,12 +673,6 @@ export const en: Messages = {
   coinStyle2DDesc: 'A clean black/white disc that spins to a stop.',
   coinStyleFantasy: 'Fantasy',
   coinStyleFantasyDesc: 'Silver-rimmed engraved coin lands on a soft magic ring.',
-
-  aiEngineLabel: 'AI engine',
-  aiEngineSubtitle: 'Pick the thinking back-end',
-  tenseiClassicDesc: 'Built-in hybrid AI. Light, level-graded, instant.',
-  edaxDesc: 'Strong WASM port (~2400 ELO). One-time ~1MB load, snappy after.',
-  edaxMissingNote: 'Local build required (scripts/build-edax-wasm.sh). Falls back to Tensei Classic until present.',
 
   commentaryLabel: 'Character commentary',
   commentarySubtitle: 'Let the LLM voice your opponent',

@@ -8,10 +8,3 @@ dist/
 .wrangler/
 android/app/build/
 android/.gradle/
-
-# Edax-WASM local build (see othello-game/scripts/build-edax-wasm.sh).
-# The emsdk install + edax source clone live here so they don't end up
-# in every developer's git status; the built artifact lands under
-# othello-game/public/edax/ which IS checked in once produced.
-.emsdk/
-.tmp/
