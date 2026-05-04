@@ -2199,7 +2199,22 @@ export default function App() {
     doMove(row, col);
   }
 
-  function reset() {
+  /**
+   * Reset the board and roll first-player.
+   *
+   * `modeHint` lets the caller declare the mode the *next* match will
+   * run as. Critical for callers who set `gameMode` / `aiMode` and
+   * synchronously invoke `reset()` in the same tick — those state
+   * updates haven't been applied yet, so reading `gameMode` / `aiMode`
+   * from closure inside reset would see the PREVIOUS match's mode and
+   * dispatch the coin-flip down the wrong branch (e.g. previous free
+   * mode with `firstPlayerPref='second'` → permanently white in the
+   * brand-new story match). When omitted (in-game "新規" button),
+   * we trust the live React state because no transition is in flight.
+   */
+  function reset(modeHint?: { gameMode: GameMode; aiMode: AiMode }) {
+    const effectiveGameMode = modeHint?.gameMode ?? gameMode;
+    const effectiveAiMode = modeHint?.aiMode ?? aiMode;
     setBoard(createInitialBoard());
     setCurrentColor(BLACK);
     setLastMove(null);
@@ -2225,8 +2240,8 @@ export default function App() {
     // a coin-flip with animation; free with 'random' = same; free with
     // 'first'/'second' = deterministic, no animation; two-player =
     // doesn't apply (both panels are humans, leave at BLACK).
-    const isStory = aiMode === 'story' && gameMode === 'ai';
-    const isFree = aiMode === 'free' && gameMode === 'ai';
+    const isStory = effectiveAiMode === 'story' && effectiveGameMode === 'ai';
+    const isFree = effectiveAiMode === 'free' && effectiveGameMode === 'ai';
     if (isStory || (isFree && firstPlayerPref === 'random')) {
       const next: Color = Math.random() < 0.5 ? BLACK : WHITE;
       setPlayerColor(next);
@@ -2281,7 +2296,7 @@ export default function App() {
   function startGame(selection: TitleStartMode) {
     if (selection.mode === 'human') {
       setGameMode('human');
-      reset();
+      reset({ gameMode: 'human', aiMode });
       setScreen('game');
       return;
     }
@@ -2294,7 +2309,7 @@ export default function App() {
       }
       setGameMode('ai');
       setAiMode('story');
-      reset();
+      reset({ gameMode: 'ai', aiMode: 'story' });
       setScreen('game');
       return;
     }
@@ -2316,7 +2331,7 @@ export default function App() {
     setSlotPickerOpen(false);
     setGameMode('ai');
     setAiMode('story');
-    reset();
+    reset({ gameMode: 'ai', aiMode: 'story' });
     setScreen('game');
   }
 
@@ -2511,9 +2526,10 @@ export default function App() {
     setComputerChar(idx);
     setLevel(level);
     setGameMode('ai');
-    setAiMode(isFrontier ? 'story' : 'free');
+    const nextAiMode: AiMode = isFrontier ? 'story' : 'free';
+    setAiMode(nextAiMode);
     setSettingsOpen(false);
-    reset();
+    reset({ gameMode: 'ai', aiMode: nextAiMode });
     setScreen('game');
   }
 
@@ -3865,7 +3881,7 @@ export default function App() {
                       >
                         {t.slotSwitch}
                       </button>
-                      <button onClick={reset} className="btn">
+                      <button onClick={() => reset()} className="btn">
                         {t.gameOverTryAgainNoLives}
                       </button>
                       <button
@@ -4157,7 +4173,7 @@ export default function App() {
                         {t.nextChapter}
                       </button>
                     ) : (
-                      <button onClick={reset} className="btn">
+                      <button onClick={() => reset()} className="btn">
                         {t.oneMore}
                       </button>
                     )}
