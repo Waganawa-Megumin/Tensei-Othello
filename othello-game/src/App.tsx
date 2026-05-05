@@ -2205,8 +2205,26 @@ export default function App() {
   }, [doMove]);
 
   function handleClick(row: number, col: number) {
-    if (!isHumanTurn || aiThinking || gameOver || passInfo !== null) return;
+    // `aiThinking` was previously part of this gate, but a recurring
+    // freeze at endgame ("can't play the last move, board doesn't
+    // respond") was traced to `aiThinking` getting stuck `true` in
+    // edge cases where the AI worker silently dies / never replies
+    // and the watchdog hasn't yet kicked in. Drop it here:
+    // `isHumanTurn` (= currentColor === playerColor) already proves
+    // the AI shouldn't be thinking. If the flag is somehow still
+    // true on the human's turn that's the stale state — let the
+    // human play through it instead of locking the board. We also
+    // proactively reset the flag below so the AI useEffect's next
+    // re-run starts from a clean state.
+    if (!isHumanTurn || gameOver || passInfo !== null) return;
     if (!validMoveMap.has(moveKey(row, col))) return;
+    if (aiThinking) {
+      // Defensive: surfaced state was aiThinking-true on the human's
+      // turn, which is impossible by design. Clear it + cancel any
+      // in-flight worker request so the next AI cycle starts clean.
+      ai.cancel();
+      setAiThinking(false);
+    }
     // First user click after loading a kifu means they want to resume
     // play, not just review — exit the loaded-view gate so subsequent
     // gameOver flow records normally.
