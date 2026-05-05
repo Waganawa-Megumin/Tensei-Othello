@@ -1504,6 +1504,12 @@ export default function App() {
   const [reviewOverlay, setReviewOverlay] = useState<OverlayKey | null>(null);
   /** Title-screen "scene archive" modal toggle. */
   const [archiveOpen, setArchiveOpen] = useState(false);
+  /** Spell-cast modal — types-the-magic-words → unlock-all path. */
+  const [spellOpen, setSpellOpen] = useState(false);
+  const [spellInput, setSpellInput] = useState('');
+  const [spellResult, setSpellResult] = useState<'success' | 'failure' | null>(
+    null,
+  );
 
   // Post-game review state
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -5478,6 +5484,31 @@ export default function App() {
                     </p>
                   </>
                 )}
+                {/* Magic-spell unlock-all — counterpart to the
+                    🔒 reset above. Opens a small modal that takes
+                    a phrase; matching the locale's `spellCipher`
+                    sets unlockedCount to TOTAL_BONUS_AVATARS so the
+                    full roster is selectable for the "I just want
+                    to see every avatar" use case. Visible always
+                    so it's discoverable; the gating is the spell
+                    string, not the button visibility. */}
+                {unlockedCount < TOTAL_BONUS_AVATARS && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setSpellInput('');
+                        setSpellResult(null);
+                        setSpellOpen(true);
+                      }}
+                      className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
+                    >
+                      🪄 {t.spellButtonLabel}
+                    </button>
+                    <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
+                      {t.spellButtonDesc}
+                    </p>
+                  </>
+                )}
                 {/* Emergency reload — last-resort escape hatch for
                     stuck states (UI freeze, stale PWA cache, etc.).
                     Unregisters every Service Worker, wipes their
@@ -5546,6 +5577,106 @@ export default function App() {
         onSlotsChanged={setSlots}
         t={t}
       />
+
+      {/* Magic-spell modal — unlocks every bonus character on a
+          locale-specific cipher match. Input is normalized (trim +
+          lowercase + strip ASCII / JP punctuation) so common typing
+          variants of the spell still resolve. */}
+      {spellOpen && (
+        <div
+          className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6"
+          onClick={() => setSpellOpen(false)}
+        >
+          <div
+            className="bg-zinc-950/95 border border-amber-200/30 rounded-sm w-full max-w-md max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t.spellModalTitle}
+          >
+            <div className="px-5 py-4 border-b border-amber-200/15">
+              <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.4em] uppercase mb-1">
+                Spell
+              </div>
+              <h2 className="jp-display text-amber-100 text-lg tracking-wider">
+                {t.spellModalTitle}
+              </h2>
+              <p className="jp-display italic text-amber-200/65 text-xs mt-1">
+                {t.spellModalSubtitle}
+              </p>
+            </div>
+            <div className="px-5 py-5 space-y-3">
+              <p className="jp-display italic text-amber-200/75 text-[12px] leading-relaxed">
+                {renderEmphasized(t.spellModalHint)}
+              </p>
+              <input
+                type="text"
+                value={spellInput}
+                onChange={(e) => {
+                  setSpellInput(e.target.value);
+                  if (spellResult !== null) setSpellResult(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  const norm = (s: string) =>
+                    s
+                      .normalize('NFKC')
+                      .toLowerCase()
+                      .replace(/[\s、。！!？?「」・]/g, '');
+                  if (norm(spellInput) === norm(t.spellCipher)) {
+                    setUnlockedCount(TOTAL_BONUS_AVATARS);
+                    void setCharacterUnlocks(TOTAL_BONUS_AVATARS);
+                    setSpellResult('success');
+                  } else {
+                    setSpellResult('failure');
+                  }
+                }}
+                placeholder={t.spellPlaceholder}
+                autoFocus
+                className="w-full px-3 py-2 bg-zinc-900/80 border border-amber-200/25 focus:border-amber-200/70 outline-none rounded-sm jp-display text-amber-100 text-sm tracking-wider"
+              />
+              {spellResult === 'success' && (
+                <p className="jp-display text-amber-200 text-sm leading-relaxed">
+                  {t.spellSuccess}
+                </p>
+              )}
+              {spellResult === 'failure' && (
+                <p className="jp-display italic text-amber-200/70 text-xs leading-relaxed">
+                  {t.spellFailure}
+                </p>
+              )}
+            </div>
+            <div className="px-5 py-3 border-t border-amber-200/15 flex justify-end gap-2">
+              <button
+                onClick={() => setSpellOpen(false)}
+                className="px-4 py-1.5 border border-amber-200/40 hover:border-amber-200 text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display text-xs tracking-wider"
+              >
+                {t.spellCancelLabel}
+              </button>
+              <button
+                onClick={() => {
+                  const norm = (s: string) =>
+                    s
+                      .normalize('NFKC')
+                      .toLowerCase()
+                      .replace(/[\s、。！!?？「」・]/g, '');
+                  if (norm(spellInput) === norm(t.spellCipher)) {
+                    setUnlockedCount(TOTAL_BONUS_AVATARS);
+                    void setCharacterUnlocks(TOTAL_BONUS_AVATARS);
+                    setSpellResult('success');
+                  } else {
+                    setSpellResult('failure');
+                  }
+                }}
+                className="px-4 py-1.5 border border-amber-200/70 text-amber-100 bg-amber-200/[0.06] hover:bg-amber-200/[0.12] rounded-sm jp-display text-xs tracking-wider"
+              >
+                🪄 {t.spellSubmitLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Scene archive modal — lists already-seen story overlays for the
           active slot so the player can re-watch them from the title.

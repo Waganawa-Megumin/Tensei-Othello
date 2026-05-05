@@ -295,6 +295,22 @@ export interface Messages {
   unlockResetConfirm: string;
   emergencyReloadLabel: string;
   emergencyReloadDesc: string;
+  /** Spell that unlocks every bonus character at once. The cipher is
+   *  intentionally locale-specific so the wordplay lands in each
+   *  language. JA: 「ばんじょうぜんてんかいほう」 (盤上全転解放 —
+   *  "board / flip-everything / unleash"). EN: "flip them all"
+   *  (echoes the title-screen tagline). */
+  spellCipher: string;
+  spellButtonLabel: string;
+  spellButtonDesc: string;
+  spellModalTitle: string;
+  spellModalSubtitle: string;
+  spellModalHint: string;
+  spellPlaceholder: string;
+  spellSubmitLabel: string;
+  spellCancelLabel: string;
+  spellSuccess: string;
+  spellFailure: string;
 
   // Multi-step story intro flow (PrologueScreen / FallingScreen /
   // ArrivalScreen / ChapterIntroScreen). Ja keys mirror the spec in
@@ -656,6 +672,19 @@ export const ja: Messages = {
   emergencyReloadLabel: '緊急再読み込み (キャッシュ削除)',
   emergencyReloadDesc:
     '画面が固まった / 古い表示のままの時に。Service Worker のキャッシュを削除して最新版を読み込み直します。セーブデータは消えません。',
+  spellCipher: 'ばんじょうぜんてんかいほう',
+  spellButtonLabel: '魔法の呪文を唱える',
+  spellButtonDesc:
+    '正しい呪文を唱えると、すべての追加キャラクターが一気に解放されます。「カンスト状態のアバター棚を眺めたい」とき用の隠しコマンドです。',
+  spellModalTitle: '🪄 魔法の呪文',
+  spellModalSubtitle: '盤上世界の鍵を、ことばで開く。',
+  spellModalHint:
+    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。',
+  spellPlaceholder: '呪文をひらがなで入力',
+  spellSubmitLabel: '唱える',
+  spellCancelLabel: '閉じる',
+  spellSuccess: '── 盤上世界、ひらく。すべての打ち手、解き放たれた。',
+  spellFailure: '……ふぅん。神々はその名前で呼ばれていないようだ。',
 
   intro: {
     prologueLabel: '序章',
@@ -1019,6 +1048,19 @@ your journey on the board reaches its close.`,
   emergencyReloadLabel: 'Emergency reload (clear cache)',
   emergencyReloadDesc:
     "Use this if the screen has frozen or you're stuck on an old build. Wipes the Service Worker cache and pulls the latest. Save data is preserved.",
+  spellCipher: 'flip them all',
+  spellButtonLabel: 'Cast the magic spell',
+  spellButtonDesc:
+    "Say the right phrase aloud and every bonus character is unlocked at once. A hidden command for when you want to stare at a fully-unlocked roster without grinding to chapter 20.",
+  spellModalTitle: '🪄 Magic Spell',
+  spellModalSubtitle: 'Open the gate of the Board World with a word.',
+  spellModalHint:
+    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**",
+  spellPlaceholder: 'whisper the spell',
+  spellSubmitLabel: 'cast',
+  spellCancelLabel: 'close',
+  spellSuccess: '— The Board World opens. Every player has been set free.',
+  spellFailure: "...Hmm. The gods don't seem to know that name.",
 
   intro: {
     prologueLabel: 'Prologue',
