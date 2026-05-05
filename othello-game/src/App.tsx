@@ -3554,10 +3554,22 @@ export default function App() {
                     >
                       {displayBoard.map((row, r) =>
                         row.map((cell: Disc, c) => {
+                          // `aiThinking` was previously part of this
+                          // gate, which made it AND the move-hint dot
+                          // disappear if the flag ever stuck `true`
+                          // on the human's turn — the same endgame
+                          // freeze v0.33.4 tried to address inside
+                          // handleClick. The cell-level short-circuit
+                          // (`onClick={() => isValid && ...}`) ran
+                          // *before* handleClick could hit, so that
+                          // fix was incomplete. `isHumanTurn` already
+                          // proves it's the human's turn, so drop the
+                          // aiThinking term here too — handleClick's
+                          // own defensive `ai.cancel()` clears the
+                          // stale flag on the way through.
                           const isValid =
                             validMoveMap.has(moveKey(r, c)) &&
                             isHumanTurn &&
-                            !aiThinking &&
                             !gameOver &&
                             passInfo === null &&
                             !loadedKifuView;
