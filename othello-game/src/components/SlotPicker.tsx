@@ -7,6 +7,7 @@ import {
   type SaveSlot,
   MAX_SLOTS,
 } from '../storage/saveSlots';
+import { resetOverlaysSeen } from '../storage/storyOverlays';
 import type { Messages } from '../i18n/messages';
 
 interface SlotPickerProps {
@@ -75,6 +76,13 @@ export function SlotPicker({
   async function handleReset(id: number) {
     if (!window.confirm(t.slotResetConfirm)) return;
     const next = await resetSlot(id);
+    // Clear the per-slot story-overlay "have I seen this scene yet?"
+    // flags too — otherwise the prologue + narrative inserts would
+    // remain in the archive (and skip auto-firing) on a slot the
+    // user just rewound to chapter 1. The slot data lives in
+    // localStorage under SLOTS_KEY, the overlay flags live under
+    // their own per-slot prefix; resetSlot only touches the former.
+    resetOverlaysSeen(String(id));
     onSlotsChanged(next);
   }
 

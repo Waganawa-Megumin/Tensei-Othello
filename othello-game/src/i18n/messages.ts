@@ -293,6 +293,8 @@ export interface Messages {
   unlockResetLabel: string;
   unlockResetDesc: (current: number) => string;
   unlockResetConfirm: string;
+  emergencyReloadLabel: string;
+  emergencyReloadDesc: string;
 
   // Multi-step story intro flow (PrologueScreen / FallingScreen /
   // ArrivalScreen / ChapterIntroScreen). Ja keys mirror the spec in
@@ -650,6 +652,9 @@ export const ja: Messages = {
     `現在 ${current} 体の追加キャラクターが解放されています。タップでハルキ以外をすべてロックし直します。`,
   unlockResetConfirm:
     '解放済みのキャラクターをすべてロックし、選択中のアバターも初期 (ハルキ) に戻します。よろしいですか？',
+  emergencyReloadLabel: '緊急再読み込み (キャッシュ削除)',
+  emergencyReloadDesc:
+    '画面が固まった / 古い表示のままの時に。Service Worker のキャッシュを削除して最新版を読み込み直します。セーブデータは消えません。',
 
   intro: {
     prologueLabel: '序章',
@@ -1009,6 +1014,9 @@ your journey on the board reaches its close.`,
     `${current} bonus characters are currently unlocked. Tap to relock everyone except Haruki.`,
   unlockResetConfirm:
     'This will relock every bonus character and reset your selected avatars to Haruki. Continue?',
+  emergencyReloadLabel: 'Emergency reload (clear cache)',
+  emergencyReloadDesc:
+    "Use this if the screen has frozen or you're stuck on an old build. Wipes the Service Worker cache and pulls the latest. Save data is preserved.",
 
   intro: {
     prologueLabel: 'Prologue',

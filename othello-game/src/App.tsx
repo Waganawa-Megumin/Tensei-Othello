@@ -59,6 +59,7 @@ import {
   getSeenOverlays,
   hasSeenOverlay,
   markOverlaySeen,
+  resetOverlaysSeen,
   type OverlayKey,
 } from './storage/storyOverlays';
 import { renderEmphasized } from './i18n/story/render';
@@ -2362,11 +2363,16 @@ export default function App() {
     setScreen('intro');
   }
 
-  /** Wipes the active slot back to defaults (keeps name + avatar). */
+  /** Wipes the active slot back to defaults (keeps name + avatar).
+   *  Also clears the per-slot overlay-seen flags so the prologue +
+   *  narrative inserts re-fire on the fresh playthrough; otherwise
+   *  the slot would be rewound to chapter 1 but the archive would
+   *  still report the prologue as already viewed. */
   async function resetStoryProgress() {
     if (activeSlotId === null) return;
     const next = await resetStoredSlot(activeSlotId);
     setSlots(next);
+    resetOverlaysSeen(String(activeSlotId));
     reset();
   }
 
@@ -3975,7 +3981,15 @@ export default function App() {
                     {justCompletedStory
                       ? t.storyEnding
                       : isStoryMode
-                        ? winner === BLACK
+                        ? // Story-mode verdict is from the human's
+                          // perspective. Coin-toss can put the human
+                          // on either color, so checking
+                          // winner === BLACK was wrong whenever the
+                          // toss landed the player on White — they'd
+                          // win the match (winner=WHITE, storyProgress
+                          // advances, "next chapter" button appears)
+                          // but this header would still show 敗北.
+                          winner === playerColor
                           ? t.storyVictory
                           : winner === EMPTY
                             ? t.storyDraw
@@ -4172,11 +4186,11 @@ export default function App() {
                   {!isStoryMode && gameMode === 'ai' && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-2">
                       「
-                      {winner === BLACK
-                        ? t.gameOverAiQuoteWin
-                        : winner === WHITE
-                          ? t.gameOverAiQuoteLose
-                          : t.gameOverAiQuoteDraw}
+                      {winner === EMPTY
+                        ? t.gameOverAiQuoteDraw
+                        : winner === playerColor
+                          ? t.gameOverAiQuoteWin
+                          : t.gameOverAiQuoteLose}
                       」
                     </p>
                   )}
@@ -5464,6 +5478,36 @@ export default function App() {
                     </p>
                   </>
                 )}
+                {/* Emergency reload — last-resort escape hatch for
+                    stuck states (UI freeze, stale PWA cache, etc.).
+                    Unregisters every Service Worker, wipes their
+                    Caches, and reloads. Slot data lives in
+                    localStorage so it survives. */}
+                <button
+                  onClick={async () => {
+                    try {
+                      if (
+                        'serviceWorker' in navigator
+                      ) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(regs.map((r) => r.unregister()));
+                      }
+                      if ('caches' in window) {
+                        const keys = await caches.keys();
+                        await Promise.all(keys.map((k) => caches.delete(k)));
+                      }
+                    } catch {
+                      /* even if cache wipe fails, fall through to reload */
+                    }
+                    window.location.reload();
+                  }}
+                  className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
+                >
+                  ♻️ {t.emergencyReloadLabel}
+                </button>
+                <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
+                  {t.emergencyReloadDesc}
+                </p>
               </div>
             </section>
 
