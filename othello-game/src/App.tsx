@@ -3747,7 +3747,39 @@ export default function App() {
                     <ReplayIconButton
                       icon={X}
                       helpText={t.kifuViewingClose}
-                      onClick={reset}
+                      onClick={() => {
+                        // Story mode wants the chapter card +
+                        // boss-pre dialogue to come back on screen
+                        // before the next match starts; calling
+                        // reset() directly here used to drop the
+                        // player straight onto the coin-toss + board
+                        // because reset() runs in-place on the same
+                        // 'game' screen. Route through the intro
+                        // flow for the upcoming chapter instead — on
+                        // its "対局を始める →" tap, IntroSequence
+                        // calls reset({ gameMode:'ai', aiMode:'story' })
+                        // and flips back to screen='game', so the
+                        // coin toss still fires, just *after* the
+                        // chapter card. Free / 2P / non-slot kifu
+                        // review fall back to reset() like before.
+                        if (
+                          gameMode === 'ai' &&
+                          aiMode === 'story' &&
+                          activeSlotId !== null
+                        ) {
+                          const chapter = Math.min(
+                            Math.max(
+                              (activeSlot?.storyProgress ?? 0) + 1,
+                              1,
+                            ),
+                            20,
+                          );
+                          setIntroChapter(chapter);
+                          setScreen('intro');
+                        } else {
+                          reset();
+                        }
+                      }}
                     />
                   </div>
                 </div>
