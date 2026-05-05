@@ -280,7 +280,7 @@ export interface Messages {
   slotReset: string;
   slotResetConfirm: string;
   slotSwitch: string;
-  slotInUseFooter: (name: string, lives: number) => string;
+  slotInUseFooter: (name: string, lives: number, chapter: number) => string;
   slotSelect: string;
   slotChooseFirst: string;
   livesLabel: string;
@@ -638,7 +638,8 @@ export const ja: Messages = {
   slotReset: 'このセーブをリセット',
   slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
   slotSwitch: 'セーブを変更',
-  slotInUseFooter: (name, lives) => `セーブ：${name}（残機 ${lives}）`,
+  slotInUseFooter: (name, lives, chapter) =>
+    `セーブ：${name}・第${chapter}章・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -998,7 +999,8 @@ your journey on the board reaches its close.`,
   slotResetConfirm:
     'This wipes the save’s progress, stats and lives. Continue?',
   slotSwitch: 'Switch save',
-  slotInUseFooter: (name, lives) => `Save: ${name} (${lives} lives)`,
+  slotInUseFooter: (name, lives, chapter) =>
+    `Save: ${name} · Ch.${chapter} · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',

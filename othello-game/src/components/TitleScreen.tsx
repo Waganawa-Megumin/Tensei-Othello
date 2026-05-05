@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.33.0 · verdict-fix-and-recovery-paths';
+const BUILD_TAG = 'v0.33.1 · slot-chapter-on-footer';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -174,7 +174,11 @@ export function TitleScreen({
               className="mb-3 px-2.5 py-2 bg-amber-200/[0.05] border border-amber-200/20 rounded-sm flex items-center justify-between gap-2 hover:bg-amber-200/[0.08]"
             >
               <span className="jp-display text-amber-100/90 text-xs truncate">
-                {t.slotInUseFooter(activeSlot.name, activeSlot.lives)}
+                {t.slotInUseFooter(
+                  activeSlot.name,
+                  activeSlot.lives,
+                  Math.min(activeSlot.storyProgress + 1, 20),
+                )}
               </span>
               <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">
                 {t.slotSwitch} ▸
