@@ -1714,55 +1714,18 @@ export default function App() {
   //  ("re-watch any scene I've already passed"), but it no longer
   //  fires automatically inside the match flow.)
 
-  // Browser back / mobile edge-flick navigation. Without explicit
-  // history entries the SPA can't be backed out of — flicking from
-  // the screen edge on Android Chrome / iOS Safari does nothing.
-  // We push a `{ appScreen }` history entry every time the screen
-  // moves *forward* (anything other than 'title') and let popstate
-  // restore whichever screen sits in the previous entry. Going home
-  // collapses the chain via replaceState so a subsequent flick-back
-  // exits the app instead of bouncing through stale forward states.
-  const navHistoryRef = useRef<{ poppedFromHistory: boolean; lastScreen: Screen }>({
-    poppedFromHistory: false,
-    lastScreen: 'title',
-  });
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (
-      !window.history.state ||
-      typeof window.history.state.appScreen !== 'string'
-    ) {
-      window.history.replaceState({ appScreen: 'title' }, '');
-    }
-    const onPopState = (e: PopStateEvent) => {
-      const target =
-        (e.state && typeof e.state.appScreen === 'string'
-          ? e.state.appScreen
-          : 'title') as Screen;
-      navHistoryRef.current.poppedFromHistory = true;
-      setScreen(target);
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const ref = navHistoryRef.current;
-    if (ref.lastScreen === screen) return;
-    if (ref.poppedFromHistory) {
-      // The change came from popstate — history is already in sync,
-      // don't append another entry.
-      ref.poppedFromHistory = false;
-    } else if (screen === 'title') {
-      // Going home via in-app UI (toolbar Home, GameOver back-to-title).
-      // Collapse the chain so a single flick-back exits the app rather
-      // than bouncing through stale intro/game entries.
-      window.history.replaceState({ appScreen: 'title' }, '');
-    } else {
-      window.history.pushState({ appScreen: screen }, '');
-    }
-    ref.lastScreen = screen;
-  }, [screen]);
+  // (Browser back / edge-flick navigation is wired further down in
+  //  this file — the older `layerDepthRef` + popstate listener at
+  //  ~line 2094 handles modal close + screen back as a single
+  //  coherent stack. v0.32.5 introduced a parallel `appScreen`-
+  //  state-based listener here; in v0.32.9 it was removed because
+  //  it was double-popping the history entry the layer-depth
+  //  effect already pushed and double-firing on every back press,
+  //  which left the React tree in an inconsistent state at
+  //  endgame and produced the "all toolbar buttons unresponsive"
+  //  freeze. The single-source-of-truth handler below now also
+  //  treats `intro` as a poppable layer so the original use case
+  //  (flick-back from intro → title) keeps working.)
 
 
   // Auto-pass — passInfo intentionally NOT in deps: including it would
@@ -2106,7 +2069,12 @@ export default function App() {
         setKifuOpen(false);
       } else if (infoOpen) {
         setInfoOpen(false);
-      } else if (screen === 'game') {
+      } else if (screen === 'game' || screen === 'intro') {
+        // Both 'game' and 'intro' are forward layers from the title.
+        // Mobile edge-flick / browser back on either should fall back
+        // to the title screen (this also restores the v0.32.5 fix the
+        // user asked for, but routed through the single popstate
+        // listener instead of a parallel one).
         setScreen('title');
       }
       // Otherwise: let the browser handle (exits the PWA on title screen).
@@ -2121,7 +2089,7 @@ export default function App() {
   const layerDepthRef = useRef(0);
   useEffect(() => {
     const depth =
-      (screen === 'game' ? 1 : 0) +
+      (screen === 'game' || screen === 'intro' ? 1 : 0) +
       (settingsOpen ? 1 : 0) +
       (kifuOpen ? 1 : 0) +
       (infoOpen ? 1 : 0) +
