@@ -11,14 +11,7 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-- [ ] **Phase 3: 挿絵更新 + PLR01 配置 + シナリオ書き換え + 真エンディング演出** —
-      章別挿絵 10 枚 (差し替え 6: ch3/6/8 + 新規 4: ch20-B/20-C)、
-      PLR01 英霊ハルキを `players/PLR01_haruki_heroic/` に新規配置、
-      シナリオ i18n 書き換え (章 3/6/8/11/12/20/20-B/20-C/OPP22)、
-      章 20-B/20-C シネマティック演出、真エンディング判定 (PLR01 で
-      章 20 クリア → OPP21+OPP22 同時アンロック)、CLAUDE.md 更新。
-      詳細 `phase3_handoff/TASK.md` + `scenarios/scenario_rewrite_v3.md`。
-      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
+なし。
 
 ---
 
@@ -71,6 +64,33 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **Phase 3: 挿絵更新 + PLR01 配置 + シナリオ書き換え + 真エンディング演出** —
+      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: `f44c941` —
+      章別挿絵 10 枚配置 (差し替え ch3/6/8 + 新規 ch20-B/20-C
+      → `chapter_20b/c-{landscape,portrait}.png` + `/illustrations/`
+      に NarrativeOverlay 用コピーも配置)。PLR01 英霊ハルキを
+      `players/PLR01_haruki_heroic/` に新規配置 (1024×1024
+      character/background/icon + spec.md)、旧 `PLR01_haruki.png`
+      は `avatars-old/players/` 温存。`AVATARS_DATA` の PLR01
+      パスとセッティング更新 + マッチャを `PLR01_haruki_heroic`
+      slug に変更。`COMPUTERS_DATA` に Lv.22 ヴォイドφ
+      (`hidden: true`、画像は OPP21 暫定、Phase 4 で差し替え予定)
+      追加。シナリオ書き換え (ch.11 シオン姉妹暗示 / ch.12 ルナで
+      召喚仄めかし + ゼロ初出 / ch.20 フード姿ゼロのフードが落ちる
+      演出 + 旧「いちかと双子」設定削除)。新 i18n エントリ
+      `narrative.trueEnding20B`/`trueEnding20C` を ja/en で追加。
+      章 20-B → 20-C シネマティック (NarrativeOverlay 連鎖) を
+      gameOver 効果から自動発火 (PLR01 + 章 20 勝利 +
+      `!trueEndingAchieved` で初回のみ)。`OverlayKey` に
+      `narrative:trueEnding20B/20C` 追加 + シーン回想ラベル ja/en +
+      review-overlay 描画分岐。OPP22 アンロックは既存
+      `trueEndingAchieved` ガードで自動的に解除される。CLAUDE.md
+      §4.1 (Lv.22 ヴォイドφ 行追加) / §4.2 (PLR01 英霊ハルキ
+      フォルダ構造 + アンロック条件 + index 20 への移動) / §7
+      (真エンディング連鎖の手続き解説) 更新。
+      詳細 `phase3_handoff/TASK.md` + `scenarios/scenario_rewrite_v3.md`。
 
 - [x] **OPP アバター v4 統合 (Phase 2 / 最終形)** —
       completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
