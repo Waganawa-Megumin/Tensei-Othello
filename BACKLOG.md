@@ -5,25 +5,13 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
+Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.6)
 
 ---
 
 ## 🔥 In Progress
 
-- [ ] **対局中フリーズの再発確認 (PWA キャッシュ攻撃モード化)** —
-      2026-05-04〜2026-05-06 で Ch.3 朝日 / Ch.6 つむぎ で残 1 マスでの
-      フリーズが計 3 回ユーザー報告。コード側は v0.33.4→v0.33.5 で
-      `aiThinking` ガードを `handleClick` + cell-level `isValid` の
-      両方から除去済 (これが歴史的に最後の手をブロックする 2 経路)。
-      しかし v0.33.5 deploy 後も再発。確実な原因は **PWA SW が古い
-      bundle を配信し続けている**: `vite.config.ts` の workbox 設定に
-      `skipWaiting`/`clientsClaim` が無いため新 SW は `waiting` のまま
-      で、reload を 2 回以上要求する。v0.33.6 で workbox に
-      `skipWaiting:true` + `clientsClaim:true` を追加し、新 SW が
-      install 直後に activate して既存 client 全部を即取り込ませる。
-      owner: `claude/othello-ui-autosave-bPnmY` —
-      started: 2026-05-06
+なし。
 
 ---
 
@@ -67,6 +55,23 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **PWA キャッシュ攻撃モード化 (v0.33.6, endgame freeze の根本治療)** —
+      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: `6626916` —
+      v0.33.5 で endgame freeze の真因 (`handleClick` + cell-level
+      `isValid` の `aiThinking` ガード両系統) は除去済だったが、deploy
+      後も Ch.3 朝日 / Ch.6 つむぎで残 1 マスフリーズの再発報告が継続。
+      原因は vite-plugin-pwa workbox 設定に `skipWaiting` /
+      `clientsClaim` が無く、新 SW が `waiting` で stuck → 旧 bundle
+      (= aiThinking ガード残存版) が配信され続けていた。workbox に
+      `skipWaiting: true` + `clientsClaim: true` を追加して install
+      直後に新 SW が activate + 既存 client 取り込み。BUILD_TAG を
+      `v0.33.6 · pwa-skip-waiting` に更新 (タイトル画面で配信中
+      バージョンを目視確認可能)。今後の修正は再 reload 1 回で反映
+      される運用に。`dist/sw.js` に `self.skipWaiting()` +
+      `a.clientsClaim()` が焼き込まれていることを目視確認済。
+      typecheck / tests (34/34) / build pass。
 
 - [x] **Phase 3: 挿絵更新 + PLR01 配置 + シナリオ書き換え + 真エンディング演出** —
       completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
