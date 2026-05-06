@@ -2095,6 +2095,28 @@ export default function App() {
     const p1Image = AVATARS[p1Avatar]?.image ?? '';
     const ranAsPLR01 = p1Image.includes('PLR01_haruki_heroic');
     const wonChapter20 = result === 'win' && opponentLevel === 20;
+    // Diagnostic snapshot — captures every gate term so a "the
+    // cinematic didn't fire even though I just beat ゼロ with PLR01"
+    // report is decidable from the diag log alone. The most common
+    // cause is `trueEndingAlreadyAchieved=true` from an earlier run
+    // (the cinematic is gated `!trueEndingAchieved` for idempotency,
+    // so it only fires the first time globally). The settings modal
+    // exposes a "真エンディングを再視聴" button that clears both
+    // flags so the player can re-watch the chain.
+    logDiag('trueending.gate', {
+      gameMode,
+      ranAsPLR01,
+      wonChapter20,
+      result,
+      opponentLevel,
+      trueEndingAlreadyAchieved: trueEndingAchieved,
+      voidphiAwakened,
+      willFire:
+        gameMode === 'ai' &&
+        wonChapter20 &&
+        ranAsPLR01 &&
+        !trueEndingAchieved,
+    });
     if (
       gameMode === 'ai' &&
       wonChapter20 &&
@@ -6127,6 +6149,38 @@ export default function App() {
                     </button>
                     <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
                       {t.spellButtonDesc}
+                    </p>
+                  </>
+                )}
+                {/* Replay-true-ending escape hatch. The cinematic chain
+                    (20-B → 20-C → 20-D) is gated by
+                    `!trueEndingAchieved` so it only fires the first
+                    time PLR01 beats Lv.20 ゼロ. Players who already
+                    have the flag set (or whose flag was set by an
+                    earlier session before the v0.34.5 gate fix) can
+                    clear both flags here and replay the chain on
+                    their next PLR01 ch.20 win. Visible only when at
+                    least one of the flags is true so it doesn't
+                    clutter the section for first-time players. */}
+                {(trueEndingAchieved || voidphiAwakened) && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm(t.trueEndingReplayConfirm)) {
+                          return;
+                        }
+                        logDiag('manual.trueEndingReplay');
+                        setTrueEndingAchievedState(false);
+                        setVoidphiAwakenedState(false);
+                        await setTrueEndingAchieved(false);
+                        await setVoidphiAwakened(false);
+                      }}
+                      className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
+                    >
+                      🌟 {t.trueEndingReplayLabel}
+                    </button>
+                    <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
+                      {t.trueEndingReplayDesc}
                     </p>
                   </>
                 )}
