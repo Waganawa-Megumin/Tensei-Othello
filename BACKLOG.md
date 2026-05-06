@@ -11,14 +11,7 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-- [ ] **OPP アバター v4 ゲーム実装 (Phase 2)** —
-      Phase 1 で配置済みの OPP 21 アセットに対応するコード実装。
-      `COMPUTERS_DATA` のパス参照を新形式
-      (`/avatars/opponents/OPPxx_*/icon.png`) に書き換え、
-      章 20 のゼロアバター切り替えロジック
-      (フード姿戦闘 / フード無し対話、PLR01 特例) を実装、
-      `CLAUDE.md §4.1` を更新。詳細 `opp_handoff/PHASE2_TASK.md`。
-      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
+なし。
 
 ---
 
@@ -71,6 +64,19 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **OPP アバター v4 ゲーム実装 (Phase 2)** —
+      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: `0c9acfc` —
+      `COMPUTERS_DATA` のパスを新形式
+      (`/avatars/opponents/OPPxx_*/icon.png`) に更新。章 20 シーン
+      分岐実装 (PLR00-20 戦闘中 = フード姿、PLR01 = フード無し特例、
+      勝利後対話 = フード無しで「フードが落ちる」演出) を `App.tsx`
+      の `aiAvatarImage` 派生 + `zeroAvatarFor()` ヘルパーで実装。
+      GameOver モーダルの `aiAvatar` も `opponentSnapshot.level === 20`
+      の時は `aiAvatarImage` で上書きしてフードオフ reveal を保証。
+      `CLAUDE.md §4.1` を OPP21 (20 + ゼロ戦闘モード) 表 + シーン
+      分岐解説に更新。OPP v4 統合完遂。
 
 - [x] **OPP アバター v4 アセット配置 (Phase 1)** —
       completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
