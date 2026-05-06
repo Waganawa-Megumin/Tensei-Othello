@@ -186,9 +186,18 @@ const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
   { kanji: '湊', name: '湊',       name_en: 'Minato',    setting: '海の冒険者',            setting_en: 'Sea Adventurer',             quote: '世界の果てへ',           quote_en: 'To the ends of the earth.',          image: 'avatars/players/PLR18_minato.png' },
   { kanji: '奏', name: '奏太',     name_en: 'Souta',     setting: '天才ピアニスト',        setting_en: 'Prodigy Pianist',            quote: 'この旋律、聴いてくれ',   quote_en: 'Listen to this melody.',             image: 'avatars/players/PLR19_souta.png' },
   { kanji: '悠', name: '悠',       name_en: 'Yu',        setting: '神話の英雄',            setting_en: 'Mythic Hero',                quote: '神々よ、いざ尋常に',     quote_en: 'Gods, let us duel honorably.',       image: 'avatars/players/PLR20_yu.png' },
-  // Special 20th-clear reward — only revealed after the player has
-  // walked the path with every other archetype.
-  { kanji: '春', name: 'ハルキ',   name_en: 'Haruki',    setting: '初代英雄の記憶を持つ者', setting_en: 'Bearer of the First Hero’s Memory', quote: 'すべてを覚えている',     quote_en: 'I remember it all.',                 image: 'avatars/players/PLR01_haruki.png' },
+  // Special 20th-clear reward — PLR01 Heroic Spirit Haruki
+  // (英霊ハルキ). Phase 3 swapped the asset from the legacy
+  // single PNG `PLR01_haruki.png` to the v3 folder
+  // `PLR01_haruki_heroic/icon.png` (1024×1024 RGBA composite of
+  // character + transition-space background). The legacy PNG is
+  // preserved at `avatars-old/players/PLR01_haruki.png`. The
+  // setting line is updated to reflect the heroic-spirit framing
+  // (the future, ascended form of Haruki returning to guide
+  // PLR00). This avatar's selection by the player is what gates
+  // the bonus Lv.21 OPP21 / Lv.22 OPP22 unlock — see the
+  // `trueEndingAchieved` derivation in App body.
+  { kanji: '春', name: '英霊ハルキ',   name_en: 'Heroic Spirit Haruki',    setting: '英霊化された旅人', setting_en: 'Ascended Heroic Spirit', quote: '変分は、お前自身が紡ぐもの',     quote_en: 'The variations — you weave them yourself.',                 image: 'avatars/players/PLR01_haruki_heroic/icon.png' },
 ];
 
 const COMPUTERS_DATA: ReadonlyArray<ComputerEntry> = [
@@ -225,7 +234,16 @@ const COMPUTERS_DATA: ReadonlyArray<ComputerEntry> = [
   // `chapterArtBase` is intentionally omitted — there's no chapter-21
   // illustration; this character only appears in free-mode picks +
   // the post-true-ending reveal.
-  { kanji: '零', name: 'ゼロ (現世帰還)', name_en: 'Zero (Returned)', level: 21, quote: '盤の外にも世界があった。それを、見せてくれた。', quote_en: 'There was a world outside the board. You showed me that.', image: 'avatars/opponents/OPP21_zero_unmasked/icon.png', hidden: true },
+  { kanji: '零', name: 'ゼロ (現世帰還)', name_en: 'Zero (Returned)', level: 21, quote: '変分は閉じない。それが、面白い。予想の外へ飛び出したくなった。', quote_en: "Variations don't close. That's the beauty of it. I want to step beyond the forecast.", image: 'avatars/opponents/OPP21_zero_unmasked/icon.png', hidden: true },
+  // Lv.22 ヴォイドφ (Void-φ) — 神格化されし秩序. Sister "hidden
+  // hidden" boss unlocked alongside OPP21 the moment PLR01 英霊
+  // ハルキ clears chapter 20 (true ending). Asset is still pending
+  // (Phase 4 ships `OPP22_voidphi/icon.png` and `spec.md`); the
+  // image path here points at OPP21's icon as a UI stand-in so the
+  // grid row renders correctly behind the `.avatar-locked` ??? mask
+  // until then. When the proper asset lands, just swap the path on
+  // this line.
+  { kanji: 'φ', name: 'ヴォイドφ', name_en: 'Void-φ', level: 22, quote: 'すべては φ の波動の狭間にある', quote_en: 'All exists between the waves of φ.', image: 'avatars/opponents/OPP21_zero_unmasked/icon.png', hidden: true },
 ];
 
 /* ============================================================
@@ -1985,7 +2003,7 @@ export default function App() {
       // path the bonus character is gated behind. Fires once and
       // persists; subsequent PLR01 runs are no-ops.
       const p1Image = AVATARS[p1Avatar]?.image ?? '';
-      const ranAsPLR01 = p1Image.includes('PLR01_haruki');
+      const ranAsPLR01 = p1Image.includes('PLR01_haruki_heroic');
       if (justClearedStory && ranAsPLR01 && !trueEndingAchieved) {
         setTrueEndingAchievedState(true);
         void setTrueEndingAchieved(true);
@@ -2804,7 +2822,7 @@ export default function App() {
   const isPLR01Player =
     p1Avatar >= 0 &&
     p1Avatar < AVATARS.length &&
-    AVATARS[p1Avatar].image.includes('PLR01_haruki');
+    AVATARS[p1Avatar].image.includes('PLR01_haruki_heroic');
   const isZeroPostVictory =
     gameOver && lastResult === 'win' && COMPUTERS[computerChar]?.level === 20;
   const aiAvatarImage =
