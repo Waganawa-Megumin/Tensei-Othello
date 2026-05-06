@@ -46,3 +46,32 @@ body {
   0%   { transform: scale(1.00); }
   100% { transform: scale(1.05); }
 }
+
+/* Locked-avatar placeholder used by the OPP picker for
+   `???`-treatment of hidden characters (currently Lv.21 OPP21
+   ゼロ・現世帰還, gated behind the true-ending flag).
+   The wrapper darkens its single child (the AvatarBadge image) to
+   silhouette and overlays `???` centred on top. `pointer-events:
+   none` on the overlay keeps the parent button's disabled-state
+   ergonomics intact. */
+.avatar-locked {
+  position: relative;
+  display: inline-block;
+}
+.avatar-locked > * {
+  filter: brightness(0) opacity(0.55);
+}
+.avatar-locked::after {
+  content: '???';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #faf2dc;
+  font-family: 'Cormorant Garamond', 'Shippori Mincho', serif;
+  font-style: italic;
+  font-size: 1.4em;
+  letter-spacing: 0.15em;
+  pointer-events: none;
+}

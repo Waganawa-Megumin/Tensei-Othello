@@ -5460,41 +5460,58 @@ export default function App() {
                           {t.characterGridLabel}
                         </div>
                         <div className="grid grid-cols-4 md:grid-cols-5 gap-2.5 md:gap-3">
-                          {COMPUTERS.map((c, i) => (
-                            <button
-                              key={i}
-                              onClick={() => selectCharacter(i)}
-                              className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
-                                computerChar === i
-                                  ? 'border-amber-200/70 bg-amber-200/[0.06]'
-                                  : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
-                              }`}
-                            >
-                              <AvatarBadge
-                                kanji={c.kanji}
-                                idx={i + 100}
-                                image={c.image}
-                                size="sm"
-                              />
-                              <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
-                                {c.name}
-                              </div>
-                              {/* "標準 Lv.X / Default Lv.X" — labelled this
-                                  way so the user understands the number
-                                  is the character's natural strength,
-                                  not the active match difficulty (set by
-                                  the slider below). */}
-                              <div
-                                className={`latin-display italic text-[10px] tracking-wider ${
-                                  computerChar === i
-                                    ? 'text-amber-200/80'
-                                    : 'text-amber-200/65'
+                          {COMPUTERS.map((c, i) => {
+                            // Hidden = OPP21 (Lv.21 ゼロ・現世帰還).
+                            // Renders with the `.avatar-locked` filter
+                            // (black-out + ??? overlay) and rejects
+                            // selection until `trueEndingAchieved`
+                            // (= PLR01 cleared chapter 20) flips.
+                            const isLocked = !!c.hidden && !trueEndingAchieved;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => {
+                                  if (isLocked) return;
+                                  selectCharacter(i);
+                                }}
+                                disabled={isLocked}
+                                aria-disabled={isLocked}
+                                aria-label={isLocked ? '???' : c.name}
+                                className={`p-2.5 md:p-3 rounded-sm border transition-all flex flex-col items-center gap-1.5 ${
+                                  isLocked
+                                    ? 'border-amber-200/15 cursor-not-allowed'
+                                    : computerChar === i
+                                      ? 'border-amber-200/70 bg-amber-200/[0.06]'
+                                      : 'border-amber-200/15 hover:border-amber-200/40 hover:bg-amber-200/[0.02]'
                                 }`}
                               >
-                                {t.defaultLevelLabel(c.level)}
-                              </div>
-                            </button>
-                          ))}
+                                <div className={isLocked ? 'avatar-locked' : ''}>
+                                  <AvatarBadge
+                                    kanji={isLocked ? '？' : c.kanji}
+                                    idx={i + 100}
+                                    image={c.image}
+                                    size="sm"
+                                  />
+                                </div>
+                                <div className="jp-display text-amber-100/90 text-[11px] md:text-xs leading-tight text-center">
+                                  {isLocked ? '???' : c.name}
+                                </div>
+                                <div
+                                  className={`latin-display italic text-[10px] tracking-wider ${
+                                    isLocked
+                                      ? 'text-amber-200/40'
+                                      : computerChar === i
+                                        ? 'text-amber-200/80'
+                                        : 'text-amber-200/65'
+                                  }`}
+                                >
+                                  {isLocked
+                                    ? `Lv.${c.level} · ???`
+                                    : t.defaultLevelLabel(c.level)}
+                                </div>
+                              </button>
+                            );
+                          })}
                         </div>
                         <div className="mt-3 px-3 py-2.5 bg-amber-200/[0.03] border border-amber-200/15 rounded-sm">
                           <div className="jp-display text-amber-100/80 text-sm">
