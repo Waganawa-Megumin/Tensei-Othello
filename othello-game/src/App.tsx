@@ -55,10 +55,13 @@ import { useAiWorker } from './hooks/useAiWorker';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { PrologueOverlay } from './components/PrologueOverlay';
 import { NarrativeOverlay } from './components/NarrativeOverlay';
+import { ChapterStoryOverlay } from './components/ChapterStoryOverlay';
 import {
   hasSeenOverlay,
   markOverlaySeen,
   getArchiveScenes,
+  getOrderedArchiveScenes,
+  type ArchiveScene,
   resetOverlaysSeen,
   type OverlayKey,
 } from './storage/storyOverlays';
@@ -1571,9 +1574,18 @@ export default function App() {
   // the OverlayKey we're currently displaying; null when none.
   const [storyOverlay, setStoryOverlay] = useState<OverlayKey | null>(null);
   /** Re-watch a previously-seen story scene from the title-screen
-   *  archive. Distinct from `storyOverlay` because dismiss must NOT
-   *  call `reset()` — there's no chapter advance to chain into. */
-  const [reviewOverlay, setReviewOverlay] = useState<OverlayKey | null>(null);
+   *  archive. Holds an ORDERED list of scenes (chapters + overlays)
+   *  so the player can chain "次のシーンへ →" through them
+   *  seamlessly. Distinct from `storyOverlay` because dismiss must
+   *  NOT call `reset()` — there's no chapter advance to chain into.
+   *  Tap any single entry → opens with `{scenes: [that one], index:0}`.
+   *  Tap "▶ 連続再生" → opens with `{scenes: full chronological list,
+   *  index: 0}`. The dismiss handler advances index, or sets review
+   *  to null at the final scene. */
+  const [review, setReview] = useState<{
+    scenes: ArchiveScene[];
+    index: number;
+  } | null>(null);
   /** Title-screen "scene archive" modal toggle. */
   const [archiveOpen, setArchiveOpen] = useState(false);
   /** Spell-cast modal — types-the-magic-words → unlock-all path. */
@@ -2145,21 +2157,21 @@ export default function App() {
     setHintMove(null);
   }, [currentColor]);
 
-  // Park the chapter cursor on a sensible default whenever the
-  // settings modal opens. For an in-progress run we land on the
-  // frontier ("where they are"); for a completed run (storyProgress
-  // === 20) we land on chapter 1 so revisiting the story reads
-  // chronologically — otherwise users with the game already cleared
-  // would be force-fed the ending screen as their default view and
-  // had to tap ◀ 19 times to reach earlier chapters.
+  // Park the chapter cursor on the chapter the player is currently
+  // engaged with whenever the settings modal opens.
+  // - For in-progress runs (progress < 20): the next chapter to play
+  //   (= `storyProgress + 1`).
+  // - For completed runs (progress >= 20): the current `level`, which
+  //   tracks the most recent chapter played including replays of
+  //   already-cleared ones. This means a player who's currently
+  //   replaying ch.5 sees ch.5's card by default, not ch.1 or ch.20.
   useEffect(() => {
     if (!settingsOpen) return;
-    if (storyProgress >= 20) {
-      setChapterCursor(1);
-    } else {
-      const max = Math.min(Math.max(storyProgress + 1, 1), 20);
-      setChapterCursor(max);
-    }
+    const current =
+      storyProgress < 20
+        ? Math.min(Math.max(storyProgress + 1, 1), 20)
+        : Math.min(Math.max(level, 1), 20);
+    setChapterCursor(current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsOpen]);
 
@@ -6233,19 +6245,34 @@ export default function App() {
         </div>
       )}
 
-      {/* Scene archive modal — lists already-seen story overlays for the
-          active slot so the player can re-watch them from the title.
-          Renders OUTSIDE the screen gate because the entry-point sits on
-          the title screen. */}
+      {/* Scene archive modal — lists every story beat the slot has
+          cleared past (per-chapter narrative + interludes + ending +
+          true-ending epilogue). Tap any entry → starts sequential
+          playback FROM that scene; each overlay's "次のシーンへ →"
+          button chains to the next, until the final scene shows
+          「閉じる」 and exits.
+
+          Renders OUTSIDE the screen gate because the entry-point
+          sits on the title screen. */}
       {archiveOpen && (() => {
-        const seen =
+        const ordered =
           activeSlotId !== null
-            ? getArchiveScenes(
+            ? getOrderedArchiveScenes(
                 String(activeSlotId),
                 storyProgress,
                 trueEndingAchieved,
               )
             : [];
+        const sceneLabel = (s: ArchiveScene): string => {
+          if (s.kind === 'overlay') return t.archiveSceneLabels[s.key];
+          const opp = COMPUTERS.find((c) => c.level === s.chapter);
+          return t.archiveChapterLabel(s.chapter, opp?.name ?? '');
+        };
+        const startFrom = (index: number) => {
+          if (ordered.length === 0) return;
+          setArchiveOpen(false);
+          setReview({ scenes: ordered, index });
+        };
         return (
           <div
             className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6"
@@ -6269,31 +6296,48 @@ export default function App() {
                   {t.archiveModalSubtitle}
                 </p>
               </div>
-              {seen.length === 0 ? (
+              {ordered.length === 0 ? (
                 <p className="jp-display italic text-amber-200/65 text-sm leading-relaxed text-center px-5 py-10">
                   {t.archiveEmpty}
                 </p>
               ) : (
-                <ul className="px-3 py-3 space-y-1.5">
-                  {seen.map((key) => (
-                    <li key={key}>
-                      <button
-                        onClick={() => {
-                          setArchiveOpen(false);
-                          setReviewOverlay(key);
-                        }}
-                        className="w-full text-left px-3 py-2.5 border border-amber-200/15 rounded-sm hover:border-amber-200/45 hover:bg-amber-200/[0.04] flex items-center justify-between gap-3"
-                      >
-                        <span className="jp-display text-amber-100/90 text-sm">
-                          {t.archiveSceneLabels[key]}
-                        </span>
-                        <span className="latin-display italic text-amber-200/65 text-[11px] tracking-wider whitespace-nowrap">
-                          {t.archiveReplayLabel} ▸
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  {/* "Play all" button — chronological cinematic from
+                      the prologue through the ending. Same chain
+                      mechanism as tapping the first entry, exposed
+                      explicitly so the affordance is obvious. */}
+                  <div className="px-3 pt-3">
+                    <button
+                      onClick={() => startFrom(0)}
+                      className="w-full px-3 py-2.5 border border-amber-200/45 bg-amber-200/[0.05] hover:bg-amber-200/[0.10] hover:border-amber-200/70 text-amber-100 rounded-sm jp-display text-sm tracking-wider"
+                    >
+                      ▶ {t.archivePlayAllLabel}
+                    </button>
+                  </div>
+                  <ul className="px-3 py-3 space-y-1.5">
+                    {ordered.map((scene, i) => {
+                      const key =
+                        scene.kind === 'overlay'
+                          ? `o:${scene.key}`
+                          : `c:${scene.chapter}`;
+                      return (
+                        <li key={key}>
+                          <button
+                            onClick={() => startFrom(i)}
+                            className="w-full text-left px-3 py-2.5 border border-amber-200/15 rounded-sm hover:border-amber-200/45 hover:bg-amber-200/[0.04] flex items-center justify-between gap-3"
+                          >
+                            <span className="jp-display text-amber-100/90 text-sm">
+                              {sceneLabel(scene)}
+                            </span>
+                            <span className="latin-display italic text-amber-200/65 text-[11px] tracking-wider whitespace-nowrap">
+                              {t.archiveReplayLabel} ▸
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
               )}
               <div className="px-5 py-3 border-t border-amber-200/15 flex justify-end">
                 <button
@@ -6310,69 +6354,124 @@ export default function App() {
 
       {/* Review-mode story overlays. Mounted OUTSIDE the screen gate so
           the player can re-watch a scene from the title screen without
-          first entering a match. Dismiss closes; we don't re-mark seen
-          (already seen) and we don't run reset() (no chapter to chain). */}
-      {reviewOverlay === 'prologue' && (
-        <PrologueOverlay
-          prologue={t.story.prologue}
-          dismissLabel={t.archiveCloseLabel}
-          onDismiss={() => setReviewOverlay(null)}
-        />
-      )}
-      {reviewOverlay === 'narrative:solitude' && (
-        <NarrativeOverlay
-          scene={t.story.narrative.solitude}
-          imageBaseName="solitude"
-          tone={locale === 'ja' ? '幕間' : 'Interlude'}
-          dismissLabel={t.archiveCloseLabel}
-          onDismiss={() => setReviewOverlay(null)}
-        />
-      )}
-      {reviewOverlay === 'narrative:allies' && (
-        <NarrativeOverlay
-          scene={t.story.narrative.allies}
-          imageBaseName="allies"
-          tone={locale === 'ja' ? '幕間' : 'Interlude'}
-          dismissLabel={t.archiveCloseLabel}
-          onDismiss={() => setReviewOverlay(null)}
-        />
-      )}
-      {reviewOverlay === 'narrative:final' && (
-        <NarrativeOverlay
-          scene={t.story.narrative.final}
-          imageBaseName="final"
-          tone={locale === 'ja' ? '幕間' : 'Interlude'}
-          dismissLabel={t.archiveCloseLabel}
-          onDismiss={() => setReviewOverlay(null)}
-        />
-      )}
-      {reviewOverlay === 'narrative:trueEnding20B' && (
-        <NarrativeOverlay
-          scene={t.story.narrative.trueEnding20B}
-          imageBaseName="trueEnding20B"
-          tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
-          dismissLabel={t.archiveCloseLabel}
-          onDismiss={() => setReviewOverlay(null)}
-        />
-      )}
-      {reviewOverlay === 'narrative:trueEnding20C' && (
-        <NarrativeOverlay
-          scene={t.story.narrative.trueEnding20C}
-          imageBaseName="trueEnding20C"
-          tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
-          dismissLabel={t.archiveCloseLabel}
-          onDismiss={() => setReviewOverlay(null)}
-        />
-      )}
-      {reviewOverlay === 'ending' && (
-        <NarrativeOverlay
-          scene={t.story.endingFull}
-          imageBaseName="ending"
-          tone={locale === 'ja' ? '終章' : 'Finale'}
-          dismissLabel={t.archiveCloseLabel}
-          onDismiss={() => setReviewOverlay(null)}
-        />
-      )}
+          first entering a match. Sequential dismiss advances through
+          `review.scenes` until the final scene exits with 「閉じる」.
+          We don't re-mark seen (already seen) and don't run reset()
+          (no chapter to chain). */}
+      {review !== null && (() => {
+        const scene = review.scenes[review.index];
+        if (!scene) {
+          return null;
+        }
+        const isLast = review.index >= review.scenes.length - 1;
+        const dismissLabel = isLast ? t.archiveCloseLabel : t.archiveNextLabel;
+        const advance = () => {
+          if (isLast) {
+            setReview(null);
+          } else {
+            setReview({ scenes: review.scenes, index: review.index + 1 });
+          }
+        };
+        if (scene.kind === 'overlay') {
+          if (scene.key === 'prologue') {
+            return (
+              <PrologueOverlay
+                prologue={t.story.prologue}
+                dismissLabel={dismissLabel}
+                onDismiss={advance}
+              />
+            );
+          }
+          if (scene.key === 'narrative:solitude') {
+            return (
+              <NarrativeOverlay
+                scene={t.story.narrative.solitude}
+                imageBaseName="solitude"
+                tone={locale === 'ja' ? '幕間' : 'Interlude'}
+                dismissLabel={dismissLabel}
+                onDismiss={advance}
+              />
+            );
+          }
+          if (scene.key === 'narrative:allies') {
+            return (
+              <NarrativeOverlay
+                scene={t.story.narrative.allies}
+                imageBaseName="allies"
+                tone={locale === 'ja' ? '幕間' : 'Interlude'}
+                dismissLabel={dismissLabel}
+                onDismiss={advance}
+              />
+            );
+          }
+          if (scene.key === 'narrative:final') {
+            return (
+              <NarrativeOverlay
+                scene={t.story.narrative.final}
+                imageBaseName="final"
+                tone={locale === 'ja' ? '幕間' : 'Interlude'}
+                dismissLabel={dismissLabel}
+                onDismiss={advance}
+              />
+            );
+          }
+          if (scene.key === 'narrative:trueEnding20B') {
+            return (
+              <NarrativeOverlay
+                scene={t.story.narrative.trueEnding20B}
+                imageBaseName="trueEnding20B"
+                tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+                dismissLabel={dismissLabel}
+                onDismiss={advance}
+              />
+            );
+          }
+          if (scene.key === 'narrative:trueEnding20C') {
+            return (
+              <NarrativeOverlay
+                scene={t.story.narrative.trueEnding20C}
+                imageBaseName="trueEnding20C"
+                tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+                dismissLabel={dismissLabel}
+                onDismiss={advance}
+              />
+            );
+          }
+          if (scene.key === 'ending') {
+            return (
+              <NarrativeOverlay
+                scene={t.story.endingFull}
+                imageBaseName="ending"
+                tone={locale === 'ja' ? '終章' : 'Finale'}
+                dismissLabel={dismissLabel}
+                onDismiss={advance}
+              />
+            );
+          }
+          return null;
+        }
+        // Per-chapter narrative scene. Pull the chapter's localized
+        // story content + opponent metadata for header + art.
+        const story = t.story.chapterStories[scene.chapter - 1];
+        const opp = COMPUTERS.find((c) => c.level === scene.chapter);
+        if (!story || !opp) return null;
+        return (
+          <ChapterStoryOverlay
+            chapter={scene.chapter}
+            opponentName={opp.name}
+            chapterArtBase={opp.chapterArtBase}
+            story={story}
+            heading={t.archiveChapterHeading(scene.chapter, opp.name)}
+            proseHeadingIntro={t.archiveBlockIntro}
+            proseHeadingBossPre={t.archiveBlockBossPre}
+            proseHeadingBossPost={t.archiveBlockBossPost}
+            proseHeadingVictoryDialogue={t.archiveBlockVictoryDialogue}
+            proseHeadingVictoryNarration={t.archiveBlockVictoryNarration}
+            dismissLabel={dismissLabel}
+            onDismiss={advance}
+          />
+        );
+      })()}
     </>
   );
 }

@@ -385,6 +385,22 @@ export interface Messages {
   };
   archiveReplayLabel: string;
   archiveCloseLabel: string;
+  /** Sequential-playback advance button label, used by every overlay
+   *  in the archive replay chain except the last. */
+  archiveNextLabel: string;
+  /** "Play all" button at the top of the scene archive modal —
+   *  starts a chronological playthrough from the prologue. */
+  archivePlayAllLabel: string;
+  /** Per-chapter list-row label, e.g. "第N章 vs {opponent}". */
+  archiveChapterLabel: (chapter: number, opponentName: string) => string;
+  /** ChapterStoryOverlay heading line. */
+  archiveChapterHeading: (chapter: number, opponentName: string) => string;
+  /** Block heading labels in the chapter scene overlay. */
+  archiveBlockIntro: string;
+  archiveBlockBossPre: string;
+  archiveBlockBossPost: string;
+  archiveBlockVictoryDialogue: string;
+  archiveBlockVictoryNarration: string;
 
   // Game over (lives = 0) screen
   gameOverScreenLabel: string;
@@ -791,6 +807,15 @@ export const ja: Messages = {
   },
   archiveReplayLabel: '再生',
   archiveCloseLabel: '閉じる',
+  archiveNextLabel: '次のシーンへ →',
+  archivePlayAllLabel: '最初から連続再生',
+  archiveChapterLabel: (n, name) => `第${n}章  vs ${name}`,
+  archiveChapterHeading: (n, name) => `第${n}章  ${name}`,
+  archiveBlockIntro: '導入',
+  archiveBlockBossPre: '対局前',
+  archiveBlockBossPost: '対局直後',
+  archiveBlockVictoryDialogue: '勝利の言葉',
+  archiveBlockVictoryNarration: '余韻',
 
   gameOverScreenLabel: 'Game Over',
   gameOverScreenTitle: 'ゲームオーバー',
@@ -1188,6 +1213,15 @@ Distant **cheers** — and what sounded suspiciously like a **glittering idol so
   },
   archiveReplayLabel: 'Play',
   archiveCloseLabel: 'Close',
+  archiveNextLabel: 'Next scene →',
+  archivePlayAllLabel: 'Play all from the prologue',
+  archiveChapterLabel: (n, name) => `Chapter ${n} — vs ${name}`,
+  archiveChapterHeading: (n, name) => `Chapter ${n} — ${name}`,
+  archiveBlockIntro: 'Setup',
+  archiveBlockBossPre: 'Before the match',
+  archiveBlockBossPost: 'Right after',
+  archiveBlockVictoryDialogue: "Master's parting line",
+  archiveBlockVictoryNarration: 'Bridge to the next',
 
   gameOverScreenLabel: 'Game Over',
   gameOverScreenTitle: 'GAME OVER',

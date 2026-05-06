@@ -104,6 +104,57 @@ export function getArchiveScenes(
 }
 
 /**
+ * Discriminated union for archive scenes. Includes per-chapter
+ * narrative scenes (intro / dialogue / victory beats) alongside the
+ * full-screen overlays. Used by the title-screen "scene archive"
+ * UI so the player can replay every story beat they've passed,
+ * not just the full-screen interludes.
+ */
+export type ArchiveScene =
+  | { kind: 'overlay'; key: OverlayKey }
+  | { kind: 'chapter'; chapter: number };
+
+/**
+ * Build the canonical chronological replay list for a slot. The order
+ * mirrors the live story flow:
+ *
+ *   prologue → ch.1 → ch.2 … ch.10 → solitude →
+ *   ch.11 … ch.15 → allies →
+ *   ch.16 … ch.19 → final →
+ *   ch.20 → ending → [trueEnding 20B → 20C if achieved]
+ *
+ * Each entry is rendered in the archive list and feeds the
+ * "▶ 連続再生" sequential playback chain.
+ */
+export function getOrderedArchiveScenes(
+  slotId: string,
+  storyProgress: number,
+  trueEndingAchieved: boolean,
+): ArchiveScene[] {
+  const result: ArchiveScene[] = [];
+  if (hasSeenOverlay(slotId, 'prologue')) {
+    result.push({ kind: 'overlay', key: 'prologue' });
+  }
+  for (let i = 1; i <= 20; i++) {
+    if (storyProgress < i) break;
+    // Mid-route interludes fire BEFORE entering the next chapter,
+    // so they slot right before the chapter they precede.
+    if (i === 11) result.push({ kind: 'overlay', key: 'narrative:solitude' });
+    if (i === 16) result.push({ kind: 'overlay', key: 'narrative:allies' });
+    if (i === 20) result.push({ kind: 'overlay', key: 'narrative:final' });
+    result.push({ kind: 'chapter', chapter: i });
+  }
+  if (storyProgress >= 20) {
+    result.push({ kind: 'overlay', key: 'ending' });
+  }
+  if (trueEndingAchieved) {
+    result.push({ kind: 'overlay', key: 'narrative:trueEnding20B' });
+    result.push({ kind: 'overlay', key: 'narrative:trueEnding20C' });
+  }
+  return result;
+}
+
+/**
  * Drop all overlay-seen flags for a slot. Used when the user resets
  * a save slot or starts a brand-new one, so the prologue + narrative
  * beats fire fresh on the next playthrough.
