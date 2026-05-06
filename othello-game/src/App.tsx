@@ -135,6 +135,15 @@ interface ComputerEntry {
    * Pack 3-6 ships these under `public/avatars/chapters/`.
    */
   chapterArtBase?: string;
+  /**
+   * Hidden / locked-by-default characters. Today this only flags
+   * Lv.21 OPP21 (zero-unmasked, the bonus "現世帰還" character that
+   * appears post-true-ending). Free-mode level pickers should still
+   * render the entry, but with the `???` placeholder treatment until
+   * `trueEndingAchieved` flips to true. Story mode never hits these
+   * because story progress caps at 20.
+   */
+  hidden?: boolean;
 }
 
 // Default protagonist — always available, used as the player's starting
@@ -200,13 +209,21 @@ const COMPUTERS_DATA: ReadonlyArray<ComputerEntry> = [
   { kanji: '獅', name: 'レオン',   name_en: 'Leon',      level: 17, quote: '正々堂々、参る！',               quote_en: 'Fair and square, here I come!',             image: 'avatars/opponents/OPP17_leon/icon.png', chapterArtBase: 'avatars/chapters/chapter_17_leon' },
   { kanji: '宗', name: '宗次郎',   name_en: 'Sojiro',    level: 18, quote: '我が一刀、避けられはせぬ',       quote_en: 'My blade cannot be evaded.',                image: 'avatars/opponents/OPP18_sojiro/icon.png', chapterArtBase: 'avatars/chapters/chapter_18_sojiro' },
   { kanji: '嵐', name: '嵐',       name_en: 'Arashi',    level: 19, quote: '我が竜の前に膝を折れ！',         quote_en: 'Kneel before my dragon!',                   image: 'avatars/opponents/OPP19_arashi/icon.png', chapterArtBase: 'avatars/chapters/chapter_19_arashi' },
-  // Lv.20 ゼロ — `image` is the unmasked default (`OPP20_zero/icon.png`).
-  // The hooded battle variant (`OPP20_zero_battle/icon.png`) is overlaid
-  // at render time by the `aiAvatarImage` derivation below: hooded during
-  // pre-/in-battle, unmasked once the player wins (the "hood falls"
-  // reveal scene) and as a special-case unmasked when the player avatar
-  // is PLR01 英霊ハルキ.
+  // Lv.20 ゼロ (フード姿) — the canonical final-boss avatar. `image`
+  // points at the hooded variant ship-shipped by Phase 2 final;
+  // `aiAvatarImage` derivation below temporarily swaps in OPP21
+  // (unmasked) for the post-victory dialogue moment so the hood falls
+  // off as a reveal beat.
   { kanji: '零', name: 'ゼロ',     name_en: 'Zero',      level: 20, quote: '全ての変分は計算済み。詰みだ',   quote_en: 'All variations computed. Checkmate.',       image: 'avatars/opponents/OPP20_zero/icon.png', chapterArtBase: 'avatars/chapters/chapter_20_zero' },
+  // Lv.21 ゼロ (現世帰還・隠しキャラ) — bonus character unlocked
+  // when PLR01 英霊ハルキ clears chapter 20 (the "true ending" path).
+  // Until then, free-mode pickers render the row with a `???`
+  // overlay (CSS .avatar-locked) and selection is disabled. Story
+  // mode caps storyProgress at 20 so this entry never auto-fires.
+  // `chapterArtBase` is intentionally omitted — there's no chapter-21
+  // illustration; this character only appears in free-mode picks +
+  // the post-true-ending reveal.
+  { kanji: '零', name: 'ゼロ (現世帰還)', name_en: 'Zero (Returned)', level: 21, quote: '盤の外にも世界があった。それを、見せてくれた。', quote_en: 'There was a world outside the board. You showed me that.', image: 'avatars/opponents/OPP21_zero_unmasked/icon.png', hidden: true },
 ];
 
 /* ============================================================
