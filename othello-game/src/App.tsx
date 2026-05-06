@@ -2866,6 +2866,20 @@ export default function App() {
     setSettingsOpen(false);
     reset({ gameMode: 'ai', aiMode: nextAiMode });
     setScreen('game');
+    // 章 20-A 対峙シーン: when PLR01 英霊ハルキ enters chapter 20
+    // (frontier OR replay), drop the full-screen confrontation
+    // overlay over the freshly-reset board so the player reads the
+    // pre-battle dialogue ("君は人間なんだろ?") before making the
+    // first move. Mirrors the trueEnding cinematic philosophy of
+    // firing every time, not gated on overlay-seen flags — the
+    // beat is short and the user explicitly asked for the bridge.
+    const playerIsPLR01 =
+      p1Avatar >= 0 &&
+      p1Avatar < AVATARS.length &&
+      AVATARS[p1Avatar].image.includes('PLR01_haruki_heroic');
+    if (level === 20 && playerIsPLR01) {
+      setStoryOverlay('narrative:chapter20A');
+    }
   }
 
   /* ----- Post-game review ----- */
@@ -3769,6 +3783,31 @@ export default function App() {
               setStoryOverlay(null);
               setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
               setScreen('intro');
+            }}
+          />
+        )}
+        {/* 章 20-A 対峙シーン — fires the moment PLR01 英霊ハルキ
+            starts a chapter 20 match (see startStoryChapter). The
+            board has already reset to the initial position behind
+            this overlay; on dismiss the player taps onto a live
+            board and makes the first move. Bridges the visual leap
+            between "hooded final boss" and the post-victory
+            unmasked Zero by giving the two travelers their face-
+            to-face dialogue beat. */}
+        {storyOverlay === 'narrative:chapter20A' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.chapter20A}
+            imageBaseName="chapter_20a_confrontation"
+            tone={locale === 'ja' ? '章 20-A' : 'Chapter 20-A'}
+            dismissLabel={t.close}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(
+                  String(activeSlotId),
+                  'narrative:chapter20A',
+                );
+              }
+              setStoryOverlay(null);
             }}
           />
         )}

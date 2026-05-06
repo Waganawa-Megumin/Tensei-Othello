@@ -605,6 +605,56 @@ A new trial opens its eyes.
 
 ── **OPP22 "Void-φ" UNLOCKED.**`,
     },
+    chapter20A: {
+      title: 'Chapter 20-A — Confrontation in the Sea of Code',
+      text: `A sea of code. Green matrix flows, floating othello boards orbiting silently.
+
+A deeply hooded figure at the center.
+
+"...You."
+
+Zero's cyan eye trembles.
+
+"You are that traveler... no. Different. But the same..."
+
+The heroic spirit Haruki steps forward in silence.
+
+──
+
+Zero exhales deeply.
+
+"You are the traveler's future. You conquered 20 chapters, returned, and then—"
+
+"**Came back as a heroic spirit.**"
+
+He nods faintly.
+
+"I, too, was once like you."
+
+"After conquering 20 chapters, I realized — **all things are predictable**."
+
+"So I chose not to return. I chose to **merge with the world's logic**."
+
+A **black othello stone** floats above Zero's palm. Above the heroic spirit's palm, a **white othello stone** glows softly.
+
+Quietly, the heroic spirit speaks.
+
+"...**You're still human, aren't you?**"
+
+The cyan glow of Zero's single eye flickers.
+
+"**You don't have to put on a brave face.**"
+
+"'Merged with the world's logic' — that was never really true, was it? You've been... **yourself**. All this time."
+
+"I'm a heroic spirit beyond mortal limits. You can't fool me."
+
+Zero's shoulders tremble, just barely.
+
+"...Heh. So **you can see through me**."
+
+"Very well. **The final trial.** Come at me with everything, future of the traveler."`,
+    },
   },
   opp22: {
     intro: {

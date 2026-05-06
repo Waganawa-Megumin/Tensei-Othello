@@ -77,6 +77,14 @@ export interface StoryContent {
      *  `voidphi_awakened` localStorage flag so the OPP22 selection
      *  gate flips from `trueEndingAchieved` to `voidphiAwakened`. */
     trueEnding20D: NarrativeScene;
+    /** Phase 4 Step 4 —章 20-A 対峙シーン: full-screen overlay
+     *  shown right BEFORE the PLR01 英霊ハルキ vs ゼロ chapter-20
+     *  match starts, so the leap from "hooded final boss" to
+     *  "two travelers face each other" gets the dialogue beat the
+     *  scenario calls for ("君は人間なんだろ?"). PLR00 routes don't
+     *  see this scene — they get the regular ch.20 intro card and
+     *  the canonical bossPre. */
+    chapter20A: NarrativeScene;
   };
   /** Phase 4 Step 3 — narrative content for the OPP22 ヴォイドφ
    *  encounter (free-mode only, after voidphiAwakened). Surfaced in

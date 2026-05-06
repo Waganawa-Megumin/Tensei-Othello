@@ -406,6 +406,7 @@ export interface Messages {
     'narrative:solitude': string;
     'narrative:allies': string;
     'narrative:final': string;
+    'narrative:chapter20A': string;
     'narrative:trueEnding20B': string;
     'narrative:trueEnding20C': string;
     'narrative:trueEnding20D': string;
@@ -848,6 +849,7 @@ export const ja: Messages = {
     'narrative:solitude': '幕間 「孤独な打ち手」',
     'narrative:allies': '幕間 「同行者たちの影」',
     'narrative:final': '幕間 「決戦の前夜」',
+    'narrative:chapter20A': '章 20-A 「コードの海の対峙」',
     'narrative:trueEnding20B': '真エンディング 「解放の瞬間」',
     'narrative:trueEnding20C': '真エンディング 「現世にて」',
     'narrative:trueEnding20D': '真エンディング 「ヴォイドφ覚醒」',
@@ -1269,6 +1271,7 @@ Distant **cheers** — and what sounded suspiciously like a **glittering idol so
     'narrative:solitude': 'Interlude · The Solitary Player',
     'narrative:allies': 'Interlude · Shadows of Companions',
     'narrative:final': 'Interlude · The Eve of the Final Match',
+    'narrative:chapter20A': 'Chapter 20-A · Confrontation in the Sea of Code',
     'narrative:trueEnding20B': 'True Ending · The Moment of Release',
     'narrative:trueEnding20C': 'True Ending · In the Human World',
     'narrative:trueEnding20D': 'True Ending · Void-φ Awakens',

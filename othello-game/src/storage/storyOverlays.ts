@@ -22,6 +22,7 @@ export type OverlayKey =
   | 'narrative:trueEnding20B'
   | 'narrative:trueEnding20C'
   | 'narrative:trueEnding20D'
+  | 'narrative:chapter20A'
   | 'narrative:opp22.intro'
   | 'narrative:opp22.victoryNarration'
   | 'ending';
@@ -82,6 +83,7 @@ const OVERLAY_ORDER: readonly OverlayKey[] = [
   'narrative:solitude',
   'narrative:allies',
   'narrative:final',
+  'narrative:chapter20A',
   'narrative:trueEnding20B',
   'narrative:trueEnding20C',
   'narrative:trueEnding20D',
@@ -109,8 +111,11 @@ export function getArchiveScenes(
   // modal at storyProgress=20, so progress alone unlocks it.
   if (storyProgress >= 20) available.add('ending');
   // True-ending pair is PLR01-only, gated by the explicit
-  // achievement flag rather than progress.
+  // achievement flag rather than progress. The 20-A confrontation
+  // scene precedes the battle, so seeing the true ending implies
+  // the player saw 20-A as well — surface them as a set.
   if (trueEndingAchieved) {
+    available.add('narrative:chapter20A');
     available.add('narrative:trueEnding20B');
     available.add('narrative:trueEnding20C');
   }
@@ -173,6 +178,8 @@ export function getOrderedArchiveScenes(
     result.push({ kind: 'overlay', key: 'ending' });
   }
   if (trueEndingAchieved) {
+    // Confrontation overlay precedes the battle in the live flow.
+    result.push({ kind: 'overlay', key: 'narrative:chapter20A' });
     result.push({ kind: 'overlay', key: 'narrative:trueEnding20B' });
     result.push({ kind: 'overlay', key: 'narrative:trueEnding20C' });
   }
