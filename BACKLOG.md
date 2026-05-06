@@ -11,7 +11,15 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-なし。
+- [ ] **OPP アバター v4 統合 (Phase 2 / 最終形) — アセット差分配置 + ゲーム実装** —
+      Phase 1 の暫定構造 (`OPP20_zero` 不本意・`OPP20_zero_battle` フード姿)
+      を最終形に整理: `OPP20_zero/` がフード姿の最終ボス標準アバター、新
+      `OPP21_zero_unmasked/` が現世帰還の隠しキャラ。`COMPUTERS_DATA` に
+      Lv.21 エントリ追加、章 20 シーン分岐再配線、未アンロック時の `???`
+      表示 (CSS フィルタ) 実装、`CLAUDE.md §4.1` を 21 体表に更新。真エ
+      ンディング達成 (PLR01 で章 20 クリア) で OPP21 アンロック判定。
+      詳細 `opp_handoff/TASK.md`。
+      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
 
 ---
 
