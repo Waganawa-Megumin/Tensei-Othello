@@ -2730,12 +2730,48 @@ export default function App() {
     quote: AVATARS[p1Avatar].quote,
     level: undefined as number | undefined,
   };
+
+  // Chapter-20 Zero scene branching. Zero ships two avatars:
+  //   - OPP20_zero/icon.png        (unmasked, default in COMPUTERS_DATA)
+  //   - OPP20_zero_battle/icon.png (hooded, used in pre-/in-battle)
+  // Selection rules:
+  //   - PLR01 英霊ハルキ vs Zero  →  unmasked (本来の姿で対峙する特例演出)
+  //   - 章 20 戦闘前/中            →  hooded
+  //   - 章 20 勝利後の対話         →  unmasked (フードが落ちて素顔露呈)
+  // Other characters always render `c.image` unchanged.
+  // PLR01 detection is via the avatar's image filename — AVATARS_DATA's
+  // last entry is the PLR01 special, but `playerId === 'PLR01'`
+  // semantically resolves through the file path which is stable.
+  const ZERO_UNMASKED = 'avatars/opponents/OPP20_zero/icon.png';
+  const ZERO_HOODED = 'avatars/opponents/OPP20_zero_battle/icon.png';
+  function zeroAvatarFor(args: {
+    isPostVictory: boolean;
+    playerIsPLR01: boolean;
+  }): string {
+    if (args.playerIsPLR01) return ZERO_UNMASKED;
+    if (args.isPostVictory) return ZERO_UNMASKED;
+    return ZERO_HOODED;
+  }
+  const isPLR01Player =
+    p1Avatar >= 0 &&
+    p1Avatar < AVATARS.length &&
+    AVATARS[p1Avatar].image.includes('PLR01_haruki');
+  const isZeroPostVictory =
+    gameOver && lastResult === 'win' && COMPUTERS[computerChar]?.level === 20;
+  const aiAvatarImage =
+    gameMode === 'ai' && COMPUTERS[computerChar]?.level === 20
+      ? zeroAvatarFor({
+          isPostVictory: isZeroPostVictory,
+          playerIsPLR01: isPLR01Player,
+        })
+      : COMPUTERS[computerChar]?.image;
+
   const aiInfo =
     gameMode === 'ai'
       ? {
           kanji: COMPUTERS[computerChar].kanji,
           idx: computerChar + 100,
-          image: COMPUTERS[computerChar].image,
+          image: aiAvatarImage,
           name: COMPUTERS[computerChar].name,
           quote: COMPUTERS[computerChar].quote,
           level: COMPUTERS[computerChar].level as number | undefined,
@@ -4153,7 +4189,17 @@ export default function App() {
                         ? {
                             kanji: opponentSnapshot.kanji,
                             idx: 100 + opponentSnapshot.level,
-                            image: opponentSnapshot.image,
+                            // Zero's snapshot was taken during play
+                            // (i.e. hooded variant). Once we're in
+                            // the gameOver-modal phase it should
+                            // switch to the unmasked variant — that's
+                            // the "hood falls off" reveal moment. Use
+                            // the live aiAvatarImage which reflects
+                            // the current scene/player branching.
+                            image:
+                              opponentSnapshot.level === 20
+                                ? aiAvatarImage
+                                : opponentSnapshot.image,
                             name: opponentSnapshot.name,
                           }
                         : {
