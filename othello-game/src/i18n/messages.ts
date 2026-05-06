@@ -316,6 +316,14 @@ export interface Messages {
   diagLogExportDesc: string;
   diagLogCopiedToast: string;
   diagLogClearLabel: string;
+  /** Section heading for the post-match review block on the GameOver
+   *  modals (both regular and lives=0 variants). Frames the AI
+   *  review + kifu replay buttons as a "look back at the match"
+   *  affordance rather than punishment. */
+  gameOverReviewSection: string;
+  /** Tiny inline hint under the review/replay grid explaining what
+   *  the buttons do. */
+  gameOverReviewHint: string;
   /** Spell that unlocks every bonus character at once. The cipher is
    *  intentionally locale-specific so the wordplay lands in each
    *  language. JA: 「ばんじょうぜんてんかいほう」 (盤上全転解放 —
@@ -751,6 +759,9 @@ export const ja: Messages = {
     '直近 200 件の操作ログをクリップボードにコピーします。フリーズなどの不具合報告に貼り付けてください。送信は行われず、端末内だけで完結します。',
   diagLogCopiedToast: '診断ログをクリップボードにコピーしました',
   diagLogClearLabel: 'ログを消去',
+  gameOverReviewSection: '対局を振り返る',
+  gameOverReviewHint:
+    'AI の総評を聞くか、棋譜を一手ずつ再生して読み直せます。',
   spellCipher: 'ばんじょうぜんてんかいほう',
   spellButtonLabel: '魔法の呪文を唱える',
   spellButtonDesc:
@@ -1163,6 +1174,9 @@ your journey on the board reaches its close.`,
     "Copies the last 200 events to your clipboard. Paste this into a bug report when you hit a freeze. Nothing is sent over the network — it stays on your device.",
   diagLogCopiedToast: 'Diagnostic log copied to clipboard',
   diagLogClearLabel: 'Clear log',
+  gameOverReviewSection: 'Look back at the match',
+  gameOverReviewHint:
+    'Hear the AI commentary or replay the kifu move-by-move.',
   spellCipher: 'flip them all',
   spellButtonLabel: 'Cast the magic spell',
   spellButtonDesc:

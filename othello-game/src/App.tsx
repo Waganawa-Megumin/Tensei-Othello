@@ -4293,16 +4293,27 @@ export default function App() {
                     )}
 
                     {gameMode === 'ai' && kifu.length > 0 && (
-                      <div className="flex justify-center gap-2 mt-3 mb-3 flex-wrap">
-                        <button onClick={startReview} className="btn">
-                          {t.reviewMatchButton}
-                        </button>
-                        <button
-                          onClick={() => void loadCurrentMatchKifu()}
-                          className="btn"
-                        >
-                          {t.gameOverViewKifu}
-                        </button>
+                      <div className="mt-2 mb-4 pb-4 border-b border-amber-200/15">
+                        <div className="latin-display italic text-amber-200/65 text-[10px] tracking-[0.25em] uppercase mb-2 text-center">
+                          — {t.gameOverReviewSection} —
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={startReview}
+                            className="px-3 py-3 border border-amber-200/55 bg-amber-200/[0.04] hover:bg-amber-200/[0.10] hover:border-amber-200/85 rounded-sm jp-display text-amber-100 text-sm tracking-wider leading-snug"
+                          >
+                            {t.reviewMatchButton}
+                          </button>
+                          <button
+                            onClick={() => void loadCurrentMatchKifu()}
+                            className="px-3 py-3 border border-amber-200/55 bg-amber-200/[0.04] hover:bg-amber-200/[0.10] hover:border-amber-200/85 rounded-sm jp-display text-amber-100 text-sm tracking-wider leading-snug"
+                          >
+                            {t.gameOverViewKifu}
+                          </button>
+                        </div>
+                        <p className="jp-display italic text-amber-200/55 text-[10px] mt-2 text-center leading-relaxed">
+                          {t.gameOverReviewHint}
+                        </p>
                       </div>
                     )}
 
@@ -4618,16 +4629,27 @@ export default function App() {
                   )}
 
                   {gameMode === 'ai' && kifu.length > 0 && (
-                    <div className="flex justify-center gap-2 mt-3 mb-1 flex-wrap">
-                      <button onClick={startReview} className="btn">
-                        {t.reviewMatchButton}
-                      </button>
-                      <button
-                        onClick={() => void loadCurrentMatchKifu()}
-                        className="btn"
-                      >
-                        {t.gameOverViewKifu}
-                      </button>
+                    <div className="mt-3 mb-3 pb-3 border-b border-amber-200/15">
+                      <div className="latin-display italic text-amber-200/65 text-[10px] tracking-[0.25em] uppercase mb-2 text-center">
+                        — {t.gameOverReviewSection} —
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={startReview}
+                          className="px-3 py-3 border border-amber-200/55 bg-amber-200/[0.04] hover:bg-amber-200/[0.10] hover:border-amber-200/85 rounded-sm jp-display text-amber-100 text-sm tracking-wider leading-snug"
+                        >
+                          {t.reviewMatchButton}
+                        </button>
+                        <button
+                          onClick={() => void loadCurrentMatchKifu()}
+                          className="px-3 py-3 border border-amber-200/55 bg-amber-200/[0.04] hover:bg-amber-200/[0.10] hover:border-amber-200/85 rounded-sm jp-display text-amber-100 text-sm tracking-wider leading-snug"
+                        >
+                          {t.gameOverViewKifu}
+                        </button>
+                      </div>
+                      <p className="jp-display italic text-amber-200/55 text-[10px] mt-2 text-center leading-relaxed">
+                        {t.gameOverReviewHint}
+                      </p>
                     </div>
                   )}
 
