@@ -1479,6 +1479,12 @@ export default function App() {
   // loaded board can be inspected without re-firing the win/loss flow.
   // Cleared by reset() and by the first user click on the board.
   const [loadedKifuView, setLoadedKifuView] = useState(false);
+  /** Set when the player entered loaded-kifu replay via the
+   *  GameOver modal's "対戦棋譜を読み込む" button. The replay strip's
+   *  × close branches on this so it returns to the GameOver modal
+   *  (preserving the result + score panel) instead of starting a
+   *  fresh match like every other exit path. Cleared on reset(). */
+  const [cameFromGameOver, setCameFromGameOver] = useState(false);
   // Step-replay cursor for the loaded kifu. null = not in replay mode
   // (use `board` directly). 0 = initial empty-center board, 1..N =
   // board after replaying the first N moves of `kifu`.
@@ -2427,6 +2433,7 @@ export default function App() {
     setKifu([]);
     setResigned(null);
     setGameOverDismissed(false);
+    setCameFromGameOver(false);
     setUnlockedThisRun(null);
     setLoadedKifuView(false);
     setReplayCursor(null);
@@ -2682,7 +2689,17 @@ export default function App() {
     setSavedSlots(slots);
     const slot = key ? slots.find((s) => s.key === key) ?? null : null;
     if (slot) {
+      // Stash the GameOver-relevant state before loadKifuMoves wipes
+      // it (the loader clears `lastResult`/`resigned` because for the
+      // generic kifu library path the loaded match is unrelated to
+      // the current run). Re-set them after so the GameOver modal
+      // renders identically when the player closes the replay strip.
+      const stashedResult = lastResult;
+      const stashedResigned = resigned;
+      setCameFromGameOver(true);
       loadKifuMoves(slot);
+      setLastResult(stashedResult);
+      setResigned(stashedResigned);
     } else {
       setKifuOpen(true);
     }
@@ -4037,6 +4054,22 @@ export default function App() {
                       icon={X}
                       helpText={t.kifuViewingClose}
                       onClick={() => {
+                        // Re-entry from the GameOver modal: the
+                        // player tapped 「対戦棋譜を読み込む」 to
+                        // study the just-finished match and now wants
+                        // back. Just exit the loaded-kifu view —
+                        // gameOver is still true (board is at the
+                        // final position) and the modal re-appears
+                        // through the existing
+                        // `gameOver && !loadedKifuView` gate. Skip
+                        // the reset()/intro branches below; those
+                        // start a fresh match, which the player
+                        // explicitly didn't ask for.
+                        if (cameFromGameOver) {
+                          setLoadedKifuView(false);
+                          setCameFromGameOver(false);
+                          return;
+                        }
                         // Story mode wants the chapter card +
                         // boss-pre dialogue to come back on screen
                         // before the next match starts; calling
