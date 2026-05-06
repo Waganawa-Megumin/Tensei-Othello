@@ -56,9 +56,9 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { PrologueOverlay } from './components/PrologueOverlay';
 import { NarrativeOverlay } from './components/NarrativeOverlay';
 import {
-  getSeenOverlays,
   hasSeenOverlay,
   markOverlaySeen,
+  getArchiveScenes,
   resetOverlaysSeen,
   type OverlayKey,
 } from './storage/storyOverlays';
@@ -1495,6 +1495,18 @@ export default function App() {
     savedAt: number;
   } | null>(null);
   const [resultRecorded, setResultRecorded] = useState(false);
+  /** Synchronous mirror of `resultRecorded`. The state-only gate had
+   *  a runtime failure mode where the gameOver effect re-fired
+   *  hundreds of times in a single second (diag log v0.33.7 captured
+   *  200 consecutive `gameOver` events at ~5ms cadence) — the
+   *  setResultRecorded(true) update wasn't blocking the next effect
+   *  re-entry quickly enough, presumably because
+   *  `recordSlotResult().then(setSlots)` keeps churning `activeSlot`
+   *  (an effect dep) and some batching/closure edge case meant the
+   *  state read came back stale. The ref write commits synchronously
+   *  inside the effect body, so the gate is bulletproof regardless
+   *  of how React schedules the surrounding state updates. */
+  const resultRecordedRef = useRef(false);
   /** Last recorded result, used by the gameOver modal to know whether
    *  to show "Next chapter" vs "Try again". Set synchronously when
    *  gameOver fires; persists until the next reset. */
@@ -1955,7 +1967,12 @@ export default function App() {
   // loss). Free matches feed the global free-stats bucket. Two-player
   // matches are not recorded.
   useEffect(() => {
-    if (!gameOver || resultRecorded || loadedKifuView) return;
+    // Sync ref check FIRST: if a previous fire of this effect
+    // already entered the body, never re-enter — even if React
+    // hasn't yet committed the matching `setResultRecorded(true)`
+    // state update.
+    if (!gameOver || resultRecordedRef.current || loadedKifuView) return;
+    resultRecordedRef.current = true;
     logDiag('gameOver', {
       black: counts.black,
       white: counts.white,
@@ -2058,9 +2075,14 @@ export default function App() {
   ]);
 
   // Whenever a fresh game starts (kifu cleared, board reset) clear the
-  // recorded-result gate so the next gameOver records again.
+  // recorded-result gate so the next gameOver records again. The ref
+  // mirror has to be cleared in lockstep — otherwise a fresh match
+  // would be locked out from recording its result.
   useEffect(() => {
-    if (kifu.length === 0 && !gameOver) setResultRecorded(false);
+    if (kifu.length === 0 && !gameOver) {
+      resultRecordedRef.current = false;
+      setResultRecorded(false);
+    }
   }, [kifu.length, gameOver]);
 
   // Auto-save the kifu when the game ends. Skipped while reviewing a
@@ -2595,6 +2617,7 @@ export default function App() {
     setPlayerColor(slot.playerColor === WHITE ? WHITE : BLACK);
     setFirstPlayerRoll(null);
     setLoadedKifuView(true);
+    resultRecordedRef.current = true;
     setResultRecorded(true);
     // Track the slot we're parked on so a freshly-generated review
     // patches into the same record instead of duplicating it.
@@ -3488,7 +3511,11 @@ export default function App() {
           onSwitchSlot={() => setSlotPickerOpen(true)}
           archiveAvailable={
             activeSlotId !== null &&
-            getSeenOverlays(String(activeSlotId)).length > 0
+            getArchiveScenes(
+              String(activeSlotId),
+              storyProgress,
+              trueEndingAchieved,
+            ).length > 0
           }
           onOpenArchive={() => setArchiveOpen(true)}
         />
@@ -6105,7 +6132,13 @@ export default function App() {
           the title screen. */}
       {archiveOpen && (() => {
         const seen =
-          activeSlotId !== null ? getSeenOverlays(String(activeSlotId)) : [];
+          activeSlotId !== null
+            ? getArchiveScenes(
+                String(activeSlotId),
+                storyProgress,
+                trueEndingAchieved,
+              )
+            : [];
         return (
           <div
             className="modal-bg fixed inset-0 z-[55] flex items-stretch md:items-center justify-center p-2 md:p-6"
