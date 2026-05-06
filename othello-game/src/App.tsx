@@ -1807,7 +1807,25 @@ export default function App() {
       setActiveSlotIdState(id);
       setUnlockedCount(unlocks);
       setTrueEndingAchievedState(trueEnding);
-      setVoidphiAwakenedState(voidphi);
+      // Backward-compat migration (v0.36.4): pre-Phase-4-Step-3
+      // semantics had OPP22 unlocked alongside OPP21 the moment the
+      // single `trueEndingAchieved` flag flipped. v0.36.0 introduced
+      // a separate `voidphiAwakened` flag to gate OPP22 behind the
+      // 20-D awakening cinematic, but that broke grandfathered
+      // players: they had `trueEndingAchieved=true` from an earlier
+      // session yet `voidphiAwakened=false` (the storage key didn't
+      // exist back then), so OPP22 silently re-locked itself on
+      // upgrade. Treat any pre-existing true ender as having seen
+      // 20-D — they can re-watch it from the scene archive (added
+      // alongside the migration since the archive entry was also
+      // gated on `voidphiAwakened`).
+      let voidphiResolved = voidphi;
+      if (trueEnding && !voidphi) {
+        voidphiResolved = true;
+        void setVoidphiAwakened(true);
+        logDiag('voidphi.migrated_from_trueending');
+      }
+      setVoidphiAwakenedState(voidphiResolved);
       // Default the player avatar to the latest unlocked character
       // on app boot (mirrors `selectSlot`'s logic). Without this, a
       // returning player with PLR01 英霊ハルキ unlocked would land
