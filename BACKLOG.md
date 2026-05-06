@@ -11,15 +11,7 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-- [ ] **OPP アバター v4 アセット配置 (Phase 1)** —
-      別 Claude セッションで精製された OPP 21 アセット (キャラ/背景/
-      アイコン/仕様書) をリポジトリに配置。旧 256×256 PNG は
-      `public/avatars-old/opponents/` に温存、新は
-      `public/avatars/opponents/OPPxx_*/` 構造で配置 (21 フォルダ)。
-      ゼロは通常版 (OPP20_zero) + 戦闘モード版 (OPP20_zero_battle)
-      の二重アセット構造。ゲーム実装 (パス参照更新・シーン分岐) は
-      Phase 2 で別タスク対応。詳細 `opp_handoff/TASK.md`。
-      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
+なし。
 
 ---
 
@@ -72,6 +64,17 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **OPP アバター v4 アセット配置 (Phase 1)** —
+      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: `dccc1ae` —
+      OPP 21 アセット (20 + ゼロ戦闘モード) を
+      `public/avatars/opponents/OPPxx_*/` 構造に配置 (各フォルダに
+      `character.png` / `background.png` / `icon.png` / `spec.md`、
+      合計 63 PNG + 21 spec.md + INDEX.md + README.md)。
+      旧 256×256 PNG 20 枚は `public/avatars-old/opponents/` に
+      `git mv` で温存。コード参照更新と章 20 シーン分岐は Phase 2
+      で別タスク対応予定。詳細 `opp_handoff/TASK.md`。
 
 - [x] **PLR00 デフォルト一本道のシナリオ + 挿絵を統合** —
       completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
