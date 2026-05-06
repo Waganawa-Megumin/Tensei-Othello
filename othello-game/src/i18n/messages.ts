@@ -309,14 +309,6 @@ export interface Messages {
    *  drop the current board state. */
   aiRespawnLabel: string;
   aiRespawnDesc: string;
-  /** "Replay true-ending cinematic" escape hatch in the settings
-   *  modal. Visible only when the player already has at least one
-   *  of `trueEndingAchieved` / `voidphiAwakened` set — pressing it
-   *  clears both, so the next PLR01 ch.20 win re-fires the
-   *  20-B → 20-C → 20-D chain. */
-  trueEndingReplayLabel: string;
-  trueEndingReplayDesc: string;
-  trueEndingReplayConfirm: string;
   /** Diagnostic log export — copies the recent event ring buffer
    *  to clipboard so users can paste into bug reports. Local-only,
    *  nothing is sent over the network. */
@@ -765,11 +757,6 @@ export const ja: Messages = {
   aiRespawnLabel: '🔄 AI を再起動',
   aiRespawnDesc:
     'AI の手番が長く返ってこない時に。盤面を保ったまま思考ワーカーだけ作り直します。緊急再読み込みより軽い復旧手段です。',
-  trueEndingReplayLabel: '真エンディングを再視聴',
-  trueEndingReplayDesc:
-    '真エンディング (20-B → 20-C → 20-D) のシネマは初回 1 度だけ自動再生される設計です。「クリアしたのに何も出なかった」「もう一度観たい」時にこのボタンでフラグをリセット → 次に PLR01 で章 20 に勝った時に再発火します。',
-  trueEndingReplayConfirm:
-    '真エンディングシネマの「視聴済み」フラグを 2 つ (trueEndingAchieved / voidphiAwakened) リセットします。\n次に PLR01 英霊ハルキで章 20 (vs ゼロ) に勝つと、20-B → 20-C → 20-D のシネマが再生され、OPP21/OPP22 のアンロックも再演出されます。よろしいですか?',
   diagLogExportLabel: '🩺 診断ログを書き出す',
   diagLogExportDesc:
     '直近 200 件の操作ログをクリップボードにコピーします。フリーズなどの不具合報告に貼り付けてください。送信は行われず、端末内だけで完結します。',
@@ -1188,11 +1175,6 @@ your journey on the board reaches its close.`,
   aiRespawnLabel: '🔄 Restart AI worker',
   aiRespawnDesc:
     "Use this if the AI is taking too long to respond. Respawns the thinking worker without dropping your board state — lighter-touch than the emergency reload.",
-  trueEndingReplayLabel: 'Replay the true ending',
-  trueEndingReplayDesc:
-    'The true-ending cinematic (20-B → 20-C → 20-D) auto-plays only the first time globally. If "I cleared but nothing happened" or you just want to watch it again, this button resets the flags so the chain re-fires on your next PLR01 win at chapter 20.',
-  trueEndingReplayConfirm:
-    "This clears both 'seen' flags (trueEndingAchieved / voidphiAwakened).\nThe next time you defeat Lv.20 ゼロ as PLR01 英霊ハルキ, the 20-B → 20-C → 20-D cinematic will play again and OPP21/OPP22 will be re-announced as unlocked. Continue?",
   diagLogExportLabel: '🩺 Export diagnostic log',
   diagLogExportDesc:
     "Copies the last 200 events to your clipboard. Paste this into a bug report when you hit a freeze. Nothing is sent over the network — it stays on your device.",

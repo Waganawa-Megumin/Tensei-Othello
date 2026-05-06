@@ -2097,12 +2097,12 @@ export default function App() {
     const wonChapter20 = result === 'win' && opponentLevel === 20;
     // Diagnostic snapshot — captures every gate term so a "the
     // cinematic didn't fire even though I just beat ゼロ with PLR01"
-    // report is decidable from the diag log alone. The most common
-    // cause is `trueEndingAlreadyAchieved=true` from an earlier run
-    // (the cinematic is gated `!trueEndingAchieved` for idempotency,
-    // so it only fires the first time globally). The settings modal
-    // exposes a "真エンディングを再視聴" button that clears both
-    // flags so the player can re-watch the chain.
+    // report is decidable from the diag log alone. v0.36.2 dropped
+    // the `!trueEndingAchieved` / `!voidphiAwakened` idempotency
+    // clauses so the chain plays on every qualifying win (user
+    // request), not just the first time. The flag setters below are
+    // still no-ops on subsequent wins, which keeps OPP21/22 unlock
+    // semantics stable.
     logDiag('trueending.gate', {
       gameMode,
       ranAsPLR01,
@@ -2111,20 +2111,19 @@ export default function App() {
       opponentLevel,
       trueEndingAlreadyAchieved: trueEndingAchieved,
       voidphiAwakened,
-      willFire:
-        gameMode === 'ai' &&
-        wonChapter20 &&
-        ranAsPLR01 &&
-        !trueEndingAchieved,
+      willFire: gameMode === 'ai' && wonChapter20 && ranAsPLR01,
     });
-    if (
-      gameMode === 'ai' &&
-      wonChapter20 &&
-      ranAsPLR01 &&
-      !trueEndingAchieved
-    ) {
-      setTrueEndingAchievedState(true);
-      void setTrueEndingAchieved(true);
+    if (gameMode === 'ai' && wonChapter20 && ranAsPLR01) {
+      // Idempotent flag flips — only matter on the first win, but
+      // calling them again is harmless. They keep OPP21 / OPP22 in
+      // their unlocked state across replays.
+      if (!trueEndingAchieved) {
+        setTrueEndingAchievedState(true);
+        void setTrueEndingAchieved(true);
+      }
+      // Chain: 20-B → 20-C → 20-D. Re-fires on every qualifying
+      // win so the player can re-experience the finale by simply
+      // beating ゼロ as PLR01 again.
       setStoryOverlay('narrative:trueEnding20B');
     }
     setResultRecorded(true);
@@ -3751,15 +3750,14 @@ export default function App() {
                 );
               }
               // Phase 4 Step 3 — chain straight into the Void-φ
-              // awakening cinematic if the player hasn't watched it
-              // yet. Re-runs (= player re-watches 20-B/C from the
-              // scene archive) skip the chain since voidphiAwakened
-              // is already true.
-              if (!voidphiAwakened) {
-                setStoryOverlay('narrative:trueEnding20D');
-              } else {
-                setStoryOverlay(null);
-              }
+              // awakening cinematic. v0.36.2 dropped the
+              // `!voidphiAwakened` gate so the chain re-plays on
+              // every PLR01 ch.20 win, not just the first. Archive-
+              // mode replay (no gameOver context) doesn't reach
+              // here, so the chain only auto-fires from the
+              // gameOver effect's `setStoryOverlay('narrative:
+              // trueEnding20B')`.
+              setStoryOverlay('narrative:trueEnding20D');
             }}
           />
         )}
@@ -6149,38 +6147,6 @@ export default function App() {
                     </button>
                     <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
                       {t.spellButtonDesc}
-                    </p>
-                  </>
-                )}
-                {/* Replay-true-ending escape hatch. The cinematic chain
-                    (20-B → 20-C → 20-D) is gated by
-                    `!trueEndingAchieved` so it only fires the first
-                    time PLR01 beats Lv.20 ゼロ. Players who already
-                    have the flag set (or whose flag was set by an
-                    earlier session before the v0.34.5 gate fix) can
-                    clear both flags here and replay the chain on
-                    their next PLR01 ch.20 win. Visible only when at
-                    least one of the flags is true so it doesn't
-                    clutter the section for first-time players. */}
-                {(trueEndingAchieved || voidphiAwakened) && (
-                  <>
-                    <button
-                      onClick={async () => {
-                        if (!window.confirm(t.trueEndingReplayConfirm)) {
-                          return;
-                        }
-                        logDiag('manual.trueEndingReplay');
-                        setTrueEndingAchievedState(false);
-                        setVoidphiAwakenedState(false);
-                        await setTrueEndingAchieved(false);
-                        await setVoidphiAwakened(false);
-                      }}
-                      className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
-                    >
-                      🌟 {t.trueEndingReplayLabel}
-                    </button>
-                    <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
-                      {t.trueEndingReplayDesc}
                     </p>
                   </>
                 )}
