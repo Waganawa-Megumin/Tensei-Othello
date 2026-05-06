@@ -393,6 +393,9 @@ export interface Messages {
     'narrative:final': string;
     'narrative:trueEnding20B': string;
     'narrative:trueEnding20C': string;
+    'narrative:trueEnding20D': string;
+    'narrative:opp22.intro': string;
+    'narrative:opp22.victoryNarration': string;
     ending: string;
   };
   archiveReplayLabel: string;
@@ -829,6 +832,9 @@ export const ja: Messages = {
     'narrative:final': '幕間 「決戦の前夜」',
     'narrative:trueEnding20B': '真エンディング 「解放の瞬間」',
     'narrative:trueEnding20C': '真エンディング 「現世にて」',
+    'narrative:trueEnding20D': '真エンディング 「ヴォイドφ覚醒」',
+    'narrative:opp22.intro': 'OPP22 「ヴォイドφ ── 初対面」',
+    'narrative:opp22.victoryNarration': 'OPP22 「ヴォイドφ ── 真の終幕」',
     ending: '終章 「盤上世界、その先へ」',
   },
   archiveReplayLabel: '再生',
@@ -1244,6 +1250,9 @@ Distant **cheers** — and what sounded suspiciously like a **glittering idol so
     'narrative:final': 'Interlude · The Eve of the Final Match',
     'narrative:trueEnding20B': 'True Ending · The Moment of Release',
     'narrative:trueEnding20C': 'True Ending · In the Human World',
+    'narrative:trueEnding20D': 'True Ending · Void-φ Awakens',
+    'narrative:opp22.intro': 'OPP22 — Void-φ · First Encounter',
+    'narrative:opp22.victoryNarration': 'OPP22 — Void-φ · The True Curtain',
     ending: 'Ending · Beyond Bansho Sekai',
   },
   archiveReplayLabel: 'Play',

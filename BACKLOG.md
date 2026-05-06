@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.7 + Phase 4 Step 1)
+Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.36.0 + Phase 4 Step 3)
 
 ---
 
@@ -74,10 +74,86 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.7 + Phase 
 - [ ] **アクセシビリティ** — キーボード操作（v0.21.0 で棋譜リプレイ画面
       に ←/→/Space/Home/End を実装。盤面操作と全画面 toolbar への展開
       は未着手）、スクリーンリーダー対応
+- [ ] **OPP22 in-battle 統合 (Phase 4 follow-up)** — Phase 4 Step 3 で
+      i18n + storage + archive + unlock gate は完成済。残るは free-mode
+      で OPP22 を選択した時の UX 配線: (1) `voidphi_intro_seen` flag
+      で初回戦闘前に `t.story.opp22.intro` を NarrativeOverlay 再生 +
+      flag 立て + `markOverlaySeen('narrative:opp22.intro')`、(2) 戦闘
+      画面で `t.story.opp22.bossPre` を pre-match バナー表示 (chapter
+      card にあたる UI を OPP22 用に作る)、(3) GameOver モーダルで
+      `t.story.opp22.bossPost.{victory,defeat}` 表示、(4) 勝利時に
+      `t.story.opp22.victoryNarration` を NarrativeOverlay 再生 +
+      `markOverlaySeen('narrative:opp22.victoryNarration')`。
+      現状でも archive (シーン回想) 経由でテキストは全て再生可能。
+- [ ] **Phase 4 音設計 (Step 4.5-A〜D, Phase 4 follow-up)** — Phase 4
+      Step 3 の zip に同梱されていた `sound_design/` 仕様 + 4 ステップ
+      指示書の実装。デフォルト OFF の opt-in 方式、SoundManager コア +
+      設定 UI + 24+ 音種類 + iOS Safari AudioContext 対応 + CC0/CC-BY
+      素材 (Freesound / OpenGameArt 等) 収集。素材入手と実装で 6-8
+      時間規模。
 
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **Phase 4 Step 3: ヴォイドφ覚醒シネマ + シナリオ統合 + アンロック
+      ゲート分離 (v0.36.0)** — completed: 2026-05-06 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (this push) —
+      Phase 4 Step 3 アップデートセット投入。ZIP 同梱のドラフト
+      (`drafts/i18n/`, `drafts/code/code_skeleton.ts`,
+      `drafts/scenarios/voidphi_scenario_v1.md`,
+      `specs/master_world_§5.5_extension.md`) を参考に、
+      シナリオ + ロジックを 1 commit に集約 (10 commit 推奨を
+      セッション内集約)。新規型: `StoryContent.narrative.trueEnding20D`
+      (NarrativeScene) + `StoryContent.opp22` (intro / bossPre /
+      bossPost.victory / bossPost.defeat / victoryNarration の 5
+      ブロック)。新規 OverlayKey: `narrative:trueEnding20D` /
+      `narrative:opp22.intro` / `narrative:opp22.victoryNarration`。
+      新規 storage helper:
+      `getVoidphiAwakened`/`setVoidphiAwakened` +
+      `getVoidphiIntroSeen`/`setVoidphiIntroSeen` (`saveSlots.ts`、
+      Phase 3 の trueEnding helper と同じパターン)。i18n 追加:
+      `narrative.trueEnding20D` + `narrative.opp22.*` を ja/en で
+      合計 約 1500 字のシナリオ流し込み (drafts/scenarios と一致)。
+      連鎖発火: `trueEnding20C` の dismiss handler で
+      `!voidphiAwakened` チェックして `trueEnding20D` へ chain。
+      20-D dismiss で `setVoidphiAwakened(true)` + state 更新 +
+      logDiag('voidphi.awakened') + `markOverlaySeen`。アンロック
+      ゲート分離: OPP 選択画面の isLocked 判定を
+      `c.level === 22 ? !voidphiAwakened : !trueEndingAchieved` に
+      変更し OPP21 と OPP22 を別フラグ管理。Archive 拡張:
+      `getOrderedArchiveScenes` 第 4 引数に `voidphiAwakened` 追加、
+      20-D は voidphiAwakened ベース、opp22.intro/victoryNarration は
+      seen-flag ベース (in-battle 統合 follow-up までの暫定)。
+      レビューチェーン: 各 NarrativeOverlay に `chapter_20d_voidphi`
+      imageBaseName を渡す ($/illustrations/chapter_20d_voidphi-
+      \{landscape,portrait\}.png$ を Phase 4 Step 2 から流用、
+      LS+PT を illustrations/ にも配置)。i18n
+      archiveSceneLabels に 3 ラベル追加 (ja/en)。CLAUDE.md §7
+      を 4 段化に更新、§4.1 OPP22 説明を voidphiAwakened ガートに
+      更新。スコープ外 (P3 として保留): OPP22 in-battle 統合
+      (intro/bossPre/Post の戦闘画面表示)、Phase 4 音設計 (12
+      ステップ実装)。検証: typecheck pass / 66 tests pass / build OK。
+
+- [x] **Phase 4 Step 2: ヴォイドφ覚醒シネマ挿絵 LS+PT (v0.35.1)** —
+      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: `e55efd5` —
+      Phase 4 Step 2 アップデートセット (`update_set_phase4_step2.zip`)
+      投入。ヴォイドφ覚醒シネマ (章 20-D) 用フルスクリーン挿絵 3
+      ファイル新規追加: `chapter_20d_voidphi-landscape.png`
+      (1920×1080, 3.8MB, 横長構図、左に巨大黄金螺旋、右に渦巻銀河、
+      ヴォイドφ中央〜右配置で左手から黄金螺旋へ光ほとばしる) /
+      `chapter_20d_voidphi-portrait.png` (1080×1920, 3.4MB, 縦長
+      構図、上部銀河、下部 φ 記号、全身像、縦に走る黄金螺旋が
+      キャラ全体を貫く、下 1/4 はテキストオーバーレイ用) /
+      `illustrations/chapter_20d_voidphi.png` (LS 流用)。
+      アセット生成パイプライン: ChatGPT (GPT-4o + DALL-E 3) で
+      OPP22 character.png を参照画像投入 → プロンプト v2 で
+      1672×941 / 941×1672 出力 → Pillow LANCZOS で 1920×1080 /
+      1080×1920 にアップサンプル。本セットだけでは UI 上に新
+      挿絵は表示されず、Phase 4 Step 3 (シナリオ + ロジック)
+      投入時に NarrativeOverlay 経由で自動表示される設計。
+      PWA precache 219 → 222 entries (+3 PNG, +5.1 MB)。
 
 - [x] **Phase 4 Step 1: OPP22 ヴォイドφ 正アセット投入 + stopgap 撤去
       (v0.34.7)** — completed: 2026-05-06 — by:
@@ -426,53 +502,6 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.7 + Phase 
       の時は `aiAvatarImage` で上書きしてフードオフ reveal を保証。
       `CLAUDE.md §4.1` を OPP21 (20 + ゼロ戦闘モード) 表 + シーン
       分岐解説に更新。OPP v4 統合完遂。
-
-- [x] **OPP アバター v4 アセット配置 (Phase 1)** —
-      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
-      commit: `dccc1ae` —
-      OPP 21 アセット (20 + ゼロ戦闘モード) を
-      `public/avatars/opponents/OPPxx_*/` 構造に配置 (各フォルダに
-      `character.png` / `background.png` / `icon.png` / `spec.md`、
-      合計 63 PNG + 21 spec.md + INDEX.md + README.md)。
-      旧 256×256 PNG 20 枚は `public/avatars-old/opponents/` に
-      `git mv` で温存。コード参照更新と章 20 シーン分岐は Phase 2
-      で別タスク対応予定。詳細 `opp_handoff/TASK.md`。
-
-- [x] **PLR00 デフォルト一本道のシナリオ + 挿絵を統合** —
-      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
-      commit: (next push) — ユーザーから 6 pack で受領した完成版
-      シナリオ (~4200 行 ja/en ペア) と挿絵 52 PNG (タイトル 2 +
-      ナラティブ 10 + 章 40、LS/PT ペア) をアプリに統合。
-      4 commit に分割:
-      (1) `feat(i18n): structured chapter stories + prologue + narrative
-      scenes` (`ecfd5f0`) — `src/i18n/story/{types,ja,en,index,render}.ts`
-      新設、章 4 ブロック構造 (intro/bossPre/bossPost/victoryDialogue/
-      victoryNarration) + プロローグ + 5 ナラティブ + endingFull +
-      epilogueHook を 200+ 文字列で読み込み。messages.ts は `story`
-      フィールド 1 行追加のみで 2000 行肥大を回避。`**bold**` の
-      Markdown 強調は `renderEmphasized()` で `<strong>` 化。
-      (2) `feat(art): wire title-bg + chapter-art with LS/PT variants`
-      (`15a463d`) — `useMediaQuery('(orientation: landscape)')` 新設、
-      `<ChapterArt>` を `chapterArtBase` + LS/PT 切替に書き換え、
-      COMPUTERS_DATA 20 体のパスを `avatars/chapters/chapter_NN_name`
-      新形式に。TitleScreen に LS/PT 背景画像 + 新タグライン
-      (「石をひっくり返せ。世界も、ひっくり返せ。」) + Story カードに
-      新 CTA「異邦の打ち手として、はじめる」を追加。
-      (3) `feat(story): prologue overlay + 4-block chapter cards +
-      game-over dialogue` (`b09b03f`) — `<PrologueOverlay>` 新設、
-      `storyOverlays` ストレージで既読管理 (`othello:overlay_seen:
-      {slot}:{key}`)、章カード本文を 4 ブロック構造表示
-      (クリア済章のみ outro 追記、ネタバレ防止)、GameOver モーダルに
-      章クリア時の victoryDialogue + bossPost + victoryNarration、
-      Ch.20 クリア時に endingFull を表示。
-      (4) `feat(story): narrative inserts + ending finale + v0.31.0`
-      — `<NarrativeOverlay>` 新設、Ch.10 → solitude / Ch.15 → allies /
-      Ch.19 → final を「次の章へ」ボタン経由で全画面挿入、
-      `<EndingArt>` で Ch.20 GameOver に ending 挿絵。BUILD_TAG
-      `v0.31.0 · default-route-finished`。
-      スコープ外 (次フェーズ): PLR01-PLR20 アンロック分岐、
-      `03_dynamic_gameplay_dialogue.md` の動的ゲーム中セリフ。
-      `v0.31.0`
 
 ---
 

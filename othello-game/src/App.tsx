@@ -109,6 +109,8 @@ import {
   setCharacterUnlocks,
   getTrueEndingAchieved,
   setTrueEndingAchieved,
+  getVoidphiAwakened,
+  setVoidphiAwakened,
   TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from './storage/saveSlots';
@@ -1457,6 +1459,16 @@ export default function App() {
    */
   const [trueEndingAchieved, setTrueEndingAchievedState] = useState(false);
   /**
+   * Phase 4 Step 3 — Void-φ awakening flag. Flips `true` after the
+   * player dismisses the chapter 20-D cinematic (the chain that
+   * follows 20-C the first time the true ending plays). The OPP22
+   * selection gate uses this *instead of* `trueEndingAchieved` so
+   * 20-D acts as the true unlock event for Lv.22, while OPP21
+   * keeps its original `trueEndingAchieved` gate. Persisted via
+   * `getVoidphiAwakened` / `setVoidphiAwakened`.
+   */
+  const [voidphiAwakened, setVoidphiAwakenedState] = useState(false);
+  /**
    * When non-null, the GameOver modal renders a "新キャラクター解放"
    * banner with the avatar's name. Set the moment storyProgress
    * transitions from 19 → 20 in the result-recording effect; cleared
@@ -1788,12 +1800,14 @@ export default function App() {
       getActiveSlotId(),
       getCharacterUnlocks(),
       getTrueEndingAchieved(),
-    ]).then(([loaded, id, unlocks, trueEnding]) => {
+      getVoidphiAwakened(),
+    ]).then(([loaded, id, unlocks, trueEnding, voidphi]) => {
       if (cancelled) return;
       setSlots(loaded);
       setActiveSlotIdState(id);
       setUnlockedCount(unlocks);
       setTrueEndingAchievedState(trueEnding);
+      setVoidphiAwakenedState(voidphi);
     });
     return () => {
       cancelled = true;
@@ -3714,6 +3728,42 @@ export default function App() {
                   'narrative:trueEnding20C',
                 );
               }
+              // Phase 4 Step 3 — chain straight into the Void-φ
+              // awakening cinematic if the player hasn't watched it
+              // yet. Re-runs (= player re-watches 20-B/C from the
+              // scene archive) skip the chain since voidphiAwakened
+              // is already true.
+              if (!voidphiAwakened) {
+                setStoryOverlay('narrative:trueEnding20D');
+              } else {
+                setStoryOverlay(null);
+              }
+            }}
+          />
+        )}
+        {/* Phase 4 Step 3 — Void-φ awakening cinematic. Plays once
+            after the standard true ending (20-C). The dismiss handler
+            sets `voidphiAwakened` (state + localStorage) which flips
+            the OPP22 selection-grid gate from `trueEndingAchieved` to
+            `voidphiAwakened` — i.e. OPP22 only unlocks once the
+            player has actually seen the awakening, not just the
+            standard true ending. */}
+        {storyOverlay === 'narrative:trueEnding20D' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.trueEnding20D}
+            imageBaseName="chapter_20d_voidphi"
+            tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+            dismissLabel={t.close}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(
+                  String(activeSlotId),
+                  'narrative:trueEnding20D',
+                );
+              }
+              setVoidphiAwakenedState(true);
+              void setVoidphiAwakened(true);
+              logDiag('voidphi.awakened');
               setStoryOverlay(null);
             }}
           />
@@ -5843,9 +5893,21 @@ export default function App() {
                             // Hidden = OPP21 (Lv.21 ゼロ・現世帰還).
                             // Renders with the `.avatar-locked` filter
                             // (black-out + ??? overlay) and rejects
-                            // selection until `trueEndingAchieved`
-                            // (= PLR01 cleared chapter 20) flips.
-                            const isLocked = !!c.hidden && !trueEndingAchieved;
+                            // selection until the matching unlock
+                            // flag flips. Phase 4 Step 3 split the
+                            // gate by level so OPP22 needs its own
+                            // 20-D awakening before becoming
+                            // selectable, while OPP21 keeps the
+                            // canonical `trueEndingAchieved` gate.
+                            //   OPP21 (Lv.21) → trueEndingAchieved
+                            //   OPP22 (Lv.22) → voidphiAwakened
+                            // Other hidden entries (none today) stay
+                            // on the more permissive trueEnding gate.
+                            const isLocked =
+                              !!c.hidden &&
+                              (c.level === 22
+                                ? !voidphiAwakened
+                                : !trueEndingAchieved);
                             return (
                               <button
                                 key={i}
@@ -6328,6 +6390,7 @@ export default function App() {
                 String(activeSlotId),
                 storyProgress,
                 trueEndingAchieved,
+                voidphiAwakened,
               )
             : [];
         const sceneLabel = (s: ArchiveScene): string => {
@@ -6548,6 +6611,42 @@ export default function App() {
                     scene={t.story.narrative.trueEnding20C}
                     imageBaseName="trueEnding20C"
                     tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+                    dismissLabel={dismissLabel}
+                    tapHintLabel={tapHintLabel}
+                    onDismiss={advance}
+                  />
+                );
+              case 'narrative:trueEnding20D':
+                return (
+                  <NarrativeOverlay
+                    key={review.index}
+                    scene={t.story.narrative.trueEnding20D}
+                    imageBaseName="chapter_20d_voidphi"
+                    tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+                    dismissLabel={dismissLabel}
+                    tapHintLabel={tapHintLabel}
+                    onDismiss={advance}
+                  />
+                );
+              case 'narrative:opp22.intro':
+                return (
+                  <NarrativeOverlay
+                    key={review.index}
+                    scene={t.story.opp22.intro}
+                    imageBaseName="chapter_20d_voidphi"
+                    tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
+                    dismissLabel={dismissLabel}
+                    tapHintLabel={tapHintLabel}
+                    onDismiss={advance}
+                  />
+                );
+              case 'narrative:opp22.victoryNarration':
+                return (
+                  <NarrativeOverlay
+                    key={review.index}
+                    scene={t.story.opp22.victoryNarration}
+                    imageBaseName="chapter_20d_voidphi"
+                    tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
                     onDismiss={advance}

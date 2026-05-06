@@ -21,6 +21,9 @@ export type OverlayKey =
   | 'narrative:final'
   | 'narrative:trueEnding20B'
   | 'narrative:trueEnding20C'
+  | 'narrative:trueEnding20D'
+  | 'narrative:opp22.intro'
+  | 'narrative:opp22.victoryNarration'
   | 'ending';
 
 const STORAGE_PREFIX = 'othello:overlay_seen:';
@@ -81,6 +84,9 @@ const OVERLAY_ORDER: readonly OverlayKey[] = [
   'narrative:final',
   'narrative:trueEnding20B',
   'narrative:trueEnding20C',
+  'narrative:trueEnding20D',
+  'narrative:opp22.intro',
+  'narrative:opp22.victoryNarration',
   'ending',
 ];
 
@@ -138,6 +144,7 @@ export function getOrderedArchiveScenes(
   slotId: string,
   storyProgress: number,
   trueEndingAchieved: boolean,
+  voidphiAwakened: boolean = false,
 ): ArchiveScene[] {
   const result: ArchiveScene[] = [];
   // The intro sequence runs as a single uninterruptible chain on the
@@ -168,6 +175,23 @@ export function getOrderedArchiveScenes(
   if (trueEndingAchieved) {
     result.push({ kind: 'overlay', key: 'narrative:trueEnding20B' });
     result.push({ kind: 'overlay', key: 'narrative:trueEnding20C' });
+  }
+  // Phase 4 Step 3 — Void-φ awakening cinematic + OPP22 encounter
+  // beats. 20-D auto-plays once 20-C dismisses (see App.tsx
+  // gameOver effect chain), and is gated on its own flag so a
+  // `trueEndingAchieved` user who hasn't yet watched 20-D won't
+  // see it as already-seen in the archive. The opp22 scenes are
+  // seen-flag-based because in-battle integration is a follow-up
+  // patch — players first see them in Free-mode encounters once
+  // that ships.
+  if (voidphiAwakened) {
+    result.push({ kind: 'overlay', key: 'narrative:trueEnding20D' });
+  }
+  if (hasSeenOverlay(slotId, 'narrative:opp22.intro')) {
+    result.push({ kind: 'overlay', key: 'narrative:opp22.intro' });
+  }
+  if (hasSeenOverlay(slotId, 'narrative:opp22.victoryNarration')) {
+    result.push({ kind: 'overlay', key: 'narrative:opp22.victoryNarration' });
   }
   return result;
 }

@@ -20,6 +20,8 @@ const CHARACTER_UNLOCKS_KEY = 'othello:character_unlocks';
  * with a `???` placeholder. Once true it stays true.
  */
 const TRUE_ENDING_KEY = 'othello:true_ending_achieved';
+const VOIDPHI_AWAKENED_KEY = 'othello:voidphi_awakened';
+const VOIDPHI_INTRO_SEEN_KEY = 'othello:voidphi_intro_seen';
 
 export const MAX_SLOTS = 10;
 export const INITIAL_LIVES = 5;
@@ -435,6 +437,60 @@ export async function setTrueEndingAchieved(v: boolean): Promise<void> {
   try {
     if (v) window.localStorage.setItem(TRUE_ENDING_KEY, '1');
     else window.localStorage.removeItem(TRUE_ENDING_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Void-φ awakening flag (= bonus Lv.22 OPP22 unlock, Phase 4 Step 3) */
+/* ------------------------------------------------------------------ */
+
+/**
+ * `true` once the player has watched the Void-φ awakening cinematic
+ * (chapter 20-D), which auto-plays the first time they finish the
+ * standard true ending (20-B → 20-C). Distinct from
+ * `trueEndingAchieved` so OPP21 (Zero returned) and OPP22 (Void-φ)
+ * have independent unlock gates — though in practice they cascade
+ * through the same trigger.
+ */
+export async function getVoidphiAwakened(): Promise<boolean> {
+  try {
+    return window.localStorage.getItem(VOIDPHI_AWAKENED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setVoidphiAwakened(v: boolean): Promise<void> {
+  try {
+    if (v) window.localStorage.setItem(VOIDPHI_AWAKENED_KEY, '1');
+    else window.localStorage.removeItem(VOIDPHI_AWAKENED_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * `true` once the player has watched the Void-φ intro narrative
+ * (first-encounter scene shown before the first OPP22 free-mode
+ * fight). Used to gate "show intro vs jump straight to match".
+ * In-battle integration of intro/bossPre/Post is left for a
+ * follow-up patch — the flag is plumbed end-to-end now so the
+ * flow can be wired without another storage migration.
+ */
+export async function getVoidphiIntroSeen(): Promise<boolean> {
+  try {
+    return window.localStorage.getItem(VOIDPHI_INTRO_SEEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setVoidphiIntroSeen(v: boolean): Promise<void> {
+  try {
+    if (v) window.localStorage.setItem(VOIDPHI_INTRO_SEEN_KEY, '1');
+    else window.localStorage.removeItem(VOIDPHI_INTRO_SEEN_KEY);
   } catch {
     /* ignore */
   }

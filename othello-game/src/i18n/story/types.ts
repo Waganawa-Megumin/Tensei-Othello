@@ -71,6 +71,33 @@ export interface StoryContent {
      *  Always follows trueEnding20B, terminates on the OPP21 +
      *  OPP22 unlock notification. */
     trueEnding20C: NarrativeScene;
+    /** Phase 4 Step 3 — Void-φ awakening cinematic. Plays
+     *  automatically right after `trueEnding20C` finishes, the
+     *  first time the true ending is achieved. Marks
+     *  `voidphi_awakened` localStorage flag so the OPP22 selection
+     *  gate flips from `trueEndingAchieved` to `voidphiAwakened`. */
+    trueEnding20D: NarrativeScene;
+  };
+  /** Phase 4 Step 3 — narrative content for the OPP22 ヴォイドφ
+   *  encounter (free-mode only, after voidphiAwakened). Surfaced in
+   *  the scene archive so players can re-read the lore. In-battle
+   *  free-mode integration of intro / bossPre / bossPost is left for
+   *  a follow-up patch. */
+  opp22: {
+    /** First-encounter intro shown before OPP22's first free-mode
+     *  fight. */
+    intro: NarrativeScene;
+    /** Three pre-match dialogue lines spoken by Void-φ. */
+    bossPre: ReadonlyArray<string>;
+    /** Post-battle commentary, branched by player victory/defeat. */
+    bossPost: {
+      victory: NarrativeScene;
+      defeat: NarrativeScene;
+    };
+    /** Closing narration after the player defeats OPP22 — true
+     *  finale of the route. Echoes PLR01's quote in the player's
+     *  own voice. */
+    victoryNarration: NarrativeScene;
   };
   /** Full-route ending text shown after Ch.20 victory. */
   endingFull: NarrativeScene;

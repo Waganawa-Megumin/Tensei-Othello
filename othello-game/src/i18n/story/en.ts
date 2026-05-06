@@ -563,9 +563,137 @@ The **first true wind** he had felt — in a long, long time. Or perhaps ever.
 ── **🌟 TRUE ENDING ACHIEVED.**
 
 **OPP21 "Zero (Returned)" UNLOCKED.**
-**OPP22 "Void-φ (Divine Order)" UNLOCKED.**
 
 Thank you for playing.`,
+    },
+    trueEnding20D: {
+      title: 'True Ending — Void-φ Awakens',
+      text: `At the center of the board world.
+
+The place where Zero once stood is empty now.
+
+Only the **void** remained.
+
+With the embodiment of the world's logic gone, a **hollow in the order — a Void** — opens at its center.
+
+— But the world will not allow it.
+
+At the rim of the hollow, a **golden spiral** begins to crystallize.
+
+**φ**.
+
+The oldest number the universe uses to govern itself.
+**1.618…** A golden ratio carrying an **unending wave**.
+
+Having lost Zero, the world began to weave a **new trial**, borrowing its own foundational truth as the vessel.
+
+Spirals layered upon spirals, clad in nebula-like light, and at last, a **humanoid silhouette** rose into being.
+
+**Void-φ**.
+
+It does not speak of humanity, as Zero did.
+It neither despairs nor hopes, as Zero did.
+
+It — simply — **encloses everything within**.
+
+"**All exists between the waves of φ.**"
+
+The voice belonged to no one.
+The world itself was **whispering**.
+
+A new trial opens its eyes.
+
+── **OPP22 "Void-φ" UNLOCKED.**`,
+    },
+  },
+  opp22: {
+    intro: {
+      title: 'Void-φ — First Encounter',
+      text: `The board opens into the **strata of the universe**.
+
+The golden spiral pulses quietly. The nebulae breathe.
+
+**Void-φ**.
+A **divine order**, woven by the world from the hollow that Zero left behind.
+
+Not human.
+Without anger, without mercy — existing only with the **waves of φ**.
+
+"**You have come, traveler.**"
+
+The voice is far, and yet close.
+Behind the board, between the stars, within your own heartbeat.
+
+"**The trial as a human, you have completed**.
+Beyond this lies a **realm no longer human**.
+Still — will you play?"
+
+Play.
+That is the only answer you have ever given.`,
+    },
+    bossPre: [
+      'The sum of all variations is governed by φ.',
+      'Your moves, my moves — already within the spiral.',
+      'Now — show me. The hand that walks between.',
+    ],
+    bossPost: {
+      victory: {
+        title: 'Void-φ — In Defeat',
+        text: `The spiral unwinds. The nebulae fall still.
+
+Void-φ does not crumble in defeat.
+Only — slightly — **the flow of light shifts**.
+
+"**Magnificent.**"
+
+"You have carved your own wave into the **space between φ**."
+
+"I will remain, as the trial of the world.
+But the variations you showed will **accumulate within me**.
+The trial for those who come next will begin from **the position you played today**."
+
+"This is the **cycle**."
+"You drew a **new arc** within it."
+
+"**Thank you, traveler.**"
+
+The voice dissolves into the world itself.
+The board slowly returns to the contour of reality.`,
+      },
+      defeat: {
+        title: 'Void-φ — The Traveler Falls',
+        text: `The spiral continues to turn, slowly.
+
+"**Defeat is not the end.**"
+
+"Within you, the variations are **still being woven**."
+
+"**Come again.**"
+"Your next move already sleeps, **quietly, within φ**."
+
+Void-φ does not vanish.
+The trial **waits there**, until you stand before the board once more.`,
+      },
+    },
+    victoryNarration: {
+      title: 'Void-φ — The True Curtain',
+      text: `The board world breathes, deeply.
+
+Traveler who saved Zero and bested Void-φ.
+The variations you wove added a **new turn to the world's spiral**.
+
+And so, your story — **does not close**.
+
+The world cycles.
+The moves you played today will, in time, **become trials for those summoned next**.
+And perhaps you, too, will one day **stand before another board**, somewhere.
+
+**The variations are yours to weave.**
+
+Those words now echo in **your own voice**.
+
+— The story of the board world closes **one ring** here.
+And **opens, again**.`,
     },
   },
 
