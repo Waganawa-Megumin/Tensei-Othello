@@ -4,6 +4,7 @@ import type {
   PickMoveRequest,
 } from '../workers/ai.worker';
 import type { Board, Color, ValidMove } from '../engine/types';
+import { logDiag } from '../lib/diagLog';
 
 interface PendingResolver {
   resolve: (move: ValidMove | null) => void;
@@ -40,6 +41,7 @@ export function useAiWorker(): UseAiWorker {
   const counterRef = useRef(0);
 
   const spawnWorker = useCallback((): Worker => {
+    logDiag('worker.spawn');
     const worker = new Worker(
       new URL('../workers/ai.worker.ts', import.meta.url),
       { type: 'module' },
@@ -50,9 +52,11 @@ export function useAiWorker(): UseAiWorker {
       if (!pending) return;
       pendingRef.current.delete(requestId);
       window.clearTimeout(pending.timeoutId);
+      logDiag('worker.message', { requestId, move: move ? `${move.row},${move.col}` : null });
       pending.resolve(move);
     });
     worker.addEventListener('error', (event) => {
+      logDiag('worker.error', { message: event.message || '' });
       for (const pending of pendingRef.current.values()) {
         window.clearTimeout(pending.timeoutId);
         pending.reject(new Error(event.message || 'AI worker error'));
@@ -100,6 +104,7 @@ export function useAiWorker(): UseAiWorker {
           // the AI effect's `.finally` clears `aiThinking`.
           if (!pendingRef.current.has(requestId)) return;
           pendingRef.current.delete(requestId);
+          logDiag('worker.timeout', { requestId, level });
           workerRef.current?.terminate();
           workerRef.current = spawnWorker();
           reject(new Error('AI worker timeout'));
@@ -112,6 +117,7 @@ export function useAiWorker(): UseAiWorker {
           color,
           level,
         };
+        logDiag('worker.request', { requestId, color, level });
         worker.postMessage(request);
       }),
     [cancel, spawnWorker],

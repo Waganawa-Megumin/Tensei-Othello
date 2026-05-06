@@ -21,6 +21,15 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.6)
 
 ### P2 — 重要な機能改善
 
+- [ ] **棋譜・診断ログの IndexedDB 移行** — 診断ログは v0.33.7 で
+      localStorage の ring buffer (200 件 ≈ 50KB) に着地済。棋譜は
+      引き続き localStorage `othello:save:{ts}` 単発キーで保持中。
+      長期的には IndexedDB に統一して: (1) 棋譜全件保存 (現在は
+      ストレージ圧迫を避けるため古いものから削除されがち)、(2) 診断
+      ログを 2000 件規模に拡張 (フリーズ前の 30 分相当のイベント)、
+      (3) `navigator.storage.persist()` で永続化要求。スキーマ
+      バージョン v=1 で diagLog ring buffer が出ているので、移行時は
+      legacy detect → import → DB に書き戻し → localStorage クリア。
 - [ ] **棋譜リプレイ追加 UX（v0.21.0 で見送り）**
   - プログレスバー上を tap/drag で任意手数へジャンプ
   - 盤上の last-move セルに小さく `12` のような手数ラベル

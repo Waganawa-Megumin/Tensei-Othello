@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.33.6 · pwa-skip-waiting';
+const BUILD_TAG = 'v0.33.7 · diag-log';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

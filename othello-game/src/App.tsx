@@ -103,6 +103,7 @@ import {
   TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from './storage/saveSlots';
+import { logDiag, exportDiagLog, clearDiagLog } from './lib/diagLog';
 
 type Screen = 'title' | 'intro' | 'game';
 
@@ -1561,6 +1562,10 @@ export default function App() {
   const [spellResult, setSpellResult] = useState<'success' | 'failure' | null>(
     null,
   );
+  /** Transient "log copied" toast shown next to the diagnostic export
+   *  button so the user knows clipboard write succeeded. Auto-clears
+   *  after 2.5s. */
+  const [diagLogToast, setDiagLogToast] = useState<string | null>(null);
 
   // Post-game review state
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -1794,8 +1799,10 @@ export default function App() {
   useEffect(() => {
     if (gameOver || passInfo !== null) return;
     if (noCurrent && !noOpp) {
+      logDiag('pass.start', { color: currentColor });
       setPassInfo(currentColor);
       const t = window.setTimeout(() => {
+        logDiag('pass.end', { color: currentColor });
         setCurrentColor((c) => opponent(c));
         setPassInfo(null);
       }, 1600);
@@ -1826,6 +1833,7 @@ export default function App() {
       return;
     }
     setAiThinking(true);
+    logDiag('ai.dispatch', { level, color: opponent(playerColor), aiRetryNonce });
     const delay = 450 + Math.min(level * 35, 700);
     let cancelled = false;
     let timedOut = false;
@@ -1835,6 +1843,7 @@ export default function App() {
         .requestMove(board, aiColor, level)
         .then((move) => {
           if (cancelled || !move) return;
+          logDiag('ai.resolve', { row: move.row, col: move.col });
           doMoveRef.current(move.row, move.col);
         })
         .catch((err: unknown) => {
@@ -1844,6 +1853,7 @@ export default function App() {
           // hook just respawned, instead of leaving the human stuck on
           // their next turn waiting for a move that will never come.
           const message = err instanceof Error ? err.message : '';
+          logDiag('ai.reject', { message });
           if (message === 'AI worker timeout') {
             timedOut = true;
           }
@@ -1945,6 +1955,13 @@ export default function App() {
   // matches are not recorded.
   useEffect(() => {
     if (!gameOver || resultRecorded || loadedKifuView) return;
+    logDiag('gameOver', {
+      black: counts.black,
+      white: counts.white,
+      resigned,
+      noCurrent,
+      noOpp,
+    });
     if (gameMode !== 'ai') {
       // Two-player: nothing to record, but mark as handled to keep the
       // gate logic simple.
@@ -2255,6 +2272,8 @@ export default function App() {
       const move = validMoveMap.get(moveKey(row, col));
       if (!move) return;
 
+      logDiag('move', { row, col, color: currentColor, flips: move.flips.length });
+
       setHistory((h) => [...h, { board, currentColor, lastMove }]);
       setHintMove(null);
 
@@ -2291,6 +2310,16 @@ export default function App() {
     // human play through it instead of locking the board. We also
     // proactively reset the flag below so the AI useEffect's next
     // re-run starts from a clean state.
+    logDiag('click', {
+      row,
+      col,
+      isHumanTurn,
+      gameOver,
+      passInfo: passInfo !== null,
+      aiThinking,
+      validMoveCount: validMoveMap.size,
+      isLegal: validMoveMap.has(moveKey(row, col)),
+    });
     if (!isHumanTurn || gameOver || passInfo !== null) return;
     if (!validMoveMap.has(moveKey(row, col))) return;
     if (aiThinking) {
@@ -2329,6 +2358,7 @@ export default function App() {
   function reset(modeHint?: { gameMode: GameMode; aiMode: AiMode }) {
     const effectiveGameMode = modeHint?.gameMode ?? gameMode;
     const effectiveAiMode = modeHint?.aiMode ?? aiMode;
+    logDiag('reset', { gameMode: effectiveGameMode, aiMode: effectiveAiMode });
     setBoard(createInitialBoard());
     setCurrentColor(BLACK);
     setLastMove(null);
@@ -5757,6 +5787,81 @@ export default function App() {
                     </p>
                   </>
                 )}
+                {/* Manual AI worker respawn — softer recovery than the
+                    emergency reload. Cancels any in-flight AI request,
+                    clears the `aiThinking` flag, and bumps the retry
+                    nonce so the AI useEffect re-runs and asks the
+                    (auto-respawned) worker for a fresh move. Keeps the
+                    board state intact — useful when the AI is silent
+                    but the rest of the UI still works. */}
+                <button
+                  onClick={() => {
+                    logDiag('manual.aiRespawn');
+                    ai.cancel();
+                    setAiThinking(false);
+                    setAiRetryNonce((n) => n + 1);
+                  }}
+                  className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
+                >
+                  {t.aiRespawnLabel}
+                </button>
+                <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
+                  {t.aiRespawnDesc}
+                </p>
+                {/* Diagnostic log export — copies the recent event ring
+                    buffer to clipboard so users can paste it into a bug
+                    report. Local-only; nothing is transmitted. */}
+                <button
+                  onClick={async () => {
+                    const text = exportDiagLog();
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      setDiagLogToast(t.diagLogCopiedToast);
+                    } catch {
+                      // Older mobile browsers may not allow programmatic
+                      // clipboard writes. Fall back to a hidden textarea
+                      // + execCommand so the user still gets a copy.
+                      const ta = document.createElement('textarea');
+                      ta.value = text;
+                      ta.style.position = 'fixed';
+                      ta.style.opacity = '0';
+                      document.body.appendChild(ta);
+                      ta.select();
+                      try {
+                        document.execCommand('copy');
+                        setDiagLogToast(t.diagLogCopiedToast);
+                      } catch {
+                        setDiagLogToast(text.slice(0, 80) + '…');
+                      }
+                      document.body.removeChild(ta);
+                    }
+                    window.setTimeout(() => setDiagLogToast(null), 2500);
+                  }}
+                  className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
+                >
+                  {t.diagLogExportLabel}
+                </button>
+                <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
+                  {t.diagLogExportDesc}
+                </p>
+                {diagLogToast && (
+                  <p
+                    className="jp-display text-amber-100/95 text-[11px] mt-1 px-2 py-1 rounded-sm bg-amber-200/[0.08] border border-amber-200/30"
+                    role="status"
+                  >
+                    {diagLogToast}
+                  </p>
+                )}
+                <button
+                  onClick={() => {
+                    clearDiagLog();
+                    setDiagLogToast(t.diagLogClearLabel);
+                    window.setTimeout(() => setDiagLogToast(null), 1500);
+                  }}
+                  className="jp-display italic text-amber-200/55 text-[11px] underline mt-1 self-start"
+                >
+                  {t.diagLogClearLabel}
+                </button>
                 {/* Emergency reload — last-resort escape hatch for
                     stuck states (UI freeze, stale PWA cache, etc.).
                     Unregisters every Service Worker, wipes their

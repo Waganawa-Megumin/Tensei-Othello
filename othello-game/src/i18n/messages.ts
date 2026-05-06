@@ -295,6 +295,19 @@ export interface Messages {
   unlockResetConfirm: string;
   emergencyReloadLabel: string;
   emergencyReloadDesc: string;
+  /** Manual AI worker respawn — recovery hatch for the rare cases
+   *  where the human side is stuck waiting on a never-arriving AI
+   *  move. Distinct from the emergency reload because it doesn't
+   *  drop the current board state. */
+  aiRespawnLabel: string;
+  aiRespawnDesc: string;
+  /** Diagnostic log export — copies the recent event ring buffer
+   *  to clipboard so users can paste into bug reports. Local-only,
+   *  nothing is sent over the network. */
+  diagLogExportLabel: string;
+  diagLogExportDesc: string;
+  diagLogCopiedToast: string;
+  diagLogClearLabel: string;
   /** Spell that unlocks every bonus character at once. The cipher is
    *  intentionally locale-specific so the wordplay lands in each
    *  language. JA: 「ばんじょうぜんてんかいほう」 (盤上全転解放 —
@@ -674,6 +687,14 @@ export const ja: Messages = {
   emergencyReloadLabel: '緊急再読み込み (キャッシュ削除)',
   emergencyReloadDesc:
     '画面が固まった / 古い表示のままの時に。Service Worker のキャッシュを削除して最新版を読み込み直します。セーブデータは消えません。',
+  aiRespawnLabel: '🔄 AI を再起動',
+  aiRespawnDesc:
+    'AI の手番が長く返ってこない時に。盤面を保ったまま思考ワーカーだけ作り直します。緊急再読み込みより軽い復旧手段です。',
+  diagLogExportLabel: '🩺 診断ログを書き出す',
+  diagLogExportDesc:
+    '直近 200 件の操作ログをクリップボードにコピーします。フリーズなどの不具合報告に貼り付けてください。送信は行われず、端末内だけで完結します。',
+  diagLogCopiedToast: '診断ログをクリップボードにコピーしました',
+  diagLogClearLabel: 'ログを消去',
   spellCipher: 'ばんじょうぜんてんかいほう',
   spellButtonLabel: '魔法の呪文を唱える',
   spellButtonDesc:
@@ -1052,6 +1073,14 @@ your journey on the board reaches its close.`,
   emergencyReloadLabel: 'Emergency reload (clear cache)',
   emergencyReloadDesc:
     "Use this if the screen has frozen or you're stuck on an old build. Wipes the Service Worker cache and pulls the latest. Save data is preserved.",
+  aiRespawnLabel: '🔄 Restart AI worker',
+  aiRespawnDesc:
+    "Use this if the AI is taking too long to respond. Respawns the thinking worker without dropping your board state — lighter-touch than the emergency reload.",
+  diagLogExportLabel: '🩺 Export diagnostic log',
+  diagLogExportDesc:
+    "Copies the last 200 events to your clipboard. Paste this into a bug report when you hit a freeze. Nothing is sent over the network — it stays on your device.",
+  diagLogCopiedToast: 'Diagnostic log copied to clipboard',
+  diagLogClearLabel: 'Clear log',
   spellCipher: 'flip them all',
   spellButtonLabel: 'Cast the magic spell',
   spellButtonDesc:
