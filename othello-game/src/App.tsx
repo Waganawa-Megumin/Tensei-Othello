@@ -98,6 +98,8 @@ import {
   recordFreeResult,
   getCharacterUnlocks,
   setCharacterUnlocks,
+  getTrueEndingAchieved,
+  setTrueEndingAchieved,
   TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from './storage/saveSlots';
@@ -1418,6 +1420,14 @@ export default function App() {
    */
   const [unlockedCount, setUnlockedCount] = useState(0);
   /**
+   * Sticky flag: `true` once the player has cleared chapter 20 while
+   * playing as PLR01 英霊ハルキ (= the "true ending" path). Drives
+   * the bonus Lv.21 OPP21 unlock — until this is true, the OPP21 row
+   * in free-mode pickers shows the `???` placeholder. Persisted via
+   * `getTrueEndingAchieved` / `setTrueEndingAchieved`.
+   */
+  const [trueEndingAchieved, setTrueEndingAchievedState] = useState(false);
+  /**
    * When non-null, the GameOver modal renders a "新キャラクター解放"
    * banner with the avatar's name. Set the moment storyProgress
    * transitions from 19 → 20 in the result-recording effect; cleared
@@ -1710,11 +1720,13 @@ export default function App() {
       getSlots(),
       getActiveSlotId(),
       getCharacterUnlocks(),
-    ]).then(([loaded, id, unlocks]) => {
+      getTrueEndingAchieved(),
+    ]).then(([loaded, id, unlocks, trueEnding]) => {
       if (cancelled) return;
       setSlots(loaded);
       setActiveSlotIdState(id);
       setUnlockedCount(unlocks);
+      setTrueEndingAchievedState(trueEnding);
     });
     return () => {
       cancelled = true;
@@ -1967,6 +1979,17 @@ export default function App() {
         setUnlockedThisRun(nextUnlocks);
         setP1Avatar(nextUnlocks);
       }
+      // True-ending detection for the bonus Lv.21 OPP21 unlock.
+      // Triggered when the slot just rolled storyProgress 19→20 with
+      // the active player avatar being PLR01 英霊ハルキ — the canon
+      // path the bonus character is gated behind. Fires once and
+      // persists; subsequent PLR01 runs are no-ops.
+      const p1Image = AVATARS[p1Avatar]?.image ?? '';
+      const ranAsPLR01 = p1Image.includes('PLR01_haruki');
+      if (justClearedStory && ranAsPLR01 && !trueEndingAchieved) {
+        setTrueEndingAchievedState(true);
+        void setTrueEndingAchieved(true);
+      }
     } else if (!isStory) {
       void recordFreeResult({ result, opponentLevel });
     }
@@ -1985,6 +2008,9 @@ export default function App() {
     playerColor,
     activeSlot,
     unlockedCount,
+    trueEndingAchieved,
+    p1Avatar,
+    AVATARS,
   ]);
 
   // Whenever a fresh game starts (kifu cleared, board reset) clear the
@@ -2759,8 +2785,14 @@ export default function App() {
   // PLR01 detection is via the avatar's image filename — AVATARS_DATA's
   // last entry is the PLR01 special, but `playerId === 'PLR01'`
   // semantically resolves through the file path which is stable.
-  const ZERO_UNMASKED = 'avatars/opponents/OPP20_zero/icon.png';
-  const ZERO_HOODED = 'avatars/opponents/OPP20_zero_battle/icon.png';
+  // After v4-final the asset folders flipped: `OPP20_zero/` now houses
+  // the hooded final-boss aesthetic (was `OPP20_zero_battle/` in
+  // Phase 1) and the unmasked variant moved to `OPP21_zero_unmasked/`
+  // which doubles as the bonus Lv.21 character. The render-time
+  // branching logic stays identical — only the constants point at the
+  // new paths.
+  const ZERO_HOODED = 'avatars/opponents/OPP20_zero/icon.png';
+  const ZERO_UNMASKED = 'avatars/opponents/OPP21_zero_unmasked/icon.png';
   function zeroAvatarFor(args: {
     isPostVictory: boolean;
     playerIsPLR01: boolean;

@@ -13,6 +13,13 @@ const ACTIVE_SLOT_KEY = 'othello:active_slot';
 const FREE_STATS_KEY = 'othello:free_stats';
 const LEGACY_STORY_PROGRESS_KEY = 'othello:story_progress';
 const CHARACTER_UNLOCKS_KEY = 'othello:character_unlocks';
+/**
+ * Sticky flag set the first time the player clears chapter 20 while
+ * running PLR01 英霊ハルキ. Drives the bonus Lv.21 OPP21 unlock —
+ * until this flips to `true`, free-mode pickers render the OPP21 row
+ * with a `???` placeholder. Once true it stays true.
+ */
+const TRUE_ENDING_KEY = 'othello:true_ending_achieved';
 
 export const MAX_SLOTS = 10;
 export const INITIAL_LIVES = 5;
@@ -407,6 +414,27 @@ export async function setCharacterUnlocks(n: number): Promise<void> {
   const clamped = Math.max(0, Math.min(TOTAL_BONUS_AVATARS, Math.floor(n)));
   try {
     window.localStorage.setItem(CHARACTER_UNLOCKS_KEY, String(clamped));
+  } catch {
+    /* ignore */
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* True-ending flag (= bonus Lv.21 OPP21 unlock)                      */
+/* ------------------------------------------------------------------ */
+
+export async function getTrueEndingAchieved(): Promise<boolean> {
+  try {
+    return window.localStorage.getItem(TRUE_ENDING_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function setTrueEndingAchieved(v: boolean): Promise<void> {
+  try {
+    if (v) window.localStorage.setItem(TRUE_ENDING_KEY, '1');
+    else window.localStorage.removeItem(TRUE_ENDING_KEY);
   } catch {
     /* ignore */
   }
