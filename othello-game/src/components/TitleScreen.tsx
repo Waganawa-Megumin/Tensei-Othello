@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.2 · trueending-fires-every-time';
+const BUILD_TAG = 'v0.36.3 · slot-default-latest-avatar';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -23,7 +23,17 @@ interface TitleScreenProps {
   onLocaleChange: (locale: Locale) => void;
   /** Active save slot (if any). Shown on the Story card so the user
    *  knows which save resumes when they tap. */
-  activeSlot: { name: string; lives: number; storyProgress: number } | null;
+  activeSlot: {
+    name: string;
+    lives: number;
+    storyProgress: number;
+    /** Localized opponent name at the slot's next chapter
+     *  (`storyProgress + 1`, capped at 20). Empty string when the
+     *  slot has cleared all 20 chapters — the footer renderer uses
+     *  that to switch to a "全章クリア済 / All chapters cleared"
+     *  variant. */
+    opponentName: string;
+  } | null;
   /** Opens the slot picker so the user can switch save. */
   onSwitchSlot: () => void;
   /** True iff the active slot has at least one previously-seen story
@@ -178,6 +188,7 @@ export function TitleScreen({
                   activeSlot.name,
                   activeSlot.lives,
                   Math.min(activeSlot.storyProgress + 1, 20),
+                  activeSlot.opponentName,
                 )}
               </span>
               <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">

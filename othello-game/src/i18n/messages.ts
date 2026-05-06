@@ -288,7 +288,16 @@ export interface Messages {
   slotReset: string;
   slotResetConfirm: string;
   slotSwitch: string;
-  slotInUseFooter: (name: string, lives: number, chapter: number) => string;
+  /** Slot summary shown on the title screen Story card. `chapter`
+   *  is the next chapter to play (1..20). `opponentName` is the
+   *  master at that chapter — empty string for completed slots
+   *  (storyProgress=20) where there's no "next opponent". */
+  slotInUseFooter: (
+    name: string,
+    lives: number,
+    chapter: number,
+    opponentName: string,
+  ) => string;
   slotSelect: string;
   slotChooseFirst: string;
   livesLabel: string;
@@ -736,8 +745,10 @@ export const ja: Messages = {
   slotReset: 'このセーブをリセット',
   slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
   slotSwitch: 'セーブを変更',
-  slotInUseFooter: (name, lives, chapter) =>
-    `セーブ：${name}・第${chapter}章・♥${lives}`,
+  slotInUseFooter: (name, lives, chapter, opponentName) =>
+    opponentName
+      ? `セーブ：${name}・第${chapter}章 vs ${opponentName}・♥${lives}`
+      : `セーブ：${name}・全章クリア済・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -1152,8 +1163,10 @@ your journey on the board reaches its close.`,
   slotResetConfirm:
     'This wipes the save’s progress, stats and lives. Continue?',
   slotSwitch: 'Switch save',
-  slotInUseFooter: (name, lives, chapter) =>
-    `Save: ${name} · Ch.${chapter} · ♥${lives}`,
+  slotInUseFooter: (name, lives, chapter, opponentName) =>
+    opponentName
+      ? `Save: ${name} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
+      : `Save: ${name} · All chapters cleared · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',

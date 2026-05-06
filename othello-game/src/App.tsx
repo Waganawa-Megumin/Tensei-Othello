@@ -1808,6 +1808,15 @@ export default function App() {
       setUnlockedCount(unlocks);
       setTrueEndingAchievedState(trueEnding);
       setVoidphiAwakenedState(voidphi);
+      // Default the player avatar to the latest unlocked character
+      // on app boot (mirrors `selectSlot`'s logic). Without this, a
+      // returning player with PLR01 英霊ハルキ unlocked would land
+      // on PLR00 default until they manually picked a slot or
+      // opened settings. Same `unlockedCount > 0` guard keeps fresh
+      // installs on PLR00.
+      if (unlocks > 0 && unlocks < 1 + AVATARS_DATA.length) {
+        setP1Avatar(unlocks);
+      }
     });
     return () => {
       cancelled = true;
@@ -2585,6 +2594,16 @@ export default function App() {
     setActiveSlotIdState(id);
     void setActiveSlotId(id);
     setSlotPickerOpen(false);
+    // Default the player avatar to the latest unlocked character.
+    // Without this, a player with PLR01 英霊ハルキ unlocked
+    // (= unlockedCount === 20) would still drop into chapter
+    // selection as PLR00 default, and they'd have to dig into the
+    // settings modal to switch — surprising for a "the canon
+    // protagonist for this save" expectation. unlockedCount=0
+    // (= no bonus avatars yet) leaves p1Avatar=0 (PLR00) untouched.
+    if (unlockedCount > 0 && unlockedCount < AVATARS.length) {
+      setP1Avatar(unlockedCount);
+    }
     // Route through the intro flow. `slots` already contains the
     // freshly-selected slot, so we look up its storyProgress directly
     // (avoid relying on the in-flight `activeSlot` derivation, which
@@ -3598,6 +3617,19 @@ export default function App() {
                   name: activeSlot.name,
                   lives: activeSlot.lives,
                   storyProgress: activeSlot.storyProgress,
+                  // Opponent at the slot's next chapter, surfaced
+                  // in the title-screen slot footer so the player
+                  // sees "Ch.6 vs つむぎ・♥4" rather than just
+                  // "Ch.6・♥4". Story progress 20 means the slot
+                  // is fully cleared — pass empty string and let
+                  // i18n switch to the "全章クリア済" wording.
+                  opponentName:
+                    activeSlot.storyProgress >= 20
+                      ? ''
+                      : (COMPUTERS.find(
+                          (c) =>
+                            c.level === activeSlot.storyProgress + 1,
+                        )?.name ?? ''),
                 }
               : null
           }
