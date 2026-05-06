@@ -11,7 +11,14 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-なし。
+- [ ] **Phase 3: 挿絵更新 + PLR01 配置 + シナリオ書き換え + 真エンディング演出** —
+      章別挿絵 10 枚 (差し替え 6: ch3/6/8 + 新規 4: ch20-B/20-C)、
+      PLR01 英霊ハルキを `players/PLR01_haruki_heroic/` に新規配置、
+      シナリオ i18n 書き換え (章 3/6/8/11/12/20/20-B/20-C/OPP22)、
+      章 20-B/20-C シネマティック演出、真エンディング判定 (PLR01 で
+      章 20 クリア → OPP21+OPP22 同時アンロック)、CLAUDE.md 更新。
+      詳細 `phase3_handoff/TASK.md` + `scenarios/scenario_rewrite_v3.md`。
+      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
 
 ---
 
