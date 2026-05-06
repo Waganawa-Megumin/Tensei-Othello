@@ -61,6 +61,16 @@ export interface StoryContent {
     allies: NarrativeScene;
     /** Before Ch.20 — masters' souls join Haruki for the final stand. */
     final: NarrativeScene;
+    /** Phase 3 — true-ending cinematic, scene B (the moment of
+     *  release: Zero accepts the world is open, the code rain
+     *  dissolves into orange light). Plays only when PLR01 英霊
+     *  ハルキ has just cleared chapter 20. */
+    trueEnding20B: NarrativeScene;
+    /** Phase 3 — true-ending cinematic, scene C (epilogue:
+     *  Zero standing in modern Tokyo at dusk, looking back).
+     *  Always follows trueEnding20B, terminates on the OPP21 +
+     *  OPP22 unlock notification. */
+    trueEnding20C: NarrativeScene;
   };
   /** Full-route ending text shown after Ch.20 victory. */
   endingFull: NarrativeScene;

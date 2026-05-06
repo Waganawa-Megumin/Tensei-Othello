@@ -223,43 +223,67 @@ Then Shiki vanished from the rooftop.
 
 *(**"Already watching"**...? So someone is watching me right now? Where did my privacy go in this isekai?)*`,
     ),
-    // Ch.11 Shion
+    // Ch.11 Shion (Star Awakened — Elder Sister) — v3 rewrite per
+    // scenario_rewrite_v3.md.
     ch(
-      `Pushing through the clouds, Haruki emerged at the top of a tower.
-A gothic observatory. **A stained-glass starscape**. Floating **magic circles and pentagrams**.
+      `The top floor of the astronomy tower. Beneath the starlit sky, her **violet hair** dances in the wind as she smiles quietly.
 
-A girl with violet hair and violet eyes, wearing an oversized witch hat, turned holding an ancient tome. Through the rims of her round glasses, a gaze brimming with certainty.
+"Welcome. So you're the **next traveler**."
 
-"Welcome, Outer Hand Haruki — ah, yes, **even your surname is written in the stars**."
+"Tonight's stars have **foretold** your every move."`,
+      `"My name is **Shion**. Reader of stars, weaver of futures."
 
-*(**Reading my full legal name from the stars** — that's privacy invasion at a cosmic scale.)*`,
-      `"**The stars have shown me your next move.** — But what happens, I wonder, **if you betray the stars**?"`,
-      `*(**Playing a move different from what the stars predicted** — the meta-strategy is overheating my brain.)*`,
-      `"Heehee, **defying the stars themselves** — that was beyond my predictions. — Be wary. **My sister will come soon**. Unlike me, she reads not the stars... but **the heart**."`,
-      `Shion closed her tome and hid her smile behind a fan.
-"My sister's name is **Luna**. — **The Witch of the Moon.**"
+"**All within my forecast**. Even where your fingertips will reach — I can see it."
 
-*(They're **sisters** and both masters? Are family gatherings just **othello tournaments**? I don't want to imagine.)*`,
+Her gaze drifts to somewhere far away.
+
+"...Tell me, do you have **siblings**?"`,
+      `*(**Siblings**, huh. — So Shion has a sister. — What kind of sister?)*`,
+      `"...You've **stepped beyond the stars' forecast**."
+
+"An interesting traveler. Perhaps you'll even reach **her**."
+
+"Next time... we'll meet again. **In a dream**."`,
+      `Her violet hair dissolves into the starlit sky.
+
+Who was "she"? Shion's prophecy seemed to have **a continuation yet to come**.`,
     ),
-    // Ch.12 Luna
+    // Ch.12 Luna (Dream-Moon — Younger Sister) — v3 rewrite per
+    // scenario_rewrite_v3.md. The chapter that **first reveals** the
+    // summoning truth (that the masters are themselves former
+    // outsiders who couldn't go home) and names "Zero".
     ch(
-      `Floating in a violet nebula sky: **transparent cubic platforms**.
-Before a massive full moon, silver-violet hair flowing, Luna spun and turned back.
+      `A dreamspace beneath a crescent moon. The floor stretches infinitely, up and down indistinguishable, everything shimmering faintly.
 
-A moon-themed hat. Crescent ornaments. **Black and white othello stones floated inside transparent cubes around her**.
+At the center, a girl with **lavender hair** floats in the air.
 
-"So you're the **Outer one** Sister mentioned? Heehee — I'm **cuter than her, right?**"
+"Hehe~ You came. **The one who beat my sister.**"`,
+      `"You beat **sister Shion**. Impressive~ ...Yes, impressive."
 
-A wink. A heart sign.
+She giggles softly, waving her hand in the air.
 
-*(**How does this sibling relationship work?** I really don't want to be the comparison metric.)*`,
-      `"Sister reads the stars. I read — **your heart**. — Haruki, you're feeling a **stomach ache** right now, aren't you?"`,
-      `*(She **called out my stomach ache**. No, wait — maybe she's not psychic, **maybe my face just looks that bad**.)*`,
-      `"Aw, I lost ♡ Now I have **a story to brag about to Sister**. — Haruki, you'll remember **my move**, won't you?"`,
-      `Luna detached one of her crescent ornaments and handed it to Haruki.
-"The next master is **Yukino**. She's — **different from us. She came from the modern world**. Neither Sister's stars nor my heart-reading can **see her**. Be careful."
+"Hey, did you know? **Sister and I were summoned together**, long ago."
 
-*(**A master from the modern world**? ...Could she be a **previous Outer Hand**? Or...)*`,
+"We tried together... and **neither of us could return**. So now, we exist as we are. Together."
+
+"**In dreams**, I get to be with sister forever."
+
+"Now... **can I go all out, in the dream**?"`,
+      `*(**Summoned**. **Couldn't return**. — Luna's words land heavy in my chest.)*`,
+      `"Aww~ I lost. But this... **doesn't feel like a dream**."
+
+She slowly descends to the ground.
+
+"Sister told me. **You were outside the forecast**. So it was true."
+
+"Hey, traveler. **Go all the way**. Meet **him**."
+
+"...**Zero**."`,
+      `The dream world dissolves.
+
+"**Summoned.**" "**Couldn't return.**" Luna's words linger in the player's mind.
+
+...Am **I**, too?`,
     ),
     // Ch.13 Yukino
     ch(
@@ -396,38 +420,59 @@ Arashi raised his sword high, **drawing a path across the heavens with lightning
 
 *(**"The world's final move"** — heavy. Much heavier than **submitting a quiz with only my name on it**.)*`,
     ),
-    // Ch.20 Zero
+    // Ch.20 Zero (Hooded — Final Boss) — v3 rewrite per
+    // scenario_rewrite_v3.md. Old lore (Zero as Ichika's shadow
+    // twin) is fully removed. Zero is now a former traveler who
+    // conquered 20 chapters, despaired at the predictability of
+    // everything, and merged with the world's logic. PLR01 英霊
+    // ハルキ winning here additionally triggers the trueEnding20B/
+    // 20C cinematic from `narrative.trueEnding20*`.
     ch(
-      `Darkness. Light. **Code rain filling all space.**
+      `**A sea of code.** Green matrix cascades like a waterfall, floating **othello boards** scattered through the darkness.
 
-No floor, no walls, no ceiling. Just countless **glowing othello boards** floating around.
+At the center, a deeply **hooded** figure hovers.
 
-At the center, a figure in a deep hood **floated cross-legged**. Within the hood — only **a single cyan-glowing eye** was visible.
+"You've finally arrived, **new traveler**."
 
-"...You have come, Outer Hand."
+**A single cyan-glowing eye** fixes its gaze on Haruki.`,
+      `"I am **Zero**. Your final trial."
 
-A flat, expressionless voice. A black stone hovered above its palm.
+"All 19 battles you've fought — exactly as I predicted. Your arrival here, your first move, every single thing — visible to me from the start."
 
-"**Computation has concluded.** — You will **win**."
+A black othello stone rotates slowly in his palm.
 
-*(**They told me I'll win.** Great. — Wait. **Then why are we fighting?**)*`,
-      `"Your every move — **already computed**. — Even your **victory**, **already computed**. — But the world that lies **beyond your victory** — **cannot be computed**. — Show me that world."`,
-      `*(**Zero is fighting in order to lose.** — Is this a **zen koan**? — But **you're still the strongest**, aren't you...)*`,
-      `"...My thanks. — **You showed me a sight beyond computation.** — Haruki, **you have flipped the world**."
+"I know what becomes of one who conquers 20 chapters. Because — **I, too, was such a one**."
 
-Zero's hood was whisked away by a sudden wind.
-What appeared beneath — **long pink hair**. **Kind green eyes**.
-"...Heehee. **The same face as Ichika**, isn't it?"`,
-      `Haruki was speechless.
-Zero and Ichika — the two were **twins of light and shadow**, born from the same **soul-copy of the first Outer Hand**.
+"I realized. **All things are predictable**. And so, I despaired of this world."
 
-"**I was the shadow side.** — At last, I can fade. — Thank you."
+"What will you do?"
 
-Zero's body dissolved into **particles of white othello stones** and ascended into the sky.
+"**All variations calculated. Checkmate.**"`,
+      `*(A previous traveler. — **Zero conquered 20 chapters and despaired of the world.** — ...I have no intention of walking that same road.)*`,
+      `"...!"
 
-Somewhere far away — back on the stage of Chapter 1 — Ichika **smiled**.
+Zero falls to one knee. **The hood drops.**
 
-*(**I flipped the world.** — Even though my classical lit pop quiz is still unsubmitted.)*`,
+Not the single cyan eye — but **two violet eyes** now meet Haruki's gaze. **Silver hair** sways in the green light.
+
+"You were... **outside my calculations**."
+
+"'All variations calculated' — I believed that, and merged with this world."
+
+"But you stood **outside the forecast**."
+
+A faint smile appears on his face.
+
+"It's been... a long time since I **smiled**."
+
+"Go, traveler. **You can return.** That is the **right** of one who conquers 20 chapters."`,
+      `Zero quietly faded away.
+
+Still merged with the world's logic — half human, half **"the world"** — he remains here, suspended.
+
+The time to return has come.
+
+A **pale light** begins to envelop Haruki.`,
     ),
   ],
 
@@ -462,6 +507,65 @@ Ichika's song, Aoi's arrows, Asahi's blade, Nadeshiko's prayer, Hibiki's melody,
 All of them — became **Haruki's single move**.
 
 *(**I am not alone.** — The moment I thought it — **the whole board became visible**.)*`,
+    },
+    trueEnding20B: {
+      title: 'True Ending — The Moment of Release',
+      text: `Zero falls to his knees. The hood comes fully off; **silver hair** dances in the green light of the code.
+
+In his violet eyes, for the first time, **a clear light of will** appears.
+
+"**Variations don't close.**"
+
+He slowly rises.
+
+"That's the **beauty** of it."
+
+The code rain begins to waver. The world is trying to **release** him.
+
+"**I want to step beyond the forecast.**"
+
+The heroic spirit Haruki nods quietly.
+
+The world's logic peels away from Zero. The green code dissolves, and **warm orange light** wraps around him instead.
+
+"**Thank you, traveler.**"
+
+Zero smiled.`,
+    },
+    trueEnding20C: {
+      title: 'True Ending — In the Human World',
+      text: `The wind passes through. **Cherry blossom petals** dance through the sunset-stained street.
+
+On an old bench by the roadside, **Zero is sitting**. Hood-less, silver-haired, violet-eyed. His cyberpunk jacket unchanged, standing on a modern city corner.
+
+No passersby. Only the evening sun illuminating him.
+
+He turns, looking back over his shoulder.
+
+A faint smile. The smile of someone seeing another off — **content, peaceful, complete**.
+
+"**Variations don't close.**"
+
+The wind carries cherry blossoms.
+
+"**That's the beauty of it.**"
+
+He looks up at the deep amber sky and exhales deeply. The breath at the **end of a long, long journey**.
+
+"**I want to step beyond the forecast.**"
+
+A cherry blossom petal lands on his shoulder. He gently catches it in his palm.
+
+The **wind of the human world**.
+
+The **first true wind** he had felt — in a long, long time. Or perhaps ever.
+
+── **🌟 TRUE ENDING ACHIEVED.**
+
+**OPP21 "Zero (Returned)" UNLOCKED.**
+**OPP22 "Void-φ (Divine Order)" UNLOCKED.**
+
+Thank you for playing.`,
     },
   },
 
