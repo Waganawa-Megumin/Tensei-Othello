@@ -2,16 +2,23 @@
  * Full-screen overlay showing a single chapter's narrative content
  * (intro narration, master's pre-match line, the protagonist's
  * inner thought after the match, the master's victory line, and the
- * bridging victoryNarration). Used by the title-screen scene archive
- * to let players replay every chapter beat they've cleared, with a
- * "next" button that chains seamlessly to the following scene.
+ * bridging victoryNarration). Used by the title-screen scene
+ * archive to let players replay every chapter beat they've cleared,
+ * with a "next" button that chains seamlessly to the following
+ * scene.
  *
- * Visual style mirrors NarrativeOverlay but uses the chapter
- * illustration as backdrop instead of `/illustrations/{key}-*.png`.
+ * Visual style mirrors the in-game intro screens:
+ *   Phase A — only the chapter art is visible with a pulsing
+ *             "tap to continue" hint. The illustration breathes on
+ *             its own without text overpowering it.
+ *   Phase B — tap anywhere to fade in the 5-block narration over a
+ *             heavier vignette; the "next/close" button advances.
  */
 import { useState } from 'react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useTapToReveal } from '../hooks/useTapToReveal';
 import { renderEmphasized } from '../i18n/story/render';
+import { TapHint } from './intro/TapHint';
 import type { ChapterStory } from '../i18n/story';
 
 interface ChapterStoryOverlayProps {
@@ -34,6 +41,8 @@ interface ChapterStoryOverlayProps {
   proseHeadingVictoryDialogue: string;
   proseHeadingVictoryNarration: string;
   dismissLabel: string;
+  /** Localised "tap to continue" hint shown during phase A. */
+  tapHintLabel?: string;
   onDismiss: () => void;
 }
 
@@ -49,17 +58,20 @@ export function ChapterStoryOverlay({
   proseHeadingVictoryDialogue,
   proseHeadingVictoryNarration,
   dismissLabel,
+  tapHintLabel,
   onDismiss,
 }: ChapterStoryOverlayProps) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const [imgOk, setImgOk] = useState(true);
+  const { revealText, hasRevealed } = useTapToReveal();
   const imgSrc = chapterArtBase
     ? `${chapterArtBase}-${isLandscape ? 'landscape' : 'portrait'}.png`
     : null;
 
   return (
     <div
-      className="fixed inset-0 z-[70] overflow-y-auto bg-[#0a0805]"
+      onClick={() => !hasRevealed && revealText()}
+      className="fixed inset-0 z-[70] overflow-y-auto bg-[#0a0805] select-none cursor-pointer"
       role="dialog"
       aria-modal="true"
       aria-label={`Chapter ${chapter}: ${opponentName}`}
@@ -71,51 +83,84 @@ export function ChapterStoryOverlay({
           aria-hidden
           onError={() => setImgOk(false)}
           className="fixed inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ opacity: 0.6 }}
+          style={{
+            opacity: hasRevealed ? 0.45 : 0.95,
+            transition: 'opacity 0.6s ease-out',
+          }}
         />
       )}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background:
-            'linear-gradient(180deg, rgba(10,8,5,0.7) 0%, rgba(10,8,5,0.45) 40%, rgba(10,8,5,0.85) 100%)',
+          background: hasRevealed
+            ? 'linear-gradient(180deg, rgba(10,8,5,0.7) 0%, rgba(10,8,5,0.45) 40%, rgba(10,8,5,0.85) 100%)'
+            : 'linear-gradient(180deg, rgba(10,8,5,0.15) 0%, rgba(10,8,5,0.0) 50%, rgba(10,8,5,0.30) 100%)',
+          transition: 'background 0.6s ease-out',
         }}
       />
 
-      <div className="relative min-h-full flex flex-col items-center px-5 py-10 max-w-2xl mx-auto">
-        <div className="latin-display italic ornament text-amber-200/55 text-[10px] tracking-[0.4em] uppercase mb-3">
-          — Chapter {chapter} —
-        </div>
-        <h2 className="jp-display text-amber-100 text-xl md:text-2xl tracking-wider text-center mb-1 leading-snug">
-          {heading}
-        </h2>
-        <div className="jp-display italic text-amber-200/70 text-sm md:text-base mb-7">
-          vs {opponentName}
-        </div>
+      {!hasRevealed && (
+        <>
+          {/* Phase A: bold chapter heading at the top so the player
+              still sees what scene they're previewing while drinking
+              in the art. Subtle, not text-heavy. */}
+          <div className="absolute inset-x-0 top-12 px-5 z-10 text-center pointer-events-none">
+            <div className="latin-display italic ornament text-amber-200/55 text-[10px] tracking-[0.4em] uppercase mb-2">
+              — Chapter {chapter} —
+            </div>
+            <h2 className="jp-display text-amber-100 text-lg md:text-xl tracking-wider leading-snug">
+              {heading}
+            </h2>
+            <div className="jp-display italic text-amber-200/70 text-xs md:text-sm mt-1">
+              vs {opponentName}
+            </div>
+          </div>
+          <TapHint label={tapHintLabel ?? 'tap to reveal'} />
+        </>
+      )}
 
-        <Block heading={proseHeadingIntro} variant="narration">
-          {renderEmphasized(story.intro)}
-        </Block>
-        <Block heading={proseHeadingBossPre} variant="dialogue" speaker={opponentName}>
-          「{renderEmphasized(story.bossPre)}」
-        </Block>
-        <Block heading={proseHeadingBossPost} variant="thought">
-          {renderEmphasized(story.bossPost)}
-        </Block>
-        <Block heading={proseHeadingVictoryDialogue} variant="dialogue" speaker={opponentName}>
-          「{renderEmphasized(story.victoryDialogue)}」
-        </Block>
-        <Block heading={proseHeadingVictoryNarration} variant="narration">
-          {renderEmphasized(story.victoryNarration)}
-        </Block>
-
-        <button
-          onClick={onDismiss}
-          className="mt-4 px-6 py-2.5 border border-amber-200/60 hover:border-amber-200 text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display tracking-wider transition-colors"
+      {hasRevealed && (
+        <div
+          className="relative min-h-full flex flex-col items-center px-5 py-10 max-w-2xl mx-auto"
+          style={{ animation: 'textFadeIn 0.6s ease-out' }}
         >
-          {dismissLabel}
-        </button>
-      </div>
+          <div className="latin-display italic ornament text-amber-200/55 text-[10px] tracking-[0.4em] uppercase mb-3">
+            — Chapter {chapter} —
+          </div>
+          <h2 className="jp-display text-amber-100 text-xl md:text-2xl tracking-wider text-center mb-1 leading-snug">
+            {heading}
+          </h2>
+          <div className="jp-display italic text-amber-200/70 text-sm md:text-base mb-7">
+            vs {opponentName}
+          </div>
+
+          <Block heading={proseHeadingIntro} variant="narration">
+            {renderEmphasized(story.intro)}
+          </Block>
+          <Block heading={proseHeadingBossPre} variant="dialogue" speaker={opponentName}>
+            「{renderEmphasized(story.bossPre)}」
+          </Block>
+          <Block heading={proseHeadingBossPost} variant="thought">
+            {renderEmphasized(story.bossPost)}
+          </Block>
+          <Block heading={proseHeadingVictoryDialogue} variant="dialogue" speaker={opponentName}>
+            「{renderEmphasized(story.victoryDialogue)}」
+          </Block>
+          <Block heading={proseHeadingVictoryNarration} variant="narration">
+            {renderEmphasized(story.victoryNarration)}
+          </Block>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+            className="mt-4 px-6 py-2.5 border border-amber-200/60 hover:border-amber-200 text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display tracking-wider transition-colors"
+          >
+            {dismissLabel}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

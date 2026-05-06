@@ -17,9 +17,13 @@ import { TapHint } from './TapHint';
 interface Props {
   t: Messages;
   onNext: () => void;
+  /** Override for the "next step" button. Used by the title-screen
+   *  archive replay so the last scene reads 「閉じる」 instead of
+   *  「次のステップへ」. */
+  nextLabel?: string;
 }
 
-export function PrologueScreen({ t, onNext }: Props) {
+export function PrologueScreen({ t, onNext, nextLabel }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const bgSrc = `${import.meta.env.BASE_URL}illustrations/prologue-bg-${
     isLandscape ? 'landscape' : 'portrait'
@@ -64,7 +68,7 @@ export function PrologueScreen({ t, onNext }: Props) {
             }}
             className="self-end px-6 py-3 border border-amber-200/55 hover:border-amber-200 text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display tracking-wider transition-colors"
           >
-            {t.intro.nextStepLabel}
+            {nextLabel ?? t.intro.nextStepLabel}
           </button>
         </div>
       )}

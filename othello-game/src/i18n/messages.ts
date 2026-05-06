@@ -376,6 +376,10 @@ export interface Messages {
   archiveModalSubtitle: string;
   archiveSceneLabels: {
     prologue: string;
+    'intro:falling': string;
+    'intro:arrival': string;
+    'intro:gatewayClosed': string;
+    'intro:gatewayOpen': string;
     'narrative:solitude': string;
     'narrative:allies': string;
     'narrative:final': string;
@@ -401,6 +405,13 @@ export interface Messages {
   archiveBlockBossPost: string;
   archiveBlockVictoryDialogue: string;
   archiveBlockVictoryNarration: string;
+  /** Phase-A "tap to reveal" hint shown on archive overlays before
+   *  the narration fades in (mirrors the in-game intro flow's
+   *  `intro.tapToContinue` wording but framed for replay context). */
+  archiveTapHint: string;
+  /** Top-left progress chip during sequential replay, e.g.
+   *  "シーン 5 / 28". */
+  archivePageCounter: (current: number, total: number) => string;
 
   // Game over (lives = 0) screen
   gameOverScreenLabel: string;
@@ -797,7 +808,11 @@ export const ja: Messages = {
   archiveModalTitle: 'シーン回想',
   archiveModalSubtitle: 'これまでに通り過ぎたお話を、もう一度。',
   archiveSceneLabels: {
-    prologue: '序章 「放課後、世界が転換する」',
+    prologue: '序章 ① 「放課後、世界が転換する」',
+    'intro:falling': '序章 ② 「召喚 — 落下」',
+    'intro:arrival': '序章 ③ 「到着 — 盤上世界」',
+    'intro:gatewayClosed': '序章 ④ 「閉じた門」',
+    'intro:gatewayOpen': '序章 ⑤ 「開かれる扉」',
     'narrative:solitude': '幕間 「孤独な打ち手」',
     'narrative:allies': '幕間 「同行者たちの影」',
     'narrative:final': '幕間 「決戦の前夜」',
@@ -811,6 +826,8 @@ export const ja: Messages = {
   archivePlayAllLabel: '最初から連続再生',
   archiveChapterLabel: (n, name) => `第${n}章  vs ${name}`,
   archiveChapterHeading: (n, name) => `第${n}章  ${name}`,
+  archiveTapHint: 'タップで本文を表示',
+  archivePageCounter: (current, total) => `シーン ${current} / ${total}`,
   archiveBlockIntro: '導入',
   archiveBlockBossPre: '対局前',
   archiveBlockBossPost: '対局直後',
@@ -1203,7 +1220,11 @@ Distant **cheers** — and what sounded suspiciously like a **glittering idol so
   archiveModalTitle: 'Scene Archive',
   archiveModalSubtitle: 'Re-watch the beats you’ve already passed.',
   archiveSceneLabels: {
-    prologue: 'Prologue · After School, the World Turns',
+    prologue: 'Prologue ① · After School, the World Turns',
+    'intro:falling': 'Prologue ② · Summoning — The Fall',
+    'intro:arrival': 'Prologue ③ · Arrival — Bansho Sekai',
+    'intro:gatewayClosed': 'Prologue ④ · The Closed Gate',
+    'intro:gatewayOpen': 'Prologue ⑤ · The Gate Opens',
     'narrative:solitude': 'Interlude · The Solitary Player',
     'narrative:allies': 'Interlude · Shadows of Companions',
     'narrative:final': 'Interlude · The Eve of the Final Match',
@@ -1222,6 +1243,8 @@ Distant **cheers** — and what sounded suspiciously like a **glittering idol so
   archiveBlockBossPost: 'Right after',
   archiveBlockVictoryDialogue: "Master's parting line",
   archiveBlockVictoryNarration: 'Bridge to the next',
+  archiveTapHint: 'Tap to reveal',
+  archivePageCounter: (current, total) => `Scene ${current} / ${total}`,
 
   gameOverScreenLabel: 'Game Over',
   gameOverScreenTitle: 'GAME OVER',

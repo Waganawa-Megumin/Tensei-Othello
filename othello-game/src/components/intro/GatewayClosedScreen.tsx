@@ -17,9 +17,12 @@ import { TapHint } from './TapHint';
 interface Props {
   t: Messages;
   onNext: () => void;
+  /** See PrologueScreen — overrides the bottom button label for
+   *  archive replay use. */
+  nextLabel?: string;
 }
 
-export function GatewayClosedScreen({ t, onNext }: Props) {
+export function GatewayClosedScreen({ t, onNext, nextLabel }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const bgSrc = `${import.meta.env.BASE_URL}illustrations/gateway-closed-${
     isLandscape ? 'landscape' : 'portrait'
@@ -61,7 +64,7 @@ export function GatewayClosedScreen({ t, onNext }: Props) {
             }}
             className="self-end px-6 py-3 border border-amber-200/55 hover:border-amber-200 text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display tracking-wider transition-colors"
           >
-            {t.intro.gatewayClosedButton}
+            {nextLabel ?? t.intro.gatewayClosedButton}
           </button>
         </div>
       )}

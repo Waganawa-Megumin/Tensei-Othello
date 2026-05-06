@@ -12,6 +12,10 @@
  */
 export type OverlayKey =
   | 'prologue'
+  | 'intro:falling'
+  | 'intro:arrival'
+  | 'intro:gatewayClosed'
+  | 'intro:gatewayOpen'
   | 'narrative:solitude'
   | 'narrative:allies'
   | 'narrative:final'
@@ -68,6 +72,10 @@ export function markOverlaySeen(slotId: string, overlay: OverlayKey): void {
  */
 const OVERLAY_ORDER: readonly OverlayKey[] = [
   'prologue',
+  'intro:falling',
+  'intro:arrival',
+  'intro:gatewayClosed',
+  'intro:gatewayOpen',
   'narrative:solitude',
   'narrative:allies',
   'narrative:final',
@@ -132,8 +140,18 @@ export function getOrderedArchiveScenes(
   trueEndingAchieved: boolean,
 ): ArchiveScene[] {
   const result: ArchiveScene[] = [];
+  // The intro sequence runs as a single uninterruptible chain on the
+  // first story-mode entry (PrologueScreen → FallingScreen →
+  // ArrivalScreen → GatewayClosedScreen → GatewayOpenScreen →
+  // ChapterIntroScreen). We mark only `prologue` as seen at the end
+  // so all 5 intro sub-scenes share that one flag — they're either
+  // all seen or all not seen.
   if (hasSeenOverlay(slotId, 'prologue')) {
     result.push({ kind: 'overlay', key: 'prologue' });
+    result.push({ kind: 'overlay', key: 'intro:falling' });
+    result.push({ kind: 'overlay', key: 'intro:arrival' });
+    result.push({ kind: 'overlay', key: 'intro:gatewayClosed' });
+    result.push({ kind: 'overlay', key: 'intro:gatewayOpen' });
   }
   for (let i = 1; i <= 20; i++) {
     if (storyProgress < i) break;
