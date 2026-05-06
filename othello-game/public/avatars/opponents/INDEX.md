@@ -23,8 +23,8 @@
 | 17 | OPP17 | レオン (Leon) | 騎士 | [`OPP17_leon/`](./OPP17_leon/) | 「正々堂々、参る！」 |
 | 18 | OPP18 | 宗次郎 (Sojiro) | 侍 | [`OPP18_sojiro/`](./OPP18_sojiro/) | 「我が一刀、避けられはせぬ」 |
 | 19 | OPP19 | 嵐 (Arashi) | 竜騎士 | [`OPP19_arashi/`](./OPP19_arashi/) | 「我が竜の前に膝を折れ！」 |
-| 20 | OPP20 | ゼロ (Zero) — 通常版 | ハッカー (最終ボス) | [`OPP20_zero/`](./OPP20_zero/) | 「全ての変分は計算済み。詰みだ」 |
-| 20★ | OPP20_battle | ゼロ (Zero) — 戦闘モード | ハッカー (最終ボス・フード姿) | [`OPP20_zero_battle/`](./OPP20_zero_battle/) | (戦闘中アバター用) |
+| 20 | OPP20 | ゼロ (Zero) — フード姿 (最終ボス) | ハッカー (最終ボス) | [`OPP20_zero/`](./OPP20_zero/) | 「全ての変分は計算済み。詰みだ」 |
+| 21★ | OPP21 | ゼロ (Zero) — 現世帰還 (隠しキャラ) | 救済された旧ラスボス | [`OPP21_zero_unmasked/`](./OPP21_zero_unmasked/) | (アンロック条件: PLR01 で章 20 クリア) |
 
 ## 各キャラフォルダの中身
 
