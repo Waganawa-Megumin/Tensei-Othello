@@ -149,34 +149,57 @@ main の最新ハッシュをワンタッチで把握できる必要がある。
 
 ## 4. キャラクター ロスター
 
-### 4.1 コンピュータ側 (COMPUTERS 配列、20体)
+### 4.1 コンピュータ側 (COMPUTERS 配列、20体 + ゼロ戦闘モード追加アセット)
 
 各キャラに固有の難易度レベルが割り当てられている。**ストーリーモードでは Lv.1 から Lv.20 まで順番に対戦** する。**フリーモードでは難易度のみ自由に変更可能**（キャラはレベルに紐付き）。
 
-| Lv | 名前      | 漢字 | アーキタイプ        | 由来画像ファイル              |
-|----|-----------|------|---------------------|-------------------------------|
-| 1  | いちか    | 苺   | アイドル            | 18_idol_singer.png            |
-| 2  | 葵        | 葵   | 弓使い              | 03_energetic_archer.png       |
-| 3  | 朝日      | 朝   | 剣士                | 01_cheerful_swordsman.png     |
-| 4  | なでしこ  | 撫   | 治療師              | 05_kind_healer.png            |
-| 5  | 響        | 響   | 吟遊詩人            | 07_musician_bard.png          |
-| 6  | つむぎ    | 紬   | 獣使い              | 16_beast_tamer.png            |
-| 7  | 茜        | 茜   | 技師                | 08_gadget_engineer.png        |
-| 8  | メル      | 薬   | 錬金術師            | 19_alchemist.png              |
-| 9  | 悟        | 悟   | 修行僧              | 13_stoic_monk.png             |
-| 10 | シキ      | 黒   | 盗賊                | 06_sly_rogue.png              |
-| 11 | シオン    | 詩   | 魔術師              | 02_calm_mage.png              |
-| 12 | ルナ      | 夢   | 夢の魔女            | 12_dreamy_witch.png           |
-| 13 | 雪乃      | 雪   | 学園軍師            | 09_school_strategist.png      |
-| 14 | アキラ    | 暁   | 探偵                | 17_detective.png              |
-| 15 | シエル    | 銀   | サイバー斥候        | 10_cyberpunk_scout.png        |
-| 16 | アリア    | 姫   | 姫君                | 15_noble_princess.png         |
-| 17 | レオン    | 獅   | 騎士                | 04_noble_knight.png           |
-| 18 | 宗次郎    | 宗   | 侍                  | 11_elegant_samurai.png        |
-| 19 | 嵐        | 嵐   | 竜騎士              | 14_dragon_rider.png           |
-| 20 | ゼロ      | 零   | ハッカー（最終ボス）| 20_hacker.png                 |
+| Lv | 名前 | 漢字 | アーキタイプ | アバターパス |
+| --- | --- | --- | --- | --- |
+| 1 | いちか | 苺 | アイドル | `/avatars/opponents/OPP01_ichika/icon.png` |
+| 2 | 葵 | 葵 | 弓使い | `/avatars/opponents/OPP02_aoi/icon.png` |
+| 3 | 朝日 | 朝 | 剣士 | `/avatars/opponents/OPP03_asahi/icon.png` |
+| 4 | なでしこ | 撫 | 治療師 | `/avatars/opponents/OPP04_nadeshiko/icon.png` |
+| 5 | 響 | 響 | 吟遊詩人 | `/avatars/opponents/OPP05_hibiki/icon.png` |
+| 6 | つむぎ | 紬 | 獣使い | `/avatars/opponents/OPP06_tsumugi/icon.png` |
+| 7 | 茜 | 茜 | 技師 | `/avatars/opponents/OPP07_akane/icon.png` |
+| 8 | メル | 薬 | 錬金術師 | `/avatars/opponents/OPP08_mel/icon.png` |
+| 9 | 悟 | 悟 | 修行僧 | `/avatars/opponents/OPP09_satoru/icon.png` |
+| 10 | シキ | 黒 | 盗賊 | `/avatars/opponents/OPP10_shiki/icon.png` |
+| 11 | シオン | 詩 | 魔術師 | `/avatars/opponents/OPP11_shion/icon.png` |
+| 12 | ルナ | 夢 | 夢の魔女 | `/avatars/opponents/OPP12_luna/icon.png` |
+| 13 | 雪乃 | 雪 | 学園軍師 | `/avatars/opponents/OPP13_yukino/icon.png` |
+| 14 | アキラ | 暁 | 探偵 | `/avatars/opponents/OPP14_akira/icon.png` |
+| 15 | シエル | 銀 | サイバー斥候 | `/avatars/opponents/OPP15_ciel/icon.png` |
+| 16 | アリア | 姫 | 姫君 | `/avatars/opponents/OPP16_aria/icon.png` |
+| 17 | レオン | 獅 | 騎士 | `/avatars/opponents/OPP17_leon/icon.png` |
+| 18 | 宗次郎 | 宗 | 侍 | `/avatars/opponents/OPP18_sojiro/icon.png` |
+| 19 | 嵐 | 嵐 | 竜騎士 | `/avatars/opponents/OPP19_arashi/icon.png` |
+| 20 | ゼロ | 零 | ハッカー（最終ボス・通常版） | `/avatars/opponents/OPP20_zero/icon.png` |
+| 20★ | ゼロ | 零 | ハッカー（最終ボス・戦闘モード／フード姿） | `/avatars/opponents/OPP20_zero_battle/icon.png` |
 
-**全20体の画像が `public/avatars/` に配置済み（256×256 PNG）。**
+
+**全 21 フォルダが `public/avatars/opponents/` 配下に配置済み (1024×1024 RGBA)。** 各フォルダには:
+
+- `character.png` — 1024×1024 RGBA 透過済キャラ単体 (Adobe Photoshop で処理)
+- `background.png` — 1024×1024 RGB このキャラ専用背景
+- `icon.png` — 1024×1024 RGBA 円形クロップ済合成アイコン (UI でそのまま `<img>` 利用可)
+- `spec.md` — このキャラの正の仕様書
+
+旧 256×256 簡易版は `public/avatars-old/opponents/` に温存。詳細は `public/avatars/README.md` および `public/avatars/opponents/INDEX.md` 参照。
+
+#### v4 (2026-05-06) 改訂で確定したデザイン差分
+
+OPP03 朝日は和洋融合武士道、OPP11 シオンは紫髪+眼鏡、OPP13 雪乃は銀髪+眼鏡、OPP18 宗次郎は老侍版がそれぞれ確定版。OPP16 アリアはアバター=白ドレス・章別挿絵=青ドレスの**マルチ衣装設定**として両方が canonical。**OPP20 ゼロは「フード無し (通常版・OPP20_zero)」と「フード姿 (戦闘モード・OPP20_zero_battle)」の二重アセット構造**を採用し、章 20 のシーン・プレイヤーに応じて切り替える。各キャラの正の記述は `public/avatars/opponents/OPPxx_*/spec.md` 参照。
+
+#### 章 20 シーン分岐 (重要)
+
+ゼロのアバターはシーン・プレイヤーで切り替わる:
+
+- 章 20 戦闘中 (PLR00〜PLR20、ただし PLR01 除く) → `OPP20_zero_battle/icon.png` (フード姿)
+- 章 20 戦闘中 (PLR01 英霊ハルキ) → `OPP20_zero/icon.png` (フード無し、本来の姿で対峙する特例演出)
+- 章 20 勝利後の対話 → `OPP20_zero/icon.png` (フード無し、フードが落ちて素顔が現れる演出)
+
+`COMPUTERS_DATA` のパスは通常版 (`OPP20_zero/icon.png`) をデフォルトにし、戦闘画面コンポーネント側で条件分岐する実装方針。実装は `App.tsx` 内の `aiAvatarImage` 派生 + `zeroAvatarFor()` ヘルパー (Phase 2 / `feat(chapter20)` commit) を参照。
 
 ### 4.2 プレイヤー側 (AVATARS 配列、20体)
 
