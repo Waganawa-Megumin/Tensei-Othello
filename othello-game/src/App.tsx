@@ -2062,27 +2062,33 @@ export default function App() {
         setUnlockedThisRun(nextUnlocks);
         setP1Avatar(nextUnlocks);
       }
-      // True-ending detection for the bonus Lv.21 OPP21 unlock.
-      // Triggered when the slot just rolled storyProgress 19→20 with
-      // the active player avatar being PLR01 英霊ハルキ — the canon
-      // path the bonus character is gated behind. Fires once and
-      // persists; subsequent PLR01 runs are no-ops. Also triggers
-      // the true-ending cinematic (20-B → 20-C narrative overlays)
-      // by setting `storyOverlay` to the first scene; the second
-      // scene's onDismiss in the JSX below chains to 20-C, which
-      // dismisses to null. Phase 3 also unlocks OPP22 alongside
-      // OPP21 — both are gated by `trueEndingAchieved` in the
-      // `c.hidden && !trueEndingAchieved` lock, so the flag flip
-      // alone is sufficient (no separate "unlock OPP22" call).
-      const p1Image = AVATARS[p1Avatar]?.image ?? '';
-      const ranAsPLR01 = p1Image.includes('PLR01_haruki_heroic');
-      if (justClearedStory && ranAsPLR01 && !trueEndingAchieved) {
-        setTrueEndingAchievedState(true);
-        void setTrueEndingAchieved(true);
-        setStoryOverlay('narrative:trueEnding20B');
-      }
     } else if (!isStory) {
       void recordFreeResult({ result, opponentLevel });
+    }
+    // True-ending detection — intentionally OUTSIDE the
+    // `isStory && activeSlotId !== null` gate above. It used to fire
+    // only when the slot just rolled storyProgress 19→20 (=
+    // `justClearedStory`), which broke the canonical path: PLR00
+    // clears ch.20 first → progress is already 20 → PLR01 unlocks →
+    // user replays ch.20 with PLR01 → progress was 20 (not 19) so
+    // the old gate fails → trueEndingAchieved never set → 20-B/20-C
+    // cinematic skipped → archive shows no true-ending entries even
+    // though the player canonically completed the route. Fix: any
+    // ch.20 win in AI mode with PLR01 active flips the global flag
+    // (and fires the cinematic), regardless of slot/progress state.
+    // The `!trueEndingAchieved` clause keeps it idempotent.
+    const p1Image = AVATARS[p1Avatar]?.image ?? '';
+    const ranAsPLR01 = p1Image.includes('PLR01_haruki_heroic');
+    const wonChapter20 = result === 'win' && opponentLevel === 20;
+    if (
+      gameMode === 'ai' &&
+      wonChapter20 &&
+      ranAsPLR01 &&
+      !trueEndingAchieved
+    ) {
+      setTrueEndingAchievedState(true);
+      void setTrueEndingAchieved(true);
+      setStoryOverlay('narrative:trueEnding20B');
     }
     setResultRecorded(true);
   }, [
