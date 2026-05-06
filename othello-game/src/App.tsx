@@ -1495,6 +1495,13 @@ export default function App() {
     savedAt: number;
   } | null>(null);
   const [resultRecorded, setResultRecorded] = useState(false);
+  /** Toggle to hide the GameOver / Game Over Screen modal so the player
+   *  can re-read the final board position without dismissing the
+   *  match. Cleared on every fresh game (kifu emptied + gameOver=false).
+   *  Without this, the only way out of the modal was a destructive
+   *  button (reset / title / retry) — losing the "let me look at the
+   *  board for a moment" exit. */
+  const [gameOverDismissed, setGameOverDismissed] = useState(false);
   /** Synchronous mirror of `resultRecorded`. The state-only gate had
    *  a runtime failure mode where the gameOver effect re-fired
    *  hundreds of times in a single second (diag log v0.33.7 captured
@@ -2082,6 +2089,7 @@ export default function App() {
     if (kifu.length === 0 && !gameOver) {
       resultRecordedRef.current = false;
       setResultRecorded(false);
+      setGameOverDismissed(false);
     }
   }, [kifu.length, gameOver]);
 
@@ -2401,6 +2409,7 @@ export default function App() {
     setLastResult(null);
     setKifu([]);
     setResigned(null);
+    setGameOverDismissed(false);
     setUnlockedThisRun(null);
     setLoadedKifuView(false);
     setReplayCursor(null);
@@ -2527,9 +2536,17 @@ export default function App() {
    *  Also clears the per-slot overlay-seen flags so the prologue +
    *  narrative inserts re-fire on the fresh playthrough; otherwise
    *  the slot would be rewound to chapter 1 but the archive would
-   *  still report the prologue as already viewed. */
+   *  still report the prologue as already viewed.
+   *
+   *  Confirmation guard: this is the most destructive non-delete
+   *  action available — wipes progress, lives, vsOpponent stats, and
+   *  the overlay-seen flags for the slot. A misclick (e.g. tapping
+   *  「セーブをリセット」 on the GameOver screen instead of "retry")
+   *  used to vapourize the run. The browser-native `confirm` keeps
+   *  the wording locale-aware via i18n. */
   async function resetStoryProgress() {
     if (activeSlotId === null) return;
+    if (!window.confirm(t.resetStoryProgressConfirm)) return;
     const next = await resetStoredSlot(activeSlotId);
     setSlots(next);
     resetOverlaysSeen(String(activeSlotId));
@@ -4166,7 +4183,7 @@ export default function App() {
           )}
 
           {/* Game over modal */}
-          {gameOver && !settingsOpen && !loadedKifuView && (() => {
+          {gameOver && !gameOverDismissed && !settingsOpen && !loadedKifuView && (() => {
             const isStoryMode = aiMode === 'story' && gameMode === 'ai';
             const justAdvanced = isStoryMode && lastResult === 'win';
             const justCompletedStory = justAdvanced && storyProgress >= 20;
@@ -4184,7 +4201,20 @@ export default function App() {
             if (isGameOverScreen) {
               return (
                 <div className="modal-bg fixed inset-0 flex items-stretch md:items-center justify-center z-40 p-2 md:p-4">
-                  <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full max-h-[95vh] overflow-y-auto text-center rounded-sm">
+                  <div className="modal-card relative px-8 md:px-10 py-10 md:py-12 max-w-md w-full max-h-[95vh] overflow-y-auto text-center rounded-sm">
+                    {/* X close — hides the modal so the player can re-
+                        read the final position without a destructive
+                        action. A re-open banner shows at the bottom of
+                        the screen so they can summon it back. */}
+                    <button
+                      type="button"
+                      onClick={() => setGameOverDismissed(true)}
+                      className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-amber-200/55 hover:text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display text-lg leading-none"
+                      aria-label={t.gameOverViewBoard}
+                      title={t.gameOverViewBoard}
+                    >
+                      ×
+                    </button>
                     <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-red-300/80">
                       — {t.gameOverScreenLabel} —
                     </div>
@@ -4207,6 +4237,43 @@ export default function App() {
                       <span>{t.livesLabel}:</span>
                       <span className="text-red-200/95 tabular-nums text-lg">♥ 0</span>
                     </div>
+
+                    {/* Stats summary — frame the GameOver screen as
+                        a "respite & take stock" beat rather than pure
+                        punishment. Shows progress / W-L-D / unlocked
+                        avatar count so the player sees what their run
+                        has accumulated, even while looking at the
+                        save-reset button. Only renders when there's
+                        an active slot, which is already required for
+                        `isGameOverScreen` to be true. */}
+                    {activeSlot && (
+                      <div className="grid grid-cols-3 gap-2 mb-5 px-2 py-3 border-y border-amber-200/15">
+                        <div>
+                          <div className="latin-display italic text-amber-200/55 text-[9px] tracking-[0.25em] uppercase mb-0.5">
+                            {t.gameOverStatsProgress}
+                          </div>
+                          <div className="jp-display text-amber-100/95 tabular-nums text-base">
+                            {activeSlot.storyProgress} / 20
+                          </div>
+                        </div>
+                        <div>
+                          <div className="latin-display italic text-amber-200/55 text-[9px] tracking-[0.25em] uppercase mb-0.5">
+                            {t.gameOverStatsRecord}
+                          </div>
+                          <div className="jp-display text-amber-100/95 tabular-nums text-[11px] leading-tight">
+                            {activeSlot.wins}-{activeSlot.losses}-{activeSlot.draws}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="latin-display italic text-amber-200/55 text-[9px] tracking-[0.25em] uppercase mb-0.5">
+                            {t.gameOverStatsUnlocks}
+                          </div>
+                          <div className="jp-display text-amber-100/95 tabular-nums text-base">
+                            {unlockedCount} / {TOTAL_BONUS_AVATARS}
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {gameMode === 'ai' && kifu.length > 0 && (
                       <div className="flex justify-center gap-2 mt-3 mb-3 flex-wrap">
@@ -4241,7 +4308,15 @@ export default function App() {
                         {t.gameOverTryAgainNoLives}
                       </button>
                       <button
-                        onClick={() => setScreen('title')}
+                        onClick={() => {
+                          // Reset in-memory match state on the way out
+                          // so re-entering story mode doesn't inherit
+                          // a leftover gameOver=true / full board /
+                          // stale kifu. Slot data lives in localStorage
+                          // and is untouched.
+                          reset();
+                          setScreen('title');
+                        }}
                         className="btn"
                       >
                         {t.gameOverBackToTitle}
@@ -4263,7 +4338,19 @@ export default function App() {
                     off-screen on mobile. The endingFull text itself
                     uses PaginatedProse below to break the wall of
                     text into readable pages. */}
-                <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full max-h-[95vh] overflow-y-auto text-center rounded-sm">
+                <div className="modal-card relative px-8 md:px-10 py-10 md:py-12 max-w-md w-full max-h-[95vh] overflow-y-auto text-center rounded-sm">
+                  {/* X close — same role as the GameOver Screen modal:
+                      let the player look at the board for one more
+                      breath before committing to a button. */}
+                  <button
+                    type="button"
+                    onClick={() => setGameOverDismissed(true)}
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-amber-200/55 hover:text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display text-lg leading-none"
+                    aria-label={t.gameOverViewBoard}
+                    title={t.gameOverViewBoard}
+                  >
+                    ×
+                  </button>
                   <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3">
                     {justCompletedStory
                       ? t.storyComplete
@@ -4572,7 +4659,13 @@ export default function App() {
                       </button>
                     )}
                     <button
-                      onClick={() => setScreen('title')}
+                      onClick={() => {
+                        // See the GameOver Screen's title button: clear
+                        // in-memory state on exit so re-entry from
+                        // title is clean.
+                        reset();
+                        setScreen('title');
+                      }}
                       className="btn"
                     >
                       {t.gameOverBackToTitle}
@@ -4582,6 +4675,20 @@ export default function App() {
               </div>
             );
           })()}
+
+          {/* Re-open banner — shows when the player tapped × on the
+              GameOver modal to look at the board. One tap brings the
+              result modal back. Sits above the toolbar so it never
+              overlaps the score panel or board content. */}
+          {gameOver && gameOverDismissed && !settingsOpen && !loadedKifuView && (
+            <button
+              type="button"
+              onClick={() => setGameOverDismissed(false)}
+              className="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 px-4 py-2 bg-zinc-950/90 border border-amber-200/40 hover:border-amber-200/80 hover:bg-amber-200/[0.06] rounded-sm jp-display text-amber-100/90 text-xs tracking-wider shadow-lg backdrop-blur-sm"
+            >
+              ▲ {t.gameOverReopenBanner}
+            </button>
+          )}
 
           {/* (Replay strip is now embedded inline below the score bar so
               it never overlaps the board. See the loadedKifuView block

@@ -390,6 +390,23 @@ export interface Messages {
   gameOverScreenLabel: string;
   gameOverScreenTitle: string;
   gameOverScreenProse: string;
+  /** Tooltip / aria label for the × icon that hides the GameOver
+   *  modal so the player can re-read the final position before
+   *  committing to a destructive button. */
+  gameOverViewBoard: string;
+  /** Bottom banner shown while the modal is dismissed; tap to re-
+   *  summon the GameOver result modal. */
+  gameOverReopenBanner: string;
+  /** Confirmation prompt for the "save reset" path, which wipes
+   *  storyProgress / lives / vsOpponent stats / overlay-seen flags
+   *  on the active slot. */
+  resetStoryProgressConfirm: string;
+  /** Stats summary block shown in the GameOver Screen so the player
+   *  sees what their run has accumulated even while staring at the
+   *  reset button. */
+  gameOverStatsProgress: string;
+  gameOverStatsRecord: string;
+  gameOverStatsUnlocks: string;
   gameOverResetSave: string;
   gameOverBackToTitle: string;
   gameOverTryAgainNoLives: string;
@@ -784,6 +801,13 @@ export const ja: Messages = {
   gameOverBackToTitle: 'タイトルへ戻る',
   gameOverTryAgainNoLives: '残機なしで再挑戦',
   gameOverViewKifu: '対戦棋譜を読み込む',
+  gameOverViewBoard: '盤面を見る',
+  gameOverReopenBanner: '対局結果を再表示',
+  resetStoryProgressConfirm:
+    'このスロットの進捗・残機・戦績・既読シナリオを全て初期化します。よろしいですか？\n（他のスロットは影響を受けません）',
+  gameOverStatsProgress: '進捗',
+  gameOverStatsRecord: '勝-負-分',
+  gameOverStatsUnlocks: '解放',
 
   kifuLibraryHint: '対局終了時に自動保存されます。レビューを生成すると同じ棋譜に紐付きます。',
 
@@ -1174,6 +1198,13 @@ will you try again, or walk a different path?`,
   gameOverBackToTitle: 'Back to title',
   gameOverTryAgainNoLives: 'Retry without lives',
   gameOverViewKifu: 'View saved kifu',
+  gameOverViewBoard: 'Look at the board',
+  gameOverReopenBanner: 'Show match result',
+  resetStoryProgressConfirm:
+    "This wipes this slot's progress, lives, win/loss record, and seen-scene flags.\nAre you sure?\n(Other slots are unaffected.)",
+  gameOverStatsProgress: 'Progress',
+  gameOverStatsRecord: 'W-L-D',
+  gameOverStatsUnlocks: 'Unlocked',
 
   kifuLibraryHint: 'Matches are auto-saved when they end. Generating a review attaches it to the same kifu.',
 
