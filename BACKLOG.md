@@ -5,13 +5,21 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-04 by `claude/othello-ui-autosave-bPnmY` (v0.31.0)
+Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ---
 
 ## 🔥 In Progress
 
-なし。
+- [ ] **OPP アバター v4 アセット配置 (Phase 1)** —
+      別 Claude セッションで精製された OPP 21 アセット (キャラ/背景/
+      アイコン/仕様書) をリポジトリに配置。旧 256×256 PNG は
+      `public/avatars-old/opponents/` に温存、新は
+      `public/avatars/opponents/OPPxx_*/` 構造で配置 (21 フォルダ)。
+      ゼロは通常版 (OPP20_zero) + 戦闘モード版 (OPP20_zero_battle)
+      の二重アセット構造。ゲーム実装 (パス参照更新・シーン分岐) は
+      Phase 2 で別タスク対応。詳細 `opp_handoff/TASK.md`。
+      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
 
 ---
 
