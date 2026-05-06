@@ -222,3 +222,75 @@ describe('full-match smoke: random self-play', () => {
     expect(() => runBatch(1, 1, 500)).not.toThrow();
   });
 });
+
+/* ------------------------------------------------------------------
+   Story-mode parity: human plays BOTH colors. The coin flip in
+   `App.tsx` puts the human on either BLACK (first) or WHITE (second).
+   Both should converge to gameOver for every chapter level — this
+   asserts the engine doesn't have a color-dependent stuck state.
+   ------------------------------------------------------------------ */
+
+/** Simulate a story chapter where `humanColor` is the player and
+ *  `aiLevel` is the chapter (= AI's level). Use a deterministic-ish
+ *  "first legal move" driver for the human side so we exercise the
+ *  full game tree without random escape paths. */
+function simulateStoryChapter(
+  humanColor: Color,
+  aiLevel: number,
+  humanLevel = 1,
+): MatchResult {
+  const blackLevel = humanColor === BLACK ? humanLevel : aiLevel;
+  const whiteLevel = humanColor === WHITE ? humanLevel : aiLevel;
+  return simulateFullMatch(blackLevel, whiteLevel);
+}
+
+describe('story-mode parity: human-BLACK vs human-WHITE freeze check', () => {
+  // All 20 chapters' AI levels.
+  const chapterLevels = Array.from({ length: 20 }, (_, i) => i + 1);
+
+  it('human plays BLACK (first) — all 20 chapters reach gameOver', () => {
+    for (const aiLevel of chapterLevels) {
+      // 3 iterations per chapter to cover Math.random variance.
+      for (let i = 0; i < 3; i++) {
+        const result = simulateStoryChapter(BLACK, aiLevel);
+        expect(
+          result.reachedGameOver,
+          `Ch.${aiLevel} iter=${i} (human BLACK): did not reach gameOver. ` +
+            `moves=${result.moves} passes=${result.passes}`,
+        ).toBe(true);
+      }
+    }
+  }, 60000);
+
+  it('human plays WHITE (second) — all 20 chapters reach gameOver', () => {
+    for (const aiLevel of chapterLevels) {
+      for (let i = 0; i < 3; i++) {
+        const result = simulateStoryChapter(WHITE, aiLevel);
+        expect(
+          result.reachedGameOver,
+          `Ch.${aiLevel} iter=${i} (human WHITE): did not reach gameOver. ` +
+            `moves=${result.moves} passes=${result.passes}`,
+        ).toBe(true);
+      }
+    }
+  }, 60000);
+
+  it('the freeze-prone chapters specifically (3, 6, 8, 20)', () => {
+    // These are the chapters the user has reported freezes in. Run
+    // both colors × 5 iterations × 4 chapters = 40 games. Each must
+    // reach gameOver with a board that satisfies isGameOver().
+    const freezeProneChapters = [3, 6, 8, 20];
+    for (const aiLevel of freezeProneChapters) {
+      for (const humanColor of [BLACK, WHITE] as const) {
+        for (let i = 0; i < 5; i++) {
+          const result = simulateStoryChapter(humanColor, aiLevel);
+          expect(
+            result.reachedGameOver && isGameOver(result.finalBoard),
+            `Ch.${aiLevel} ${colorChar(humanColor)} iter=${i}: stuck. ` +
+              `trace=${result.trace.slice(-12).join(' ')}`,
+          ).toBe(true);
+        }
+      }
+    }
+  }, 30000);
+});

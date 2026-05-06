@@ -81,6 +81,7 @@ import {
 import { useLocale } from './i18n/useLocale';
 import type { Messages } from './i18n/messages';
 import { TitleScreen, type TitleStartMode } from './components/TitleScreen';
+import { PaginatedProse } from './components/PaginatedProse';
 import { SlotPicker } from './components/SlotPicker';
 import { IntroSequence } from './components/intro/IntroSequence';
 import {
@@ -2114,13 +2115,21 @@ export default function App() {
     setHintMove(null);
   }, [currentColor]);
 
-  // Park the chapter cursor on the player's current frontier whenever
-  // the settings modal opens so they always land on "where they are"
-  // before deciding to browse backward.
+  // Park the chapter cursor on a sensible default whenever the
+  // settings modal opens. For an in-progress run we land on the
+  // frontier ("where they are"); for a completed run (storyProgress
+  // === 20) we land on chapter 1 so revisiting the story reads
+  // chronologically — otherwise users with the game already cleared
+  // would be force-fed the ending screen as their default view and
+  // had to tap ◀ 19 times to reach earlier chapters.
   useEffect(() => {
     if (!settingsOpen) return;
-    const max = Math.min(Math.max(storyProgress + 1, 1), 20);
-    setChapterCursor(max);
+    if (storyProgress >= 20) {
+      setChapterCursor(1);
+    } else {
+      const max = Math.min(Math.max(storyProgress + 1, 1), 20);
+      setChapterCursor(max);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settingsOpen]);
 
@@ -4147,8 +4156,8 @@ export default function App() {
 
             if (isGameOverScreen) {
               return (
-                <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">
-                  <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full text-center rounded-sm">
+                <div className="modal-bg fixed inset-0 flex items-stretch md:items-center justify-center z-40 p-2 md:p-4">
+                  <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full max-h-[95vh] overflow-y-auto text-center rounded-sm">
                     <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3 text-red-300/80">
                       — {t.gameOverScreenLabel} —
                     </div>
@@ -4217,12 +4226,17 @@ export default function App() {
             }
 
             return (
-              <div className="modal-bg fixed inset-0 flex items-center justify-center z-40 p-4">
+              <div className="modal-bg fixed inset-0 flex items-stretch md:items-center justify-center z-40 p-2 md:p-4">
                 {/* Sakura confetti for any story-mode win (chapter clear
                     OR full ending). Sits behind the modal card so the
                     petals visibly drift past the score panel. */}
                 <ChapterClearConfetti active={justAdvanced} />
-                <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full text-center rounded-sm">
+                {/* `max-h-[95vh] scroll-y` so long story-mode endings
+                    (ch.20 endingFull = ~30 lines) don't get clipped
+                    off-screen on mobile. The endingFull text itself
+                    uses PaginatedProse below to break the wall of
+                    text into readable pages. */}
+                <div className="modal-card px-8 md:px-10 py-10 md:py-12 max-w-md w-full max-h-[95vh] overflow-y-auto text-center rounded-sm">
                   <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3">
                     {justCompletedStory
                       ? t.storyComplete
@@ -4265,9 +4279,19 @@ export default function App() {
                           present (image variant decided by viewport
                           orientation, like ChapterArt). */}
                       <EndingArt />
-                      <p className="jp-display text-amber-100/85 text-sm md:text-base leading-relaxed mb-5 whitespace-pre-line text-left">
-                        {renderEmphasized(t.story.endingFull.text)}
-                      </p>
+                      {/* Paginated reader — endingFull is ~30 lines
+                          so even with the modal scrolling enabled it
+                          reads better one paragraph-page at a time
+                          with explicit prev/next, matching the slow
+                          cinematic pace of the finale. */}
+                      <div className="mb-5">
+                        <PaginatedProse
+                          text={t.story.endingFull.text}
+                          prevLabel={t.proseTurnPrev}
+                          nextLabel={t.proseTurnNext}
+                          pageCounter={t.proseTurnCounter}
+                        />
+                      </div>
                     </>
                   )}
                   {/* Chapter-clear scenario beats (master's victory line +
@@ -5371,6 +5395,50 @@ export default function App() {
                             ))}
                           </div>
                         </div>
+
+                        {/* Direct-jump chapter chip row. Renders as a
+                            grid of 1..maxCursor numbered buttons so
+                            players don't have to step ◀/▶ N times to
+                            revisit a specific past chapter. Locked
+                            chapters (cursor > storyProgress + 1) are
+                            disabled. The current cursor is highlighted.
+                            Hidden when only ch.1 is available (no
+                            navigation needed). */}
+                        {maxCursor > 1 && (
+                          <div>
+                            <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.25em] uppercase mb-1.5">
+                              {t.chapterListLabel}
+                            </div>
+                            <div className="grid grid-cols-10 gap-1">
+                              {Array.from({ length: 20 }, (_, i) => {
+                                const n = i + 1;
+                                const isAvailable = n <= maxCursor;
+                                const isCleared = n <= storyProgress;
+                                const isHere = n === cursor;
+                                return (
+                                  <button
+                                    key={n}
+                                    type="button"
+                                    onClick={() => setChapterCursor(n)}
+                                    disabled={!isAvailable}
+                                    aria-current={isHere ? 'true' : undefined}
+                                    className={`latin-display tabular-nums text-xs py-1 rounded-sm border transition-colors ${
+                                      isHere
+                                        ? 'bg-amber-200/20 border-amber-200/80 text-amber-50'
+                                        : isCleared
+                                          ? 'bg-emerald-300/[0.04] border-emerald-200/30 text-emerald-200/85 hover:border-emerald-200/60'
+                                          : isAvailable
+                                            ? 'border-amber-200/30 text-amber-100/75 hover:border-amber-200/60'
+                                            : 'border-zinc-800/60 text-zinc-600 cursor-not-allowed'
+                                    }`}
+                                  >
+                                    {n}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Chapter navigation row. Lets the player step
                             through cleared chapters without disturbing

@@ -74,6 +74,14 @@ export interface Messages {
   chapterCurrentBadge: string;
   chapterClearedBadge: string;
   chapterCounter: (n: number, max: number) => string;
+  /** Heading above the chapter direct-jump chip grid in the story
+   *  chapter browser. */
+  chapterListLabel: string;
+  /** Page-turn UI labels used by `PaginatedProse` (story endings,
+   *  long narrative blocks). */
+  proseTurnPrev: string;
+  proseTurnNext: string;
+  proseTurnCounter: (current: number, total: number) => string;
 
   // First/second selector + roll animation
   firstPlayerHeading: string;
@@ -459,6 +467,10 @@ export const ja: Messages = {
   chapterCurrentBadge: '（現在）',
   chapterClearedBadge: '（クリア済）',
   chapterCounter: (n, max) => `第${n}章 / 第${max}章`,
+  chapterListLabel: '章選択',
+  proseTurnPrev: '前へ',
+  proseTurnNext: '次へ',
+  proseTurnCounter: (current, total) => `${current} / ${total}`,
 
   firstPlayerHeading: '手番',
   firstPlayerSubtitle: 'First / Second',
@@ -842,6 +854,10 @@ export const en: Messages = {
   chapterCurrentBadge: '(current)',
   chapterClearedBadge: '(cleared)',
   chapterCounter: (n, max) => `Chapter ${n} / ${max}`,
+  chapterListLabel: 'Jump to chapter',
+  proseTurnPrev: 'Prev',
+  proseTurnNext: 'Next',
+  proseTurnCounter: (current, total) => `${current} / ${total}`,
 
   firstPlayerHeading: 'Turn order',
   firstPlayerSubtitle: 'First / Second',
