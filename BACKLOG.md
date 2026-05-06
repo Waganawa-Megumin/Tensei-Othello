@@ -11,15 +11,7 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-- [ ] **OPP アバター v4 統合 (Phase 2 / 最終形) — アセット差分配置 + ゲーム実装** —
-      Phase 1 の暫定構造 (`OPP20_zero` 不本意・`OPP20_zero_battle` フード姿)
-      を最終形に整理: `OPP20_zero/` がフード姿の最終ボス標準アバター、新
-      `OPP21_zero_unmasked/` が現世帰還の隠しキャラ。`COMPUTERS_DATA` に
-      Lv.21 エントリ追加、章 20 シーン分岐再配線、未アンロック時の `???`
-      表示 (CSS フィルタ) 実装、`CLAUDE.md §4.1` を 21 体表に更新。真エ
-      ンディング達成 (PLR01 で章 20 クリア) で OPP21 アンロック判定。
-      詳細 `opp_handoff/TASK.md`。
-      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
+なし。
 
 ---
 
@@ -72,6 +64,25 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **OPP アバター v4 統合 (Phase 2 / 最終形)** —
+      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: `20e0a45` —
+      Phase 1 の暫定 `OPP20_zero` (フード無し) と `OPP20_zero_battle`
+      (フード姿) を最終形に再配置: `OPP20_zero/` を**フード姿の最終
+      ボス標準アバター**に、新 `OPP21_zero_unmasked/` を**現世帰還の
+      隠しキャラ**に振り直し (合計 21 フォルダ)。`COMPUTERS_DATA` に
+      Lv.21 OPP21 エントリ追加 (`hidden: true` flag)、`aiAvatarImage`
+      の `ZERO_HOODED`/`ZERO_UNMASKED` 定数を新パスに書き換え。
+      `trueEndingAchieved` 状態を `localStorage('othello:true_ending_achieved')`
+      に永続化、PLR01 英霊ハルキで章 20 クリア時に立てるロジックを
+      gameOver 効果に追加。OPP 選択グリッドで `c.hidden && !trueEndingAchieved`
+      の時 `.avatar-locked` クラス + `???` ラベル + `disabled` で選択
+      阻止。CSS フィルタ (`.avatar-locked > * { filter: brightness(0)
+      opacity(0.55); }` + `::after { content: '???'; }`) を `index.css`
+      に追加。`CLAUDE.md §4.1` を 21 体表 + OPP20/21 二段階構造解説 +
+      章 20 シーン分岐ルール + アンロック判定の実装ポインタに更新。
+      OPP v4 統合完遂。
 
 - [x] **OPP アバター v4 ゲーム実装 (Phase 2)** —
       completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY` —
