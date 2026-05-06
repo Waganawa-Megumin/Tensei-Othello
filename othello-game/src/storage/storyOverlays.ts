@@ -15,6 +15,8 @@ export type OverlayKey =
   | 'narrative:solitude'
   | 'narrative:allies'
   | 'narrative:final'
+  | 'narrative:trueEnding20B'
+  | 'narrative:trueEnding20C'
   | 'ending';
 
 const STORAGE_PREFIX = 'othello:overlay_seen:';
@@ -53,6 +55,8 @@ const OVERLAY_ORDER: readonly OverlayKey[] = [
   'narrative:solitude',
   'narrative:allies',
   'narrative:final',
+  'narrative:trueEnding20B',
+  'narrative:trueEnding20C',
   'ending',
 ];
 

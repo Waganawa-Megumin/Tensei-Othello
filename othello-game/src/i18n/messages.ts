@@ -358,6 +358,8 @@ export interface Messages {
     'narrative:solitude': string;
     'narrative:allies': string;
     'narrative:final': string;
+    'narrative:trueEnding20B': string;
+    'narrative:trueEnding20C': string;
     ending: string;
   };
   archiveReplayLabel: string;
@@ -733,6 +735,8 @@ export const ja: Messages = {
     'narrative:solitude': '幕間 「孤独な打ち手」',
     'narrative:allies': '幕間 「同行者たちの影」',
     'narrative:final': '幕間 「決戦の前夜」',
+    'narrative:trueEnding20B': '真エンディング 「解放の瞬間」',
+    'narrative:trueEnding20C': '真エンディング 「現世にて」',
     ending: '終章 「盤上世界、その先へ」',
   },
   archiveReplayLabel: '再生',
@@ -1109,6 +1113,8 @@ Distant **cheers** — and what sounded suspiciously like a **glittering idol so
     'narrative:solitude': 'Interlude · The Solitary Player',
     'narrative:allies': 'Interlude · Shadows of Companions',
     'narrative:final': 'Interlude · The Eve of the Final Match',
+    'narrative:trueEnding20B': 'True Ending · The Moment of Release',
+    'narrative:trueEnding20C': 'True Ending · In the Human World',
     ending: 'Ending · Beyond Bansho Sekai',
   },
   archiveReplayLabel: 'Play',

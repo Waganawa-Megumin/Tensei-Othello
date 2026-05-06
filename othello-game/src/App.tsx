@@ -2001,12 +2001,20 @@ export default function App() {
       // Triggered when the slot just rolled storyProgress 19→20 with
       // the active player avatar being PLR01 英霊ハルキ — the canon
       // path the bonus character is gated behind. Fires once and
-      // persists; subsequent PLR01 runs are no-ops.
+      // persists; subsequent PLR01 runs are no-ops. Also triggers
+      // the true-ending cinematic (20-B → 20-C narrative overlays)
+      // by setting `storyOverlay` to the first scene; the second
+      // scene's onDismiss in the JSX below chains to 20-C, which
+      // dismisses to null. Phase 3 also unlocks OPP22 alongside
+      // OPP21 — both are gated by `trueEndingAchieved` in the
+      // `c.hidden && !trueEndingAchieved` lock, so the flag flip
+      // alone is sufficient (no separate "unlock OPP22" call).
       const p1Image = AVATARS[p1Avatar]?.image ?? '';
       const ranAsPLR01 = p1Image.includes('PLR01_haruki_heroic');
       if (justClearedStory && ranAsPLR01 && !trueEndingAchieved) {
         setTrueEndingAchievedState(true);
         void setTrueEndingAchieved(true);
+        setStoryOverlay('narrative:trueEnding20B');
       }
     } else if (!isStory) {
       void recordFreeResult({ result, opponentLevel });
@@ -3541,6 +3549,48 @@ export default function App() {
               setStoryOverlay(null);
               setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
               setScreen('intro');
+            }}
+          />
+        )}
+        {/* True-ending cinematic — fired automatically when PLR01
+            英霊ハルキ has just cleared chapter 20 (see the gameOver
+            effect that flips `trueEndingAchieved` and sets this
+            overlay). 20-B is the moment of release (code rain →
+            orange light), 20-C is the modern-Tokyo epilogue. The
+            chained dismiss carries the player through both scenes
+            in order, then drops them back into the GameOver modal
+            with OPP21 + OPP22 already unlocked. */}
+        {storyOverlay === 'narrative:trueEnding20B' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.trueEnding20B}
+            imageBaseName="trueEnding20B"
+            tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+            dismissLabel={t.nextChapter}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(
+                  String(activeSlotId),
+                  'narrative:trueEnding20B',
+                );
+              }
+              setStoryOverlay('narrative:trueEnding20C');
+            }}
+          />
+        )}
+        {storyOverlay === 'narrative:trueEnding20C' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.trueEnding20C}
+            imageBaseName="trueEnding20C"
+            tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+            dismissLabel={t.close}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(
+                  String(activeSlotId),
+                  'narrative:trueEnding20C',
+                );
+              }
+              setStoryOverlay(null);
             }}
           />
         )}
@@ -5979,6 +6029,24 @@ export default function App() {
           scene={t.story.narrative.final}
           imageBaseName="final"
           tone={locale === 'ja' ? '幕間' : 'Interlude'}
+          dismissLabel={t.archiveCloseLabel}
+          onDismiss={() => setReviewOverlay(null)}
+        />
+      )}
+      {reviewOverlay === 'narrative:trueEnding20B' && (
+        <NarrativeOverlay
+          scene={t.story.narrative.trueEnding20B}
+          imageBaseName="trueEnding20B"
+          tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
+          dismissLabel={t.archiveCloseLabel}
+          onDismiss={() => setReviewOverlay(null)}
+        />
+      )}
+      {reviewOverlay === 'narrative:trueEnding20C' && (
+        <NarrativeOverlay
+          scene={t.story.narrative.trueEnding20C}
+          imageBaseName="trueEnding20C"
+          tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
           dismissLabel={t.archiveCloseLabel}
           onDismiss={() => setReviewOverlay(null)}
         />
