@@ -15,6 +15,13 @@ export default defineConfig({
         // Allow caching of avatar images (the largest static assets).
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // v0.33.6: take over immediately so users running an older
+        // service worker get the new bundle on next page load instead
+        // of having to reload twice. Without these, the new SW stays
+        // in `waiting` state — the historical cause of "I deployed the
+        // freeze fix but the user still hits the same freeze".
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: '召喚されたらオセロ世界でした！',
