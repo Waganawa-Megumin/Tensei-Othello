@@ -3713,6 +3713,19 @@ export default function App() {
             setAiMode('story');
             reset({ gameMode: 'ai', aiMode: 'story' });
             setScreen('game');
+            // 章 20-A 対峙シーン: same trigger as the chapter-browser
+            // path in startStoryChapter — the IntroSequence is the
+            // canonical entry from a slot's "continue from chapter
+            // X" button, which is how PLR01 normally re-enters
+            // ch.20. Without this hook the confrontation overlay
+            // only fires from the rarer chapter-browser path.
+            const playerIsPLR01 =
+              p1Avatar >= 0 &&
+              p1Avatar < AVATARS.length &&
+              AVATARS[p1Avatar].image.includes('PLR01_haruki_heroic');
+            if (introChapter === 20 && playerIsPLR01) {
+              setStoryOverlay('narrative:chapter20A');
+            }
           }}
         />
       )}

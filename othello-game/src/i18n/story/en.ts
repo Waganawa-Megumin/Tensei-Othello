@@ -434,7 +434,7 @@ At the center, a deeply **hooded** figure hovers.
 
 "You've finally arrived, **new traveler**."
 
-**A single cyan-glowing eye** fixes its gaze on Haruki.`,
+**A single cyan-glowing eye** fixes its gaze, unwavering.`,
       `"I am **Zero**. Your final trial."
 
 "All 19 battles you've fought — exactly as I predicted. Your arrival here, your first move, every single thing — visible to me from the start."
