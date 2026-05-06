@@ -75,8 +75,12 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.4 + docs v
       に ←/→/Space/Home/End を実装。盤面操作と全画面 toolbar への展開
       は未着手）、スクリーンリーダー対応
 - [ ] **OPP22 ヴォイドφ の正アセット差し替え** — 現状 OPP21
-      `zero_unmasked` 画像を暫定共用。Phase 4 で専用 character/
-      background/icon を制作して `OPP22_voidphi/` に配置。
+      `zero_unmasked` 画像を暫定共用。v0.34.6 で AvatarBadge に
+      「kanji === 'φ' なら hue-rotate(205deg) + saturate(0.6) +
+      cyan/violet 放射グロー」の CSS stopgap を適用、OPP21 と
+      視覚的に区別可能にしてある。ただしこれは応急処置で、
+      Phase 4 で専用 character/background/icon を `OPP22_voidphi/`
+      に配置して暫定共用と stopgap を撤去する必要あり。
       CLAUDE.md §4.1 に「※暫定」と明記済。
 
 ---
