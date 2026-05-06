@@ -11,7 +11,14 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-なし。
+- [ ] **OPP アバター v4 ゲーム実装 (Phase 2)** —
+      Phase 1 で配置済みの OPP 21 アセットに対応するコード実装。
+      `COMPUTERS_DATA` のパス参照を新形式
+      (`/avatars/opponents/OPPxx_*/icon.png`) に書き換え、
+      章 20 のゼロアバター切り替えロジック
+      (フード姿戦闘 / フード無し対話、PLR01 特例) を実装、
+      `CLAUDE.md §4.1` を更新。詳細 `opp_handoff/PHASE2_TASK.md`。
+      owner: `claude/othello-ui-autosave-bPnmY` started: 2026-05-06
 
 ---
 
