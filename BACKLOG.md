@@ -11,22 +11,25 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.33.5)
 
 ## 🔥 In Progress
 
-なし。
+- [ ] **対局中フリーズの再発確認 (PWA キャッシュ攻撃モード化)** —
+      2026-05-04〜2026-05-06 で Ch.3 朝日 / Ch.6 つむぎ で残 1 マスでの
+      フリーズが計 3 回ユーザー報告。コード側は v0.33.4→v0.33.5 で
+      `aiThinking` ガードを `handleClick` + cell-level `isValid` の
+      両方から除去済 (これが歴史的に最後の手をブロックする 2 経路)。
+      しかし v0.33.5 deploy 後も再発。確実な原因は **PWA SW が古い
+      bundle を配信し続けている**: `vite.config.ts` の workbox 設定に
+      `skipWaiting`/`clientsClaim` が無いため新 SW は `waiting` のまま
+      で、reload を 2 回以上要求する。v0.33.6 で workbox に
+      `skipWaiting:true` + `clientsClaim:true` を追加し、新 SW が
+      install 直後に activate して既存 client 全部を即取り込ませる。
+      owner: `claude/othello-ui-autosave-bPnmY` —
+      started: 2026-05-06
 
 ---
 
 ## 📋 Todo (priority order)
 
 ### P1 — バグ・ブロッカー
-
-- [ ] **対局中フリーズの再発確認** — 2026-05-04 ユーザー報告、Ch.1 vs
-      いちか、46W vs 17B、残り 1 マスで盤タップが効かない状態が発生。
-      AI Worker が無音で死に `aiThinking` が `true` のまま固まった、
-      が最有力仮説（モバイル時のメモリ圧迫で worker が `error` イベント
-      も飛ばさず黙って死ぬパス）。`useAiWorker` に 15s 応答タイムアウト
-      ＋ App.tsx に retry nonce を入れて自動回復するようにした。
-      次回プレイで同症状が出ないか要確認。owner:
-      `claude/othello-ui-autosave-bPnmY`
 
 ### P2 — 重要な機能改善
 
