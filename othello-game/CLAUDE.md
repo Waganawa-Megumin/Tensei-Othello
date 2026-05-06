@@ -176,10 +176,10 @@ main の最新ハッシュをワンタッチで把握できる必要がある。
 | 19 | 嵐 | 嵐 | 竜騎士 | `/avatars/opponents/OPP19_arashi/icon.png` | 最初から |
 | 20 | ゼロ (フード姿) | 零 | ハッカー（最終ボス） | `/avatars/opponents/OPP20_zero/icon.png` | 最初から |
 | **🌟 21** | **ゼロ (現世帰還)** | **零** | **救済された旧ラスボス** | `/avatars/opponents/OPP21_zero_unmasked/icon.png` | **PLR01 で章 20 クリア後** |
-| **🌟 22** | **ヴォイドφ** | **φ** | **神格化されし秩序 (隠しの隠し)** | `/avatars/opponents/OPP21_zero_unmasked/icon.png` ※暫定 | **PLR01 で章 20 クリア後 (OPP21 と同時)** |
+| **🌟 22** | **ヴォイドφ** | **φ** | **神格化されし秩序 (隠しの隠し)** | `/avatars/opponents/OPP22_voidphi/icon.png` | **PLR01 で章 20 クリア後 (OPP21 と同時)** |
 
 
-**全 21 フォルダが `public/avatars/opponents/` 配下に配置済み (1024×1024 RGBA)。** 各フォルダには:
+**全 22 フォルダが `public/avatars/opponents/` 配下に配置済み (1024×1024 RGBA)。** 各フォルダには:
 
 - `character.png` — 1024×1024 RGBA 透過済キャラ単体 (Adobe Photoshop で処理)
 - `background.png` — 1024×1024 RGB このキャラ専用背景

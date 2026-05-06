@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.4 + docs v1.1)
+Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.7 + Phase 4 Step 1)
 
 ---
 
@@ -74,18 +74,73 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.4 + docs v
 - [ ] **アクセシビリティ** — キーボード操作（v0.21.0 で棋譜リプレイ画面
       に ←/→/Space/Home/End を実装。盤面操作と全画面 toolbar への展開
       は未着手）、スクリーンリーダー対応
-- [ ] **OPP22 ヴォイドφ の正アセット差し替え** — 現状 OPP21
-      `zero_unmasked` 画像を暫定共用。v0.34.6 で AvatarBadge に
-      「kanji === 'φ' なら hue-rotate(205deg) + saturate(0.6) +
-      cyan/violet 放射グロー」の CSS stopgap を適用、OPP21 と
-      視覚的に区別可能にしてある。ただしこれは応急処置で、
-      Phase 4 で専用 character/background/icon を `OPP22_voidphi/`
-      に配置して暫定共用と stopgap を撤去する必要あり。
-      CLAUDE.md §4.1 に「※暫定」と明記済。
 
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **Phase 4 Step 1: OPP22 ヴォイドφ 正アセット投入 + stopgap 撤去
+      (v0.34.7)** — completed: 2026-05-06 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: (this push) —
+      Phase 4 Step 1 アップデートセット (`update_set_phase4_step1.zip`)
+      投入。OPP21 暫定共用だった OPP22 を専用アセットに差し替え。
+      新規: `public/avatars/opponents/OPP22_voidphi/` に
+      character.png (1.5MB, 1024×1024 RGBA, 銀髪・紫眼の神格的青年、
+      黒地に黄金螺旋幾何学装束、左手にフィボナッチ螺旋) /
+      background.png (1.8MB, 1024×1024 RGB, 深紺漆黒の宇宙、大きな
+      黄金螺旋、星雲銀河光、紫の宇宙光、φ 記号) / icon.png (1.9MB,
+      1024×1024 RGBA, 円形クロップ済合成版) / spec.md v3 (確定版)
+      の 4 ファイル配置。`COMPUTERS_DATA` の Lv.22 image path を
+      `OPP21_zero_unmasked/icon.png` から `OPP22_voidphi/icon.png` に
+      切替 + コメント文を「Phase 4 Step 1 で確定済」に更新。
+      v0.34.6 で入れた AvatarBadge の `kanji === 'φ'` CSS tint
+      stopgap (hue-rotate + cyan/violet glow) は不要になったので
+      ロジック撤去 — 通常の `<img>` レンダーパスに統一。CLAUDE.md
+      §4.1 の OPP22 行から「※暫定」記述を削除、フォルダ数表記を
+      「全 21」→「全 22」に更新。スコープ外 (Phase 4 Step 2/3 で
+      別投入): 章 20-D シネマ挿絵、`voidphi_awakened` /
+      `voidphi_intro_seen` LocalStorage フラグ、シナリオ
+      (intro/bossPre/bossPost/victoryNarration)、アンロック判定の
+      `trueEndingAchieved` → `voidphiAwakened` 切替、master_world
+      v1.2 更新。typecheck / 66 tests / build pass。
+
+- [x] **OPP22 ヴォイドφ の視覚差別化 CSS stopgap (v0.34.6)** —
+      completed: 2026-05-06 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: `ac05b8a` —
+      ユーザー報告「ヴォイドφ アイコンが OPP21 と区別がつかない」。
+      正アセット (Phase 4 で予定) 投入までの応急処置として、
+      AvatarBadge に `kanji === 'φ'` 検出を追加し、世界観 (神格化
+      されし秩序 / φ の波動の狭間) に沿った CSS treatment を適用:
+      filter (`hue-rotate(205deg) saturate(0.6) contrast(1.18)
+      brightness(0.9)`) で暖色素顔を冷色 violet/cyan にシフト、
+      radial-gradient overlay (mix-blend-mode: screen) で紫青グロー、
+      inset box-shadow で内側 violet 発光。同じ素材を使っていても
+      OPP21 と OPP22 が明確に別キャラとして読めるように。BACKLOG
+      P3 「OPP22 正アセット差し替え」項目に stopgap 適用済の注記を
+      追加。Phase 4 Step 1 (v0.34.7) で本アセットが入ると同時に
+      この stopgap は撤去予定 (今回履歴のみ Done に残す)。
+
+- [x] **真エンディング判定を justClearedStory ゲートから切り離し
+      (v0.34.5)** — completed: 2026-05-06 — by:
+      `claude/othello-ui-autosave-bPnmY` — commit: `2b320a0` —
+      ユーザー報告: 英霊ハルキ (PLR01) で章 20 をクリアしてもシーン
+      回想に trueEnding20B/20C が掲載されない。根本原因: trueEnding
+      判定が `justClearedStory = result==='win' &&
+      slotBefore.storyProgress === 19` に依存していた。PLR01 アン
+      ロックは PLR00 で ch.20 クリア後の特典なので、PLR01 切替時点
+      で slot.storyProgress は既に 20。PLR01 で ch.20 を再挑戦して
+      勝っても slotBefore.storyProgress=20 のままで gate が通らず、
+      `trueEndingAchieved` が立たなかった → 20-B/20-C シネマ未発火、
+      OPP21/22 アンロック未解除、シーン回想に真エンディング項目
+      なし。修正: trueEnding 判定を `justClearedStory` から完全に
+      切り離し、`wonChapter20 = result==='win' && opponentLevel===20`
+      + `ranAsPLR01` + `!trueEndingAchieved` のシンプルな AND
+      条件に。`isStory && activeSlotId !== null` ガードからも外し、
+      章 cursor 経由の free モード replay も拾えるように。
+      `gameMode === 'ai'` チェックだけ残して 2 人対戦は除外。冪等性
+      は `!trueEndingAchieved` で確保。次に PLR01 で ch.20 に勝つと
+      シネマ発火 + OPP21/22 解放 + archive に真エンディング 2 項目
+      追加が連鎖する。typecheck / 66 tests / build pass。
 
 - [x] **v1.1 ドキュメント整備パッチ投入 (master_world / MASTER_CHAR /
       progress / spec / QA)** — completed: 2026-05-06 — by:
@@ -418,48 +473,6 @@ Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.34.4 + docs v
       スコープ外 (次フェーズ): PLR01-PLR20 アンロック分岐、
       `03_dynamic_gameplay_dialogue.md` の動的ゲーム中セリフ。
       `v0.31.0`
-
-- [x] **アセット保全 (Pack 1-6 を repo にインポート)** —
-      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
-      commit: `63d74e1` — ユーザー指示「無くさないように統合して、
-      githubリポジトリにも保存」。シナリオ md 8 ファイル
-      (~4200 行) を `othello-game/docs/scenario/`、画像 52 PNG を
-      `public/{title-bg-{LS,PT}.png, illustrations/, avatars/chapters/}`
-      に配置。コードは未変更、純粋にアセット保全のみ。
-
-- [x] **LLM キャラ実況のみ残し、Edax / エンジン選択を撤回** —
-      completed: 2026-05-04 — by: `claude/othello-ui-autosave-bPnmY` —
-      commit: (next push) — ユーザー判断「クラウド側で完結して欲しかった
-      のでこれは中止」。`v0.30.0` で同梱した二系統のうち、ローカル
-      WASM ビルドが必須だった Edax / エンジン選択 UI を撤回。撤去対象:
-      `src/engine/engines/`、`src/workers/engines/edaxAdapter.ts`、
-      `src/storage/aiEngine.ts`、`scripts/build-edax-wasm.sh` +
-      `edax_shim.c`、`docs/EDAX_WASM.md`、`public/edax/`、
-      `useAiWorker` の `engine?` 引数、`ai.worker.ts` の dispatch、
-      `App.tsx` の engine state / 設定 UI / hint async 化、i18n の
-      `aiEngineLabel` / `tenseiClassicDesc` / `edaxDesc` /
-      `edaxMissingNote` 等、`.gitignore` の `.emsdk/.tmp`。
-      残したもの: クラウド完結する LLM キャラ実況一式 (`prompts/
-      commentary.ts`、`services/commentary.ts`、`data/personas.ts`、
-      `storage/commentary.ts`、`components/CommentaryBubble.tsx`、
-      App.tsx の commentary state + effect + bubble + 設定トグル、
-      i18n の commentary キー)。`v0.30.1`
-
-- [x] **AI キャラ実況 (LLM 経由)** — completed: 2026-05-04 — by:
-      `claude/othello-ui-autosave-bPnmY` — commit: (next push) —
-      ユーザー要望「キャラ感は Claude/ChatGPT に任せるのがよい」。
-      既存の Cloudflare Workers proxy + `services/claude.ts` パターン
-      を再利用。`prompts/commentary.ts` に tool schema
-      (`character_commentary` で `{text, tone}` を返す)、
-      `services/commentary.ts` で fire-and-forget な API 呼び出し
-      (Haiku 4.5 + プロンプトキャッシング)。`data/personas.ts` に
-      20 キャラ分の口調ヒント (1〜2 文の voice cue、ja/en)。
-      `components/CommentaryBubble.tsx` で AI 側 PlayerPanel 上に
-      フロート、tone (taunt/thoughtful/shock/cheer/neutral) で淵色を
-      切替、4.6s で自動フェード。設定モーダルに ON/OFF トグル
-      (`othello:commentary_enabled`、デフォルト OFF — opt-in)。
-      Trigger は AI 側着手後のみ、開幕 6 手はスキップ、ネット失敗は
-      サイレント。`v0.30.0`
 
 ---
 

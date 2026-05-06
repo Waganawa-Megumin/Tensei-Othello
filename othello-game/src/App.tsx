@@ -247,13 +247,14 @@ const COMPUTERS_DATA: ReadonlyArray<ComputerEntry> = [
   { kanji: '零', name: 'ゼロ (現世帰還)', name_en: 'Zero (Returned)', level: 21, quote: '変分は閉じない。それが、面白い。予想の外へ飛び出したくなった。', quote_en: "Variations don't close. That's the beauty of it. I want to step beyond the forecast.", image: 'avatars/opponents/OPP21_zero_unmasked/icon.png', hidden: true },
   // Lv.22 ヴォイドφ (Void-φ) — 神格化されし秩序. Sister "hidden
   // hidden" boss unlocked alongside OPP21 the moment PLR01 英霊
-  // ハルキ clears chapter 20 (true ending). Asset is still pending
-  // (Phase 4 ships `OPP22_voidphi/icon.png` and `spec.md`); the
-  // image path here points at OPP21's icon as a UI stand-in so the
-  // grid row renders correctly behind the `.avatar-locked` ??? mask
-  // until then. When the proper asset lands, just swap the path on
-  // this line.
-  { kanji: 'φ', name: 'ヴォイドφ', name_en: 'Void-φ', level: 22, quote: 'すべては φ の波動の狭間にある', quote_en: 'All exists between the waves of φ.', image: 'avatars/opponents/OPP21_zero_unmasked/icon.png', hidden: true },
+  // ハルキ clears chapter 20 (true ending). Phase 4 Step 1 shipped
+  // dedicated assets at `OPP22_voidphi/{character,background,icon}.png`
+  // + `spec.md` v3 (silver-haired divine figure with golden Fibonacci
+  // spiral, deep-cosmic backdrop), so the image path now points at the
+  // proper folder. Earlier the entry borrowed OPP21's icon as a UI
+  // stand-in; the matching `kanji === 'φ'` CSS tint stopgap in
+  // AvatarBadge has been removed in lockstep.
+  { kanji: 'φ', name: 'ヴォイドφ', name_en: 'Void-φ', level: 22, quote: 'すべては φ の波動の狭間にある', quote_en: 'All exists between the waves of φ.', image: 'avatars/opponents/OPP22_voidphi/icon.png', hidden: true },
 ];
 
 /* ============================================================
@@ -464,44 +465,7 @@ function AvatarBadge({
       }}
     >
       {image ? (
-        kanji === 'φ' ? (
-          // OPP22 ヴォイドφ stopgap visual treatment. The proper
-          // `OPP22_voidphi/icon.png` is Phase 4 work (see BACKLOG
-          // P3 + CLAUDE.md §4.1 ※暫定); until then the COMPUTERS_DATA
-          // entry points at OPP21 zero_unmasked's icon as a UI
-          // stand-in, which made OPP22 indistinguishable from OPP21
-          // in the selection grid. Apply a cosmic violet hue-rotate +
-          // desaturation + radial cyan glow overlay to differentiate
-          // the two while staying in-world ("φ の波動の狭間" =
-          // between-the-waves of phi → cool ethereal palette).
-          <>
-            <img
-              src={image}
-              alt={kanji}
-              className="w-full h-full object-cover"
-              draggable={false}
-              style={{
-                filter: 'hue-rotate(205deg) saturate(0.6) contrast(1.18) brightness(0.9)',
-              }}
-            />
-            <div
-              className="absolute inset-0 pointer-events-none rounded-full"
-              style={{
-                background:
-                  'radial-gradient(circle at 50% 50%, transparent 25%, rgba(70, 110, 200, 0.35) 80%, rgba(120, 80, 200, 0.5) 100%)',
-                mixBlendMode: 'screen',
-              }}
-            />
-            <div
-              className="absolute inset-0 pointer-events-none rounded-full"
-              style={{
-                boxShadow: 'inset 0 0 12px 1px rgba(150, 120, 220, 0.55)',
-              }}
-            />
-          </>
-        ) : (
-          <img src={image} alt={kanji} className="w-full h-full object-cover" draggable={false} />
-        )
+        <img src={image} alt={kanji} className="w-full h-full object-cover" draggable={false} />
       ) : (
         <span style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.7))' }}>{kanji}</span>
       )}
