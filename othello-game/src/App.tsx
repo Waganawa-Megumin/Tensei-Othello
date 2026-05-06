@@ -111,6 +111,7 @@ import {
   setTrueEndingAchieved,
   getVoidphiAwakened,
   setVoidphiAwakened,
+  setVoidphiIntroSeen,
   TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from './storage/saveSlots';
@@ -2153,6 +2154,16 @@ export default function App() {
       // beating ゼロ as PLR01 again.
       setStoryOverlay('narrative:trueEnding20B');
     }
+    // OPP22 ヴォイドφ post-victory narrative. Fires after the
+    // player wins any free-mode match against OPP22 (auto-launched
+    // after 20-D's intro chain on first encounter, or any rematch
+    // initiated from the picker). Defeat path is left to the
+    // standard GameOver modal — the OPP22 defeat narrative is in
+    // i18n (`opp22.bossPost.defeat`) but in-battle integration of
+    // both bossPre and bossPost is a follow-up patch.
+    if (gameMode === 'ai' && result === 'win' && opponentLevel === 22) {
+      setStoryOverlay('narrative:opp22.victoryNarration');
+    }
     setResultRecorded(true);
   }, [
     gameOver,
@@ -3823,7 +3834,7 @@ export default function App() {
             scene={t.story.narrative.trueEnding20D}
             imageBaseName="chapter_20d_voidphi"
             tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
-            dismissLabel={t.close}
+            dismissLabel={t.nextChapter}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -3834,6 +3845,75 @@ export default function App() {
               setVoidphiAwakenedState(true);
               void setVoidphiAwakened(true);
               logDiag('voidphi.awakened');
+              // Chain into the OPP22 intro narrative — the
+              // "transition from PLR01 to Void-φ" the player
+              // explicitly requested. After intro dismiss, the
+              // OPP22 battle auto-launches (free-mode, Lv.22,
+              // PLR01 stays as p1Avatar). On returning entries
+              // (`voidphi_intro_seen=true`) the user can rematch
+              // OPP22 from the standard free-mode picker.
+              setStoryOverlay('narrative:opp22.intro');
+            }}
+          />
+        )}
+        {/* OPP22 ヴォイドφ first-encounter intro. Auto-fires once
+            after 20-D dismisses (Phase 4 follow-up wiring), and
+            on its own dismiss launches the OPP22 battle directly:
+            sets COMPUTERS index + level 22 + free-mode + reset()
+            so the coin-flip → board fires next, with PLR01 still
+            on the player side. Marks `voidphi_intro_seen` so a
+            future rematch from the free-mode picker skips the
+            intro. */}
+        {storyOverlay === 'narrative:opp22.intro' && (
+          <NarrativeOverlay
+            scene={t.story.opp22.intro}
+            imageBaseName="chapter_20d_voidphi"
+            tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
+            dismissLabel={t.opp22IntroStartLabel}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(
+                  String(activeSlotId),
+                  'narrative:opp22.intro',
+                );
+              }
+              void setVoidphiIntroSeen(true);
+              logDiag('voidphi.intro_seen');
+              setStoryOverlay(null);
+              // Auto-launch the OPP22 battle. Free-mode keeps the
+              // story state (storyProgress=20) intact, while
+              // routing the gameOver effect through the regular
+              // free-mode result path.
+              const oppIdx = COMPUTERS.findIndex((c) => c.level === 22);
+              if (oppIdx >= 0) {
+                setComputerChar(oppIdx);
+                setLevel(22);
+                setGameMode('ai');
+                setAiMode('free');
+                reset({ gameMode: 'ai', aiMode: 'free' });
+              }
+            }}
+          />
+        )}
+        {/* OPP22 victory narration — fires after the player beats
+            Void-φ in any free-mode match (gameOver effect sets
+            this overlay when result==='win' && opponentLevel===22).
+            Closes the run loop with PLR01's quote in the player's
+            own voice. */}
+        {storyOverlay === 'narrative:opp22.victoryNarration' && (
+          <NarrativeOverlay
+            scene={t.story.opp22.victoryNarration}
+            imageBaseName="chapter_20d_voidphi"
+            tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
+            dismissLabel={t.close}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(
+                  String(activeSlotId),
+                  'narrative:opp22.victoryNarration',
+                );
+              }
+              logDiag('voidphi.victory_narration');
               setStoryOverlay(null);
             }}
           />

@@ -59,6 +59,12 @@ export interface Messages {
   storyComplete: string;
   chapterN: (n: number) => string;
   nextChapter: string;
+  /** Phase 4: dismiss button on the OPP22 ヴォイドφ first-encounter
+   *  intro overlay. On tap the overlay closes and a free-mode
+   *  battle vs OPP22 launches automatically (PLR01 stays as the
+   *  player avatar, level 22, coin flip if firstPlayerPref ===
+   *  'random'). */
+  opp22IntroStartLabel: string;
   retryStory: string;
   oneMore: string;
   retryStoryFromStart: string;
@@ -517,6 +523,7 @@ export const ja: Messages = {
   storyComplete: '— Story Complete —',
   chapterN: (n) => `— Chapter ${n} —`,
   nextChapter: '次の章へ →',
+  opp22IntroStartLabel: 'ヴォイドφと対局を始める →',
   retryStory: 'もう一度ストーリーを',
   oneMore: 'もう一度',
   retryStoryFromStart: 'ストーリーを最初から',
@@ -934,6 +941,7 @@ export const en: Messages = {
   storyComplete: '— Story Complete —',
   chapterN: (n) => `— Chapter ${n} —`,
   nextChapter: 'Next chapter →',
+  opp22IntroStartLabel: 'Begin the match against Void-φ →',
   retryStory: 'Replay the story',
   oneMore: 'Play again',
   retryStoryFromStart: 'Restart the story',
