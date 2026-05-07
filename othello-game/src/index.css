@@ -13,6 +13,10 @@ html, body, #root {
 
 body {
   overscroll-behavior: none;
+  /* Prevent any stray horizontal overflow from shifting the
+     centered layout off-axis on mobile (v0.36.16 — title
+     screen "枠全体が少し右寄り" report). */
+  overflow-x: hidden;
 }
 
 /* Intro flow keyframes — used by IntroSequence's TapHint, the

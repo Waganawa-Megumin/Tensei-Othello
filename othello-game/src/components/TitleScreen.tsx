@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.15 · chapter-21-in-browser';
+const BUILD_TAG = 'v0.36.16 · spell-pp-only-unlocks-and-real-savepoint';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -150,7 +150,7 @@ export function TitleScreen({
       </div>
 
       {/* Mode selection cards */}
-      <div className="relative w-full max-w-4xl grid md:grid-cols-3 max-lg:landscape:grid-cols-3 gap-3 max-lg:landscape:gap-2 md:gap-4 mb-6 max-lg:landscape:mb-2">
+      <div className="relative w-full max-w-4xl mx-auto grid md:grid-cols-3 max-lg:landscape:grid-cols-3 gap-3 max-lg:landscape:gap-2 md:gap-4 mb-6 max-lg:landscape:mb-2">
         {/* Story mode card */}
         <button
           onClick={() => onStart({ mode: 'ai', sub: 'story' })}

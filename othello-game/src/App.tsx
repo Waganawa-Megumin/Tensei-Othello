@@ -2944,20 +2944,19 @@ export default function App() {
     //   [PLR00 default, PLR02..PLR20 (19 entries), PLR01 special last].
     // So PLR00 → 0, PLR01 → 20, PLR02..PLR20 → 1..19.
     const avatarIdx = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
-    // unlockedCount required for that PLR to be selectable.
-    const plrUnlocksNeeded = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
-    // Natural unlocks for the chapter target. clearing N chapters
-    // grants N bonus avatars; ch.21 (post-true-ending) implies all
-    // 20 cleared. We take the max so the chosen PLR is always
-    // selectable even at low chapters (= tester intent).
-    const naturalUnlocks = chapter <= 20 ? chapter - 1 : 20;
-    const unlocks = Math.min(
-      Math.max(plrUnlocksNeeded, naturalUnlocks),
-      TOTAL_BONUS_AVATARS,
-    );
+    // unlockedCount = "exactly up to PLR PP".
+    //   spell …0306 ⇢ PP=03 ⇢ unlocks=2 ⇢ only PLR02 + PLR03 selectable
+    //   (= "PLR03 までアンロック" の意味).
+    // The per-chapter natural-progress max from v0.36.14 was wrong —
+    // testers want spell `0306` to put them at ch.6 with the PLR03
+    // roster, not ch.6 with everyone unlocked through PLR06. Drop
+    // the chapter-derived max.
+    const unlocks = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
     const slotProgress = chapter <= 20 ? chapter - 1 : 20;
     const isPostTrueEnding = chapter === 21 && plr === 1;
 
+    const now = Date.now();
+    const currentSlot = slots.find((s) => s.id === activeSlotId);
     const patch: Partial<SaveSlot> = {
       storyProgress: slotProgress,
       unlockedCount: unlocks,
@@ -2966,6 +2965,17 @@ export default function App() {
       voidphiIntroSeen: false,
       voidphiEncounterPending: isPostTrueEnding,
       lives: 3,
+      // Make the spell-cast moment a real save point — the slot
+      // should look "in use" in the picker (no "(empty)" badge),
+      // and re-entering the slot should resume from this state.
+      // Without lastPlayedAt > 0 the SlotPicker's `isUnused` gate
+      // falsely flagged spell-warped slots as fresh ("カンスト
+      // しているのにセーブデータ無しの初期の状態" report).
+      lastPlayedAt: now,
+      createdAt:
+        currentSlot && currentSlot.createdAt > 0
+          ? currentSlot.createdAt
+          : now,
     };
     void storageUpdateSaveSlot(activeSlotId, patch).then(setSlots);
     // Set p1Avatar directly — the activeSlot-sync effect's clamp
