@@ -3968,7 +3968,6 @@ export default function App() {
         <div key="title" className="screen-fade">
         <TitleScreen
           storyProgress={storyProgress}
-          firstChapterName={COMPUTERS[0].name}
           onStart={startGame}
           t={t}
           locale={locale}

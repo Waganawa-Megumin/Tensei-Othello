@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Swords, Users } from 'lucide-react';
+import { BookOpen, Sparkles, Swords, Users } from 'lucide-react';
 import type { Locale, Messages } from '../i18n/messages';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { renderEmphasized } from '../i18n/story/render';
@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.22 · title-density-pass';
+const BUILD_TAG = 'v0.36.23 · title-density-pass-2';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -16,7 +16,6 @@ export type TitleStartMode =
 
 interface TitleScreenProps {
   storyProgress: number;
-  firstChapterName: string;
   onStart: (selection: TitleStartMode) => void;
   t: Messages;
   locale: Locale;
@@ -51,7 +50,6 @@ interface TitleScreenProps {
 
 export function TitleScreen({
   storyProgress,
-  firstChapterName,
   onStart,
   t,
   locale,
@@ -223,33 +221,35 @@ export function TitleScreen({
                   activeSlot.playerName,
                 )}
               </span>
-              <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">
-                {t.slotSwitch} ▸
-              </span>
-            </div>
-          )}
-          {archiveAvailable && (
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenArchive();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenArchive();
-                }
-              }}
-              className="mb-3 px-2.5 py-1.5 border border-amber-200/15 rounded-sm flex items-center justify-between gap-2 hover:border-amber-200/40 hover:bg-amber-200/[0.04]"
-            >
-              <span className="jp-display italic text-amber-200/75 text-[11px]">
-                {t.archiveOpenLabel}
-              </span>
-              <span className="latin-display italic text-amber-200/55 text-[10px] tracking-wider">
-                ▸
+              <span className="flex items-center gap-2 shrink-0">
+                {/* Archive icon — opens scene archive. Inlined here
+                    (v0.36.23) instead of being its own row so the
+                    Story card matches the vertical density of the
+                    Free / Two-player cards. */}
+                {archiveAvailable && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenArchive();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onOpenArchive();
+                      }
+                    }}
+                    className="p-1 rounded-sm border border-amber-200/25 text-amber-200/75 hover:text-amber-100 hover:border-amber-200/60 hover:bg-amber-200/[0.06]"
+                    title={t.archiveOpenLabel}
+                    aria-label={t.archiveOpenLabel}
+                  >
+                    <BookOpen size={13} strokeWidth={1.6} />
+                  </button>
+                )}
+                <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">
+                  {t.slotSwitch} ▸
+                </span>
               </span>
             </div>
           )}
@@ -273,9 +273,6 @@ export function TitleScreen({
                   />
                 ))}
               </div>
-              <div className="jp-display italic text-amber-200/55 text-[11px] mt-2">
-                {t.titleStoryContinue(storyProgress + 1)}
-              </div>
             </div>
           )}
           {completed && (
@@ -288,17 +285,6 @@ export function TitleScreen({
               </div>
             </div>
           )}
-          {!hasProgress && !completed && (
-            <div className="jp-display italic text-amber-200/70 text-[11px] mt-auto">
-              {t.titleStoryFreshStart(firstChapterName)}
-            </div>
-          )}
-          {/* Scenario-supplied CTA from the finished prologue. Sits as
-              a subtle action line under all states so the user always
-              sees the "what does this button do?" prompt. */}
-          <div className="jp-display italic text-amber-100/80 text-[11px] tracking-wider mt-3 pt-2 border-t border-amber-200/10">
-            ▸ {t.story.prologue.startButton}
-          </div>
         </button>
 
         {/* Free mode card */}
