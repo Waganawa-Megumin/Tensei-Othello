@@ -796,7 +796,10 @@ export const ja: Messages = {
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
   slotEmpty: '未使用',
   slotPrologueSeenTag: '序章 視聴済',
-  slotProgress: (cleared) => `第${Math.min(cleared + 1, 20)}章 まで進行（${cleared}/20 クリア）`,
+  slotProgress: (cleared) =>
+    cleared >= 20
+      ? `全章クリア済（20/20）`
+      : `第${cleared + 1}章 まで進行（${cleared}/20 クリア）`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
       ? `ロスター：あなた のみ（0/20 アンロック）`
@@ -1245,7 +1248,10 @@ your journey on the board reaches its close.`,
   slotPickerHint: 'Story progress lives in one of 10 saves. Each save has independent progress, lives and stats.',
   slotEmpty: 'Unused',
   slotPrologueSeenTag: 'Prologue seen',
-  slotProgress: (cleared) => `Up to Chapter ${Math.min(cleared + 1, 20)} (${cleared}/20 cleared)`,
+  slotProgress: (cleared) =>
+    cleared >= 20
+      ? `All chapters cleared (20/20)`
+      : `Up to Chapter ${cleared + 1} (${cleared}/20 cleared)`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
       ? `Roster: You only (0/20 unlocked)`
