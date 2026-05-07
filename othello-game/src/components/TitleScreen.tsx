@@ -158,7 +158,13 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        <div className="latin-display italic ornament text-amber-200/50 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1">
+        {/* Latin subtitle. v0.36.31 bumps the opacity (50 → 75) and
+            adds the same text-shadow as the tagline / h1 so it stays
+            legible across bright bg-illustration regions. */}
+        <div
+          className="latin-display italic ornament text-amber-200/75 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
+          style={{ textShadow: '0 0 14px rgba(10,8,5,0.85), 0 1px 2px rgba(0,0,0,0.7)' }}
+        >
           — Summoned as an Othello Player —
         </div>
         <h1
