@@ -5,32 +5,13 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.40 save-point Design A)
+Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-point Design A)
 
 ---
 
 ## 🔥 In Progress
 
-- **セーブポイント全面整理 (Design A: 各 PLR が章 1-20 を replay)** —
-  owner: `claude/game-overview-docs-DjBxK` — started: 2026-05-07 —
-  ユーザー指摘「セーブポイントの表記とロジックと実際の画面遷移が
-  ぐちゃぐちゃでわかりにくい」(スクリーンショット 4 枚付き) を
-  きっかけに、4 点修正:
-  (1) PLR slug を厳格表記 (`PLR00 あなた / PLR02 美琴 / …`)、
-  (2) 「まで」「進行」を撤去し `第N章 (N/M)` に簡素化、
-  (3) 章上限を PLR01 のみ 0..21、それ以外は 0..20 に分岐、
-  (4) chain 進行のセーブポイントを auto-advance (PLR00 章 20 win 直後
-  → `PLR02 第0章` がセーブポイント)。
-  ユーザー判断 = Design A: 内部 storyProgress も chain 進行で 0
-  リセット → 各 PLR が自身の章 1-20 lap を全走 (約 421 試合)。
-  v0.36.26 で導入した Design B (各 chain step は章 20 のみ) を
-  本タスクで切替。スコープ: recordSlotResult 章 20 win 時 sp=0
-  reset / migrateSlot legacy 正規化 / castSpell に avatarIdx persist /
-  純関数 `getSavePointDisplay` 新設 / i18n slotProgress + slotInUseFooter
-  シグネチャ書換 / SlotPicker / TitleScreen / 設定パネルの呼び出し
-  更新 / chapter browser の ch.21 ゲート修正 / saveSlots tests 拡張 /
-  CLAUDE.md / master_world.md / GAME_OVERVIEW.md 同期。詳細
-  `/root/.claude/plans/plr00-20-iridescent-hartmanis.md`。
+なし。
 
 ---
 
@@ -114,6 +95,34 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.40 save-poi
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **セーブポイント全面整理 (Design A: 各 PLR が章 1-20 を replay) (v0.36.41)** —
+      completed: 2026-05-07 — by: `claude/game-overview-docs-DjBxK` —
+      commit: `9aef36b` (feature) + `b2d395c` (merge) —
+      ユーザー指摘「セーブポイントの表記とロジックと実際の画面遷移が
+      ぐちゃぐちゃでわかりにくい」(スクリーンショット 4 枚付き) を
+      きっかけに 4 点修正: (1) PLR slug を厳格表記、(2)「まで」/「進行」
+      撤去、(3) 章上限 PLR01 のみ 0..21 / 他 0..20、(4) chain 進行で
+      save-point identity を auto-advance。ユーザー判断 = Design A:
+      内部 storyProgress も chain 進行で 0 リセット → 各 chain step
+      PLR が自身の章 1-20 lap を全走 (約 421 試合)。v0.36.26 で導入した
+      Design B (各 chain step は章 20 のみ) を本タスクで切替。
+      実装: `recordSlotResult` で chain step ch.20 win 時に sp=0 リセット /
+      新 helper `normalizePostClearState` で legacy slot を正規化 /
+      `migrateSlot` の avatarIdx validation 0..20 拡張 (PLR01 idx=20 許容) /
+      新 pure helper `getSavePointDisplay(slot, avatars)` で
+      (plrSlug, plrName, chapter, chapterMax) を導出 / i18n
+      `slotProgress` + `slotInUseFooter` シグネチャ書換し
+      `${slug} ${name}・第${ch}章（${ch}/${max}）` 形式に統一 /
+      SlotPicker / TitleScreen / 設定パネル / castSpell の呼び出し更新 /
+      chapter browser の `isComplete` ゲートを `trueEndingAchieved` に統一。
+      tests: saveSlots.test.ts に normalizePostClearState (4) +
+      slugFromAvatarImage (6) + getSavePointDisplay (7) + 既存 chain-advance
+      アサーション更新で 78→96 ケース。docs: CLAUDE.md §4.2 / master_world.md
+      v1.3 / GAME_OVERVIEW.md §3.2/§3.3 同期。検証: typecheck pass /
+      96 tests pass / build OK (435 kB JS, 288 PWA precache)。
+      BUILD_TAG `v0.36.39` → `v0.36.41` (.40 は並行セッションで使用済)。
+      Plan: `/root/.claude/plans/plr00-20-iridescent-hartmanis.md`。
 
 - [x] **PLR01 アンロック条件 世界観整合 + 実装修正 (v0.36.29)** —
       completed: 2026-05-07 — by: `claude/game-overview-docs-DjBxK`
