@@ -837,7 +837,7 @@ export const ja: Messages = {
   spellModalTitle: '🪄 魔法の呪文',
   spellModalSubtitle: '盤上世界の鍵を、ことばで開く。',
   spellModalHint:
-    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n素のままだと **PLR01・第 21 章** (真エンディング直前) の状態に。\n後ろに **PPCC** (4 桁) を付けると、**PLR PP までアンロック** + **第 CC 章の挿絵** から開始 (CC ≤ 20 は自動で章イントロへ遷移)。例 `…0717` ＝ **PLR07 までアンロック・第 17 章の挿絵から**。CC=21 は PLR01 専用 (post-true-ending)。',
+    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n素のままだと **PLR01・第 21 章** (真エンディング直前) の状態に。\n後ろに **PPCC** (4 桁) を付けると、**PLR PP までアンロック** + **第 CC 章の挿絵** から開始 (CC ≤ 20 は自動で章イントロへ遷移)。例 `…0717` ＝ **PLR07 までアンロック・第 17 章の挿絵から**。**CC=00 は序章状態に初期化** (例 `…0000` で完全リセット、`…0500` で PLR05 までアンロック+序章)。CC=21 は PLR01 専用 (post-true-ending)。',
   spellPlaceholder: '呪文をひらがなで入力',
   spellSubmitLabel: '唱える',
   spellCancelLabel: '閉じる',
@@ -846,6 +846,9 @@ export const ja: Messages = {
       return '── 盤上世界、ひらく。すべての打ち手、解き放たれた。\n（真エンディング直前・PLR01 第 21 章 状態）';
     }
     const plrLabel = plr === 0 ? 'あなた のみ' : `PLR${String(plr).padStart(2, '0')} まで`;
+    if (chapter === 0) {
+      return `── 盤上世界、ひらく。${plrLabel} アンロック・序章状態に初期化された。`;
+    }
     if (chapter === 21) {
       return `── 盤上世界、ひらく。${plrLabel} アンロック・post-true-ending 状態。`;
     }
@@ -853,7 +856,7 @@ export const ja: Messages = {
   },
   spellFailureCipher: '……ふぅん。神々はその名前で呼ばれていないようだ。',
   spellFailureFormat:
-    '……呪文の末尾は **PPCC** の 4 桁 (PP=00〜20、CC=01〜21) で締めなさい。',
+    '……呪文の末尾は **PPCC** の 4 桁 (PP=00〜20、CC=00〜21) で締めなさい。',
   spellFailureNoSlot: '……先にセーブを選んでから呪文を唱えなさい。',
   spellFailureCh21NotPlr01:
     '……第 21 章 (post-true-ending) は **PLR01 英霊ハルキ** 専用です。PP=01 で唱え直しなさい。',
@@ -1284,7 +1287,7 @@ your journey on the board reaches its close.`,
   spellModalTitle: '🪄 Magic Spell',
   spellModalSubtitle: 'Open the gate of the Board World with a word.',
   spellModalHint:
-    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\nBare spell ⇢ **PLR01 · Chapter 21** (post-true-ending state).\nAppend **PPCC** (4 digits) to warp: **roster unlocked up to PLR PP** at the **Chapter CC intro illustration** (CC ≤ 20 auto-jumps to the chapter intro). Example `…0717` ⇢ **roster up to PLR07, starting at Chapter 17**. CC=21 is PLR01-only (post-true-ending).",
+    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\nBare spell ⇢ **PLR01 · Chapter 21** (post-true-ending state).\nAppend **PPCC** (4 digits) to warp: **roster unlocked up to PLR PP** at the **Chapter CC intro illustration** (CC ≤ 20 auto-jumps to the chapter intro). Example `…0717` ⇢ **roster up to PLR07, starting at Chapter 17**. **CC=00 resets to the prologue** (e.g. `…0000` full wipe, `…0500` keeps PLR05 unlocks but rewinds to prologue). CC=21 is PLR01-only (post-true-ending).",
   spellPlaceholder: 'whisper the spell',
   spellSubmitLabel: 'cast',
   spellCancelLabel: 'close',
@@ -1293,6 +1296,9 @@ your journey on the board reaches its close.`,
       return '— The Board World opens. Every player has been set free.\n(Post-true-ending state · PLR01 · Chapter 21.)';
     }
     const plrLabel = plr === 0 ? 'You only' : `up to PLR${String(plr).padStart(2, '0')}`;
+    if (chapter === 0) {
+      return `— The Board World opens. Roster ${plrLabel} unlocked · slot reset to the prologue.`;
+    }
     if (chapter === 21) {
       return `— The Board World opens. Roster ${plrLabel} unlocked · post-true-ending state.`;
     }
@@ -1300,7 +1306,7 @@ your journey on the board reaches its close.`,
   },
   spellFailureCipher: "...Hmm. The gods don't seem to know that name.",
   spellFailureFormat:
-    '...The spell needs a **PPCC** suffix (4 digits — PP 00-20, CC 01-21).',
+    '...The spell needs a **PPCC** suffix (4 digits — PP 00-20, CC 00-21).',
   spellFailureNoSlot: '...Pick a save first, then chant the spell.',
   spellFailureCh21NotPlr01:
     '...Chapter 21 (post-true-ending) is reserved for **PLR01 Heroic-Spirit Haruki**. Re-chant with PP=01.',

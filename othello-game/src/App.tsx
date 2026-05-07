@@ -2922,13 +2922,16 @@ export default function App() {
    *  - cipher + 4 digits **PPCC** → set the active slot to play as
    *    PLR PP at chapter CC's save point. PP ∈ {00, 01, 02..20}
    *    where the PLR id matches the asset folder
-   *    (`PLR03_rin` ⇢ `03`); CC ∈ {01..21} where 01..20 is "ready
-   *    to play chapter CC" (storyProgress=CC-1) and 21 is the
-   *    post-true-ending overlay state. Chapter 21 with PLR01
-   *    flips trueEnding + voidphi + voidphiEncounterPending so the
-   *    cinematic chain auto-fires on slot re-entry; with any other
-   *    PLR it just stamps storyProgress=20 / unlocks=20 (= "all 20
-   *    chapters cleared, but no true ending was earned").
+   *    (`PLR03_rin` ⇢ `03`); CC ∈ {00..21} where:
+   *    - 00 = "rewind to pre-prologue" — slot reads as 未使用 (no
+   *      lastPlayedAt / createdAt / progress / stats), unlock state
+   *      reflects PP. v0.36.26 added so testers can re-watch the
+   *      prologue without manually resetting via the slot picker.
+   *    - 01..20 = "ready to play chapter CC" (storyProgress=CC-1).
+   *    - 21 = post-true-ending overlay state. Chapter 21 with PLR01
+   *      flips trueEnding + voidphi + voidphiEncounterPending so the
+   *      cinematic chain auto-fires on slot re-entry; with any other
+   *      PLR it's rejected (see `ch21NotPlr01` failure).
    *
    *  Returns a `SpellResult` describing what happened. v0.36.20:
    *  - failure modes split into 'cipher' / 'format' / 'noSlot' /
@@ -2969,7 +2972,7 @@ export default function App() {
       }
       const pp = Number(suffix.slice(0, 2));
       const cc = Number(suffix.slice(2));
-      if (pp < 0 || pp > 20 || cc < 1 || cc > 21) {
+      if (pp < 0 || pp > 20 || cc < 0 || cc > 21) {
         return { kind: 'failure', reason: 'format' };
       }
       // Chapter 21 is the post-true-ending sandbox and only makes
@@ -2994,6 +2997,11 @@ export default function App() {
 
     const isPostTrueEnding = chapter === 21 && plr === 1;
     const isWarpToChapter = chapter >= 1 && chapter <= 20;
+    // chapter === 0 ⇢ "rewind to pre-prologue" state. Combined with
+    // PP this can express e.g. `…0500` = "PLR05 unlocked, slot
+    // otherwise reset to a pristine 未使用-looking state". `…0000`
+    // is the canonical "wipe this slot to defaults" cast.
+    const isFreshReset = chapter === 0;
 
     // Bare-cipher confirmation: "do you want to play the Void-φ
     // cinematic chain right now?". OK → autoplay flag flips on,
@@ -3013,7 +3021,10 @@ export default function App() {
     // testers want spell `0306` ⇢ PLR03 unlocked, NOT max(PP,
     // chapter-derived unlocks).)
     const unlocks = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
-    const slotProgress = chapter <= 20 ? chapter - 1 : 20;
+    // chapter 0 → storyProgress 0 (no chapters cleared); 1..20 →
+    // storyProgress = chapter - 1; 21 → 20 (post-true-ending).
+    const slotProgress =
+      chapter === 0 ? 0 : chapter <= 20 ? chapter - 1 : 20;
 
     const now = Date.now();
     const currentSlot = slots.find((s) => s.id === activeSlotId);
@@ -3039,11 +3050,15 @@ export default function App() {
       draws: 0,
       resigns: 0,
       vsOpponent: {},
-      // Real save point — slot picker shows the spell-warped slot
-      // as "in use" rather than "(empty)".
-      lastPlayedAt: now,
-      createdAt:
-        currentSlot && currentSlot.createdAt > 0
+      // For CC=00 (fresh reset) zero out lastPlayedAt + createdAt
+      // so the slot reads as "(未使用)" in the picker — matching
+      // the user's mental model 「0000 = 初期化」. For other casts
+      // (warp / post-true-ending) stamp lastPlayedAt=now to mark
+      // the slot as in-use.
+      lastPlayedAt: isFreshReset ? 0 : now,
+      createdAt: isFreshReset
+        ? 0
+        : currentSlot && currentSlot.createdAt > 0
           ? currentSlot.createdAt
           : now,
     };
@@ -3078,8 +3093,9 @@ export default function App() {
       markOverlaySeen(slotKey, 'intro:gatewayClosed');
       markOverlaySeen(slotKey, 'intro:gatewayOpen');
     }
-    // Else: chapter=21 with PP≠01. Treat as sandbox at end-game;
-    // no overlays marked.
+    // isFreshReset (chapter=00): leave overlays cleared. The next
+    // selectSlot entry into this fresh slot replays prologue + the
+    // 5-step intro, which is exactly the point of the cast.
 
     // Auto-navigate for warp-to-chapter casts so the user lands
     // on the chapter-CC intro illustration immediately, matching
@@ -3119,6 +3135,7 @@ export default function App() {
       slotProgress,
       isPostTrueEnding,
       isWarpToChapter,
+      isFreshReset,
       bareCipher,
       bareCipherAutoPlay,
       slotId: activeSlotId,
