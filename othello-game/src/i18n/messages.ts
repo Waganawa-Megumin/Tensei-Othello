@@ -308,15 +308,18 @@ export interface Messages {
    *  `opponentName` is the master at that chapter — empty string for
    *  completed slots (storyProgress=20) where there's no "next
    *  opponent". `playerName` is the localized name of the avatar
-   *  currently selected for this slot, so the second line makes
-   *  the answer to "which PLR is at which chapter" obvious at a
-   *  glance. */
+   *  currently selected for this slot. `inPrologue` is `true` iff
+   *  the slot is at storyProgress=0 AND has not yet seen the
+   *  prologue overlay — in that state we show 「序章」 instead of
+   *  「第1章 vs いちか」 so the user doesn't see a chapter-1 framing
+   *  before they've even viewed the prologue. */
   slotInUseFooter: (
     name: string,
     lives: number,
     chapter: number,
     opponentName: string,
     playerName: string,
+    inPrologue: boolean,
   ) => string;
   slotSelect: string;
   slotChooseFirst: string;
@@ -799,10 +802,12 @@ export const ja: Messages = {
   slotReset: 'このセーブをリセット',
   slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
   slotSwitch: 'セーブを変更',
-  slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
-    opponentName
-      ? `${name}\n${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
-      : `${name}\n${playerName}・全章クリア済・♥${lives}`,
+  slotInUseFooter: (name, lives, chapter, opponentName, playerName, inPrologue) =>
+    inPrologue
+      ? `${name}\n${playerName}・序章・♥${lives}`
+      : opponentName
+        ? `${name}\n${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
+        : `${name}\n${playerName}・全章クリア済・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -1247,10 +1252,12 @@ your journey on the board reaches its close.`,
   slotResetConfirm:
     'This wipes the save’s progress, stats and lives. Continue?',
   slotSwitch: 'Switch save',
-  slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
-    opponentName
-      ? `${name}\n${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
-      : `${name}\n${playerName} · All chapters cleared · ♥${lives}`,
+  slotInUseFooter: (name, lives, chapter, opponentName, playerName, inPrologue) =>
+    inPrologue
+      ? `${name}\n${playerName} · Prologue · ♥${lives}`
+      : opponentName
+        ? `${name}\n${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
+        : `${name}\n${playerName} · All chapters cleared · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',

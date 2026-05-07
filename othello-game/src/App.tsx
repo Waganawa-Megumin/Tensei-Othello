@@ -4030,6 +4030,17 @@ export default function App() {
                     locale === 'ja'
                       ? AVATARS[p1Avatar]?.name ?? ''
                       : AVATARS[p1Avatar]?.name_en ?? '',
+                  // storyProgress=0 + prologue not yet seen ⇢ the
+                  // slot is genuinely pre-prologue. Title footer then
+                  // shows 「序章」 instead of 「第1章 vs いちか」 so
+                  // the framing matches the player's narrative
+                  // position. Once they view the prologue (or finish
+                  // ch.1) the flag flips to false and the regular
+                  // 「vs (opponent)」 wording returns.
+                  inPrologue:
+                    activeSlot.storyProgress === 0 &&
+                    activeSlotId !== null &&
+                    !hasSeenOverlay(String(activeSlotId), 'prologue'),
                 }
               : null
           }

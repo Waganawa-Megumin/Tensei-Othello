@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.26 · spell-cc-00-reset';
+const BUILD_TAG = 'v0.36.27 · prologue-state-display';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -38,6 +38,11 @@ interface TitleScreenProps {
      *  which chapter — fixes the "セーブ情報を、正確に。PLR どれが
      *  何章まで」report from v0.36.10. */
     playerName: string;
+    /** True iff the slot is at storyProgress=0 AND has not yet
+     *  seen the prologue overlay. Footer then shows 「序章」 instead
+     *  of 「第1章 vs いちか」 so the framing matches the user's
+     *  actual narrative position (the prologue hasn't fired yet). */
+    inPrologue: boolean;
   } | null;
   /** Opens the slot picker so the user can switch save. */
   onSwitchSlot: () => void;
@@ -219,6 +224,7 @@ export function TitleScreen({
                   Math.min(activeSlot.storyProgress + 1, 20),
                   activeSlot.opponentName,
                   activeSlot.playerName,
+                  activeSlot.inPrologue,
                 )}
               </span>
               <span className="flex items-center gap-2 shrink-0">
