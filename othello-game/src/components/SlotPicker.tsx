@@ -19,6 +19,9 @@ interface SlotPickerProps {
   onClose: () => void;
   /** Called whenever the slots array changes (rename / reset). */
   onSlotsChanged: (slots: SaveSlot[]) => void;
+  /** Opens the magic-spell modal. Surfaced here so a tester can
+   *  warp slot state without first having to enter a match. */
+  onCastSpell?: () => void;
   t: Messages;
 }
 
@@ -49,6 +52,7 @@ export function SlotPicker({
   onSelect,
   onClose,
   onSlotsChanged,
+  onCastSpell,
   t,
 }: SlotPickerProps) {
   const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -206,6 +210,18 @@ export function SlotPicker({
             );
           })}
         </div>
+
+        {onCastSpell && (
+          <div className="mt-4 pt-3 border-t border-amber-200/15 flex items-center justify-end">
+            <button
+              onClick={onCastSpell}
+              className="btn jp-display text-xs px-3 py-1.5"
+              title={t.spellButtonLabel}
+            >
+              🪄 {t.spellButtonLabel}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

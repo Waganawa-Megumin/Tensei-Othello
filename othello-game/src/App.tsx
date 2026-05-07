@@ -107,9 +107,6 @@ import {
   recordSlotResult,
   recordFreeResult,
   updateSlot as storageUpdateSaveSlot,
-  getCharacterUnlocks,
-  getTrueEndingAchieved,
-  getVoidphiAwakened,
   TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from './storage/saveSlots';
@@ -1809,66 +1806,35 @@ export default function App() {
 
   /* ----- Effects ----- */
 
-  // Load persisted save slots + active slot id on mount, then
-  // perform a ONE-TIME migration of the legacy global unlock /
-  // true-ending / voidphi flags into the previously-active slot
-  // (v0.36.12 made these per-slot — see SaveSlot interface).
-  // Without the migration, an existing user upgrading from a build
-  // that wrote globals only would see all slots show as fresh
-  // even though their main save had reached the true ending.
+  // Load persisted save slots + active slot id on mount.
+  // v0.36.13: NO global → per-slot migration. The user's stated
+  // philosophy is "全アンロックはカンストしてできること" — full
+  // unlocks must be EARNED on each slot independently. Migrating
+  // legacy globals into the previously-active slot (v0.36.12)
+  // violated that: a slot the user perceived as fresh was silently
+  // showing every avatar unlocked. We just wipe the legacy global
+  // keys on first run so they don't haunt later sessions, and
+  // every slot starts from `defaultSlot()` defaults
+  // (unlockedCount=0 / trueEnding=false / voidphi=false). Testers
+  // who need a maxed state can warp via the spell modal.
   useEffect(() => {
     let cancelled = false;
-    const MIGRATED_KEY = 'othello:per_slot_flags_migrated';
-    Promise.all([
-      getSlots(),
-      getActiveSlotId(),
-      getCharacterUnlocks(),
-      getTrueEndingAchieved(),
-      getVoidphiAwakened(),
-    ]).then(([loaded, id, unlocks, trueEnding, voidphi]) => {
+    const LEGACY_WIPE_KEY = 'othello:legacy_unlocks_wiped';
+    Promise.all([getSlots(), getActiveSlotId()]).then(([loaded, id]) => {
       if (cancelled) return;
-      let alreadyMigrated = false;
-      try {
-        alreadyMigrated =
-          window.localStorage.getItem(MIGRATED_KEY) === '1';
-      } catch {
-        /* private mode */
-      }
-      // Pre-Phase-4-Step-3 grandfathering: if the user has the
-      // legacy `trueEndingAchieved` global but no
-      // `voidphiAwakened`, treat them as having seen 20-D so OPP22
-      // doesn't silently re-lock on upgrade.
-      const voidphiResolved = trueEnding && !voidphi ? true : voidphi;
-      if (
-        !alreadyMigrated &&
-        id !== null &&
-        (unlocks > 0 || trueEnding || voidphiResolved)
-      ) {
-        // Seed the previously-active slot from the legacy globals.
-        // Other slots stay on their default (fresh) per-slot
-        // values so the user gets independent saves.
-        void storageUpdateSaveSlot(id, {
-          unlockedCount: unlocks,
-          trueEndingAchieved: trueEnding,
-          voidphiAwakened: voidphiResolved,
-        }).then((after) => {
-          if (cancelled) return;
-          setSlots(after);
-        });
-        logDiag('per_slot_flags.migrated_from_globals', {
-          slotId: id,
-          unlocks,
-          trueEnding,
-          voidphi: voidphiResolved,
-        });
-      } else {
-        setSlots(loaded);
-      }
+      setSlots(loaded);
       setActiveSlotIdState(id);
       try {
-        window.localStorage.setItem(MIGRATED_KEY, '1');
+        if (window.localStorage.getItem(LEGACY_WIPE_KEY) !== '1') {
+          window.localStorage.removeItem('othello:character_unlocks');
+          window.localStorage.removeItem('othello:true_ending_achieved');
+          window.localStorage.removeItem('othello:voidphi_awakened');
+          window.localStorage.removeItem('othello:voidphi_intro_seen');
+          window.localStorage.setItem(LEGACY_WIPE_KEY, '1');
+          logDiag('legacy_global_unlocks.wiped');
+        }
       } catch {
-        /* private mode — re-migrating next session is harmless */
+        /* private mode */
       }
     });
     return () => {
@@ -1879,23 +1845,28 @@ export default function App() {
   // Active-slot → in-memory state sync. Whenever the active slot
   // changes (either selectSlot or a per-slot patch via
   // storageUpdateSaveSlot+setSlots) refresh the unlock / story-flag
-  // state from that slot. This is what makes save slots actually
-  // independent: `unlockedCount` etc. are now derived from the
-  // active slot, not from a global localStorage key. Default the
-  // player avatar to the latest unlocked PLR for "this is the canon
-  // protagonist for the slot I just opened" UX.
+  // state from that slot. This is what makes save slots truly
+  // independent: `unlockedCount` etc. are derived from the active
+  // slot only, not from any global localStorage key. The player
+  // avatar (p1Avatar) is also clamped to what the new slot has
+  // unlocked — a switch from a maxed slot to a fresh one resets
+  // the player avatar to PLR00 default so a stale PLR01 from the
+  // prior slot doesn't linger as the "selected" avatar.
   useEffect(() => {
     if (!activeSlot) {
       setUnlockedCount(0);
       setTrueEndingAchievedState(false);
       setVoidphiAwakenedState(false);
+      setP1Avatar(0);
       return;
     }
     const u = activeSlot.unlockedCount ?? 0;
     setUnlockedCount(u);
     setTrueEndingAchievedState(activeSlot.trueEndingAchieved ?? false);
     setVoidphiAwakenedState(activeSlot.voidphiAwakened ?? false);
-    if (u > 0 && u < 1 + AVATARS_DATA.length) {
+    if (u === 0) {
+      setP1Avatar(0);
+    } else if (u < 1 + AVATARS_DATA.length) {
       setP1Avatar(u);
     }
   }, [
@@ -6757,6 +6728,12 @@ export default function App() {
         onSelect={selectSlot}
         onClose={() => setSlotPickerOpen(false)}
         onSlotsChanged={setSlots}
+        onCastSpell={() => {
+          setSlotPickerOpen(false);
+          setSpellInput('');
+          setSpellResult(null);
+          setSpellOpen(true);
+        }}
         t={t}
       />
 
