@@ -77,14 +77,21 @@ export interface StoryContent {
      *  `voidphi_awakened` localStorage flag so the OPP22 selection
      *  gate flips from `trueEndingAchieved` to `voidphiAwakened`. */
     trueEnding20D: NarrativeScene;
-    /** Phase 4 Step 4 —章 20-A 対峙シーン: full-screen overlay
-     *  shown right BEFORE the PLR01 英霊ハルキ vs ゼロ chapter-20
-     *  match starts, so the leap from "hooded final boss" to
-     *  "two travelers face each other" gets the dialogue beat the
-     *  scenario calls for ("君は人間なんだろ?"). PLR00 routes don't
-     *  see this scene — they get the regular ch.20 intro card and
-     *  the canonical bossPre. */
+    /** Phase 4 Step 4 —章 20-A 対峙シーン (page 1 of 2): full-screen
+     *  overlay shown right BEFORE the PLR01 英霊ハルキ vs ゼロ
+     *  chapter-20 match starts. Page 1 sits on the confrontation
+     *  illustration (両者がコードの海で対峙) and covers the intro
+     *  narrative + Zero's "I, too, was once like you" confession.
+     *  On dismiss the chapter20Atransition overlay chains in.
+     *  PLR00 routes don't see either page — they get the regular
+     *  ch.20 intro card and the canonical bossPre. */
     chapter20A: NarrativeScene;
+    /** Phase 4 Step 4 —章 20-A 対峙シーン (page 2 of 2): chains
+     *  from chapter20A. Sits on the transition illustration
+     *  (闇粒子が剥がれ、フードが半分崩れ、銀髪が現れる) which syncs
+     *  with the dialogue beat where ハルキの「君は人間なんだろ?」
+     *  cracks Zero's facade. On dismiss the battle starts. */
+    chapter20Atransition: NarrativeScene;
   };
   /** Phase 4 Step 3 — narrative content for the OPP22 ヴォイドφ
    *  encounter (free-mode only, after voidphiAwakened). Surfaced in

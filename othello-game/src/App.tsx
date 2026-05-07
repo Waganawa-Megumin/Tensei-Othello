@@ -3815,25 +3815,49 @@ export default function App() {
             }}
           />
         )}
-        {/* 章 20-A 対峙シーン — fires the moment PLR01 英霊ハルキ
-            starts a chapter 20 match (see startStoryChapter). The
-            board has already reset to the initial position behind
-            this overlay; on dismiss the player taps onto a live
-            board and makes the first move. Bridges the visual leap
-            between "hooded final boss" and the post-victory
-            unmasked Zero by giving the two travelers their face-
-            to-face dialogue beat. */}
+        {/* 章 20-A 対峙シーン (page 1 of 2) — fires the moment PLR01
+            英霊ハルキ starts a chapter 20 match (see startStoryChapter).
+            The board has already reset to the initial position
+            behind this overlay; on dismiss page 2 (transition art)
+            chains in. Bridges the visual leap between "hooded
+            final boss" and the post-victory unmasked Zero by
+            giving the two travelers their face-to-face dialogue
+            beat. */}
         {storyOverlay === 'narrative:chapter20A' && (
           <NarrativeOverlay
             scene={t.story.narrative.chapter20A}
             imageBaseName="chapter_20a_confrontation"
+            tone={locale === 'ja' ? '章 20-A' : 'Chapter 20-A'}
+            dismissLabel={t.nextChapter}
+            onDismiss={() => {
+              if (activeSlotId !== null) {
+                markOverlaySeen(
+                  String(activeSlotId),
+                  'narrative:chapter20A',
+                );
+              }
+              setStoryOverlay('narrative:chapter20Atransition');
+            }}
+          />
+        )}
+        {/* 章 20-A 対峙シーン (page 2 of 2) — chains automatically
+            from chapter20A. The transition illustration shows the
+            闇粒子崩壊 + フード半壊 + 銀髪出現 moment that syncs with
+            the dialogue beat where ハルキの「君は人間なんだろ?」
+            cracks Zero's facade. On dismiss the overlay closes and
+            the player drops onto the live board for the first
+            move. */}
+        {storyOverlay === 'narrative:chapter20Atransition' && (
+          <NarrativeOverlay
+            scene={t.story.narrative.chapter20Atransition}
+            imageBaseName="chapter_20a_transition"
             tone={locale === 'ja' ? '章 20-A' : 'Chapter 20-A'}
             dismissLabel={t.close}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
                   String(activeSlotId),
-                  'narrative:chapter20A',
+                  'narrative:chapter20Atransition',
                 );
               }
               setStoryOverlay(null);

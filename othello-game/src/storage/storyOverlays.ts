@@ -23,6 +23,7 @@ export type OverlayKey =
   | 'narrative:trueEnding20C'
   | 'narrative:trueEnding20D'
   | 'narrative:chapter20A'
+  | 'narrative:chapter20Atransition'
   | 'narrative:opp22.intro'
   | 'narrative:opp22.victoryNarration'
   | 'ending';
@@ -84,6 +85,7 @@ const OVERLAY_ORDER: readonly OverlayKey[] = [
   'narrative:allies',
   'narrative:final',
   'narrative:chapter20A',
+  'narrative:chapter20Atransition',
   'narrative:trueEnding20B',
   'narrative:trueEnding20C',
   'narrative:trueEnding20D',
@@ -116,6 +118,7 @@ export function getArchiveScenes(
   // the player saw 20-A as well — surface them as a set.
   if (trueEndingAchieved) {
     available.add('narrative:chapter20A');
+    available.add('narrative:chapter20Atransition');
     available.add('narrative:trueEnding20B');
     available.add('narrative:trueEnding20C');
   }
@@ -178,8 +181,10 @@ export function getOrderedArchiveScenes(
     result.push({ kind: 'overlay', key: 'ending' });
   }
   if (trueEndingAchieved) {
-    // Confrontation overlay precedes the battle in the live flow.
+    // Confrontation pair precedes the battle in the live flow:
+    // page 1 (confrontation art) → page 2 (transition art).
     result.push({ kind: 'overlay', key: 'narrative:chapter20A' });
+    result.push({ kind: 'overlay', key: 'narrative:chapter20Atransition' });
     result.push({ kind: 'overlay', key: 'narrative:trueEnding20B' });
     result.push({ kind: 'overlay', key: 'narrative:trueEnding20C' });
   }

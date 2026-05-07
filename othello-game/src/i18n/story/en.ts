@@ -617,7 +617,7 @@ Zero's cyan eye trembles.
 
 "You are that traveler... no. Different. But the same..."
 
-The heroic spirit Haruki steps forward in silence.
+The ascended traveler steps forward in silence.
 
 ──
 
@@ -635,9 +635,11 @@ He nods faintly.
 
 "So I chose not to return. I chose to **merge with the world's logic**."
 
-A **black othello stone** floats above Zero's palm. Above the heroic spirit's palm, a **white othello stone** glows softly.
-
-Quietly, the heroic spirit speaks.
+A **black othello stone** floats above Zero's palm. Above the ascended traveler's palm, a **white othello stone** glows softly.`,
+    },
+    chapter20Atransition: {
+      title: 'Chapter 20-A — A Crack in the Mask',
+      text: `Quietly, the heroic spirit speaks.
 
 "...**You're still human, aren't you?**"
 
@@ -649,9 +651,11 @@ The cyan glow of Zero's single eye flickers.
 
 "I'm a heroic spirit beyond mortal limits. You can't fool me."
 
-Zero's shoulders tremble, just barely.
+Zero's shoulders tremble, just barely. Dark particles begin to slough off the hood's edge.
 
 "...Heh. So **you can see through me**."
+
+The hood half-collapses; a strand of **silver hair** dances in the green light of the code. The cyan light still lingers in one eye while the other shimmers with violet — the two colors flickering side by side for the first time.
 
 "Very well. **The final trial.** Come at me with everything, future of the traveler."`,
     },

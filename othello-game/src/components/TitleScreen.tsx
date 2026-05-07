@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.8 · plr-wave3-roster-refresh';
+const BUILD_TAG = 'v0.36.9 · ch20a-two-page-confrontation';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

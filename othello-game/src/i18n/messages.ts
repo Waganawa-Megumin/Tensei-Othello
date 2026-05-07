@@ -407,6 +407,7 @@ export interface Messages {
     'narrative:allies': string;
     'narrative:final': string;
     'narrative:chapter20A': string;
+    'narrative:chapter20Atransition': string;
     'narrative:trueEnding20B': string;
     'narrative:trueEnding20C': string;
     'narrative:trueEnding20D': string;
@@ -850,6 +851,7 @@ export const ja: Messages = {
     'narrative:allies': '幕間 「同行者たちの影」',
     'narrative:final': '幕間 「決戦の前夜」',
     'narrative:chapter20A': '章 20-A 「コードの海の対峙」',
+    'narrative:chapter20Atransition': '章 20-A 「仮面の罅 (ひび)」',
     'narrative:trueEnding20B': '真エンディング 「解放の瞬間」',
     'narrative:trueEnding20C': '真エンディング 「現世にて」',
     'narrative:trueEnding20D': '真エンディング 「ヴォイドφ覚醒」',
@@ -1272,6 +1274,7 @@ Distant **cheers** — and what sounded suspiciously like a **glittering idol so
     'narrative:allies': 'Interlude · Shadows of Companions',
     'narrative:final': 'Interlude · The Eve of the Final Match',
     'narrative:chapter20A': 'Chapter 20-A · Confrontation in the Sea of Code',
+    'narrative:chapter20Atransition': 'Chapter 20-A · A Crack in the Mask',
     'narrative:trueEnding20B': 'True Ending · The Moment of Release',
     'narrative:trueEnding20C': 'True Ending · In the Human World',
     'narrative:trueEnding20D': 'True Ending · Void-φ Awakens',
