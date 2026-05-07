@@ -1,17 +1,18 @@
 /**
- * Coverage for the v0.36.26 chain-unlock semantics added to
- * `SaveSlot.avatarsClearedCh20`. The previous gate
- * (`storyProgress === 19`) only fired once per slot and stranded the
- * player at unlockedCount=1 max — making PLR01 英霊ハルキ effectively
- * spell-warp-only. The new behaviour: each fresh AVATARS index 0..19
- * that wins ch.20 contributes to the chain, and `unlockedCount` is a
- * derived view of `avatarsClearedCh20.length`.
+ * Coverage for the v0.36.26 chain-unlock + v0.36.40 Design A
+ * (per-PLR lap) save-slot semantics:
  *
- * These tests exercise the two pure-ish surfaces:
- *   1. `reconcileAvatarsCleared` — read-path migration
- *      (legacy `unlockedCount` → back-derived `[0..N-1]`).
- *   2. `recordSlotResult` — the +1 chain step + the PLR01 / non-ch.20
- *      / loss / duplicate guards.
+ * - `reconcileAvatarsCleared` — read-path migration of legacy
+ *   `unlockedCount` to `avatarsClearedCh20`.
+ * - `normalizePostClearState` — read-path normalization of the
+ *   "sp=20 + chain not advanced" corner state into "sp=0 + chain
+ *   advanced by 1". Catches both pre-v0.36.26 saves and spell warps
+ *   like `…NN20` after the model switch.
+ * - `recordSlotResult` — Design A chain advance (storyProgress
+ *   resets to 0 on fresh chain-step ch.20 win) and the PLR01 /
+ *   non-ch.20 / loss / duplicate guards.
+ * - `getSavePointDisplay` — pure derivation of (plrSlug, plrName,
+ *   chapter, chapterMax) used by the slot picker / title footer.
  *
  * `recordSlotResult` writes through `localStorage`; vitest's
  * jsdom-like environment is configured by the suite-level
@@ -20,11 +21,14 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  getSavePointDisplay,
   getSlot,
   getSlots,
+  normalizePostClearState,
   reconcileAvatarsCleared,
   recordSlotResult,
   saveSlots,
+  slugFromAvatarImage,
   TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from '../saveSlots';
@@ -124,11 +128,21 @@ async function readSlot(id: number): Promise<SaveSlot> {
 }
 
 describe('recordSlotResult chain unlock', () => {
-  it('appends a fresh PLR0 ch.20 win to avatarsClearedCh20 and bumps unlockedCount', async () => {
+  it('appends a fresh PLR0 ch.20 win to avatarsClearedCh20 and bumps unlockedCount, resetting storyProgress to 0', async () => {
     // Slot 1, default state (storyProgress=0, avatarsClearedCh20=[]).
     // Player wins ch.20 (opponentLevel=20) with PLR00 (avatarIdx=0).
-    // Expected: avatarsClearedCh20=[0], unlockedCount=1.
+    // v0.36.40 Design A: avatarsClearedCh20=[0], unlockedCount=1,
+    // AND storyProgress reset to 0 (= next chain-step PLR's lap
+    // starts from 序章).
     await getSlots(); // initialise default slots in storage
+    // Pre-seed sp=19 to simulate the moment just before the ch.20
+    // win — the ch.20 increment would otherwise bump it to 20, then
+    // the chain-advance reset zeroes it.
+    {
+      const all = await getSlots();
+      all[0] = { ...all[0], storyProgress: 19 };
+      await saveSlots(all);
+    }
     await recordSlotResult({
       slotId: 1,
       result: 'win',
@@ -139,6 +153,7 @@ describe('recordSlotResult chain unlock', () => {
     const slot = await readSlot(1);
     expect(slot.avatarsClearedCh20).toEqual([0]);
     expect(slot.unlockedCount).toBe(1);
+    expect(slot.storyProgress).toBe(0);
   });
 
   it('does NOT advance the chain on a duplicate ch.20 clear with the same PLR', async () => {
@@ -229,10 +244,13 @@ describe('recordSlotResult chain unlock', () => {
     expect(slot.unlockedCount).toBe(0);
   });
 
-  it('walks the full PLR0→PLR19 chain so that PLR01 (idx 20) is unlocked', async () => {
+  it('walks the full PLR0→PLR19 chain so that PLR01 (idx 20) is unlocked, leaving sp=0 (= PLR01 lap 序章)', async () => {
     // End-to-end: simulate clearing ch.20 once with each of avatarIdx
     // 0..19 and check that unlockedCount lands at 20, which is the
-    // condition the AVATARS picker uses to surface PLR01.
+    // condition the AVATARS picker uses to surface PLR01. v0.36.40
+    // Design A: each chain advance also resets storyProgress to 0,
+    // so the final state is "PLR01 unlocked, sitting at PLR01 lap
+    // ch.0 (= 序章 of PLR01's run)".
     await getSlots();
     for (let i = 0; i < 20; i++) {
       await recordSlotResult({
@@ -248,6 +266,7 @@ describe('recordSlotResult chain unlock', () => {
       Array.from({ length: 20 }, (_, i) => i),
     );
     expect(slot.unlockedCount).toBe(TOTAL_BONUS_AVATARS);
+    expect(slot.storyProgress).toBe(0);
   });
 });
 
@@ -256,10 +275,15 @@ describe('recordSlotResult chain unlock', () => {
 /* ------------------------------------------------------------------ */
 
 describe('getSlots read-path migration', () => {
-  it('back-derives avatarsClearedCh20 from a legacy persisted slot', async () => {
+  it('back-derives avatarsClearedCh20 from a legacy persisted slot AND normalizes the post-clear state', async () => {
     // Simulate a v0.36.25 save: avatarsClearedCh20 is absent but
     // unlockedCount=3 is present (= the user cleared ch.20 with
-    // PLR00..PLR03 sequentially under the old gate).
+    // PLR00..PLR03 sequentially under the old gate). The v0.36.40
+    // migration runs `normalizePostClearState` after the
+    // back-derivation, which sees `sp=20 + acclen=3 + !trueEnd` and
+    // pushes the chain by 1 (acclen becomes 4) + resets sp to 0.
+    // Net effect: legacy saves get properly placed at the next
+    // chain-step PLR's 序章 the first time they're loaded.
     const legacy = {
       schemaVersion: 1,
       slots: [
@@ -283,7 +307,292 @@ describe('getSlots read-path migration', () => {
     };
     window.localStorage.setItem('othello:save_slots', JSON.stringify(legacy));
     const slot = await readSlot(1);
-    expect(slot.avatarsClearedCh20).toEqual([0, 1, 2]);
-    expect(slot.unlockedCount).toBe(3);
+    expect(slot.avatarsClearedCh20).toEqual([0, 1, 2, 3]);
+    expect(slot.unlockedCount).toBe(4);
+    expect(slot.storyProgress).toBe(0);
+  });
+
+  it('preserves a mid-lap legacy slot unchanged (sp < 20)', async () => {
+    // No post-clear normalization needed when storyProgress < 20.
+    const legacy = {
+      schemaVersion: 1,
+      slots: [
+        {
+          id: 1,
+          name: 'Save 1',
+          avatarIdx: 0,
+          createdAt: 100,
+          lastPlayedAt: 200,
+          storyProgress: 7,
+          lives: 5,
+          totalGames: 0,
+          wins: 0,
+          losses: 0,
+          draws: 0,
+          resigns: 0,
+          vsOpponent: {},
+          unlockedCount: 0,
+        },
+      ],
+    };
+    window.localStorage.setItem('othello:save_slots', JSON.stringify(legacy));
+    const slot = await readSlot(1);
+    expect(slot.avatarsClearedCh20).toEqual([]);
+    expect(slot.unlockedCount).toBe(0);
+    expect(slot.storyProgress).toBe(7);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* normalizePostClearState                                            */
+/* ------------------------------------------------------------------ */
+
+describe('normalizePostClearState', () => {
+  it('advances the chain when sp=20 + acclen<20 + !trueEnd (= legacy / spell-warp corner state)', () => {
+    // The "PLR0M just won ch.20 but the chain advance never fired"
+    // shape can come from pre-v0.36.40 saves or the spell warp
+    // `…NN20`. Migration shifts it to "next chain step PLR's 序章".
+    expect(
+      normalizePostClearState({
+        storyProgress: 20,
+        avatarsClearedCh20: [],
+        trueEndingAchieved: false,
+      }),
+    ).toEqual({
+      storyProgress: 0,
+      avatarsClearedCh20: [0],
+      unlockedCount: 1,
+    });
+    expect(
+      normalizePostClearState({
+        storyProgress: 20,
+        avatarsClearedCh20: [0, 1, 2],
+        trueEndingAchieved: false,
+      }),
+    ).toEqual({
+      storyProgress: 0,
+      avatarsClearedCh20: [0, 1, 2, 3],
+      unlockedCount: 4,
+    });
+  });
+
+  it('is a no-op when sp < 20 (= mid-lap state)', () => {
+    expect(
+      normalizePostClearState({
+        storyProgress: 7,
+        avatarsClearedCh20: [0, 1],
+        trueEndingAchieved: false,
+      }),
+    ).toEqual({
+      storyProgress: 7,
+      avatarsClearedCh20: [0, 1],
+      unlockedCount: 2,
+    });
+  });
+
+  it('is a no-op for the trueEnd state (= PLR01 chain finished, ch.21 reached)', () => {
+    expect(
+      normalizePostClearState({
+        storyProgress: 20,
+        avatarsClearedCh20: Array.from({ length: 20 }, (_, i) => i),
+        trueEndingAchieved: true,
+      }),
+    ).toEqual({
+      storyProgress: 20,
+      avatarsClearedCh20: Array.from({ length: 20 }, (_, i) => i),
+      unlockedCount: 20,
+    });
+  });
+
+  it('is a no-op when chain is already full (acclen=20, !trueEnd) — PLR01 lap in progress', () => {
+    // sp >= 20 + acclen=20 + !trueEnd is the brief window after
+    // PLR01 wins ch.20 but before the cinematic chain flips
+    // trueEnd. We don't auto-flip on read (the runtime handles it).
+    expect(
+      normalizePostClearState({
+        storyProgress: 20,
+        avatarsClearedCh20: Array.from({ length: 20 }, (_, i) => i),
+        trueEndingAchieved: false,
+      }),
+    ).toEqual({
+      storyProgress: 20,
+      avatarsClearedCh20: Array.from({ length: 20 }, (_, i) => i),
+      unlockedCount: 20,
+    });
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* slugFromAvatarImage                                                */
+/* ------------------------------------------------------------------ */
+
+describe('slugFromAvatarImage', () => {
+  it.each([
+    ['avatars/players/PLR00_default/icon.png', 'PLR00'],
+    ['avatars/players/PLR02_mikoto/icon.png', 'PLR02'],
+    ['avatars/players/PLR13_yreuyu/icon.png', 'PLR13'],
+    ['avatars/players/PLR20_yu/icon.png', 'PLR20'],
+    ['avatars/players/PLR01_haruki_heroic/icon.png', 'PLR01'],
+  ])('extracts %s → %s', (image, expected) => {
+    expect(slugFromAvatarImage(image)).toBe(expected);
+  });
+
+  it('falls back to PLR?? when the image path does not match', () => {
+    expect(slugFromAvatarImage('foo/bar.png')).toBe('PLR??');
+    expect(slugFromAvatarImage('')).toBe('PLR??');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* getSavePointDisplay                                                */
+/* ------------------------------------------------------------------ */
+
+const TEST_AVATARS: ReadonlyArray<{ name: string; image: string }> = [
+  { name: 'あなた',     image: 'avatars/players/PLR00_default/icon.png' },
+  { name: '美琴',       image: 'avatars/players/PLR02_mikoto/icon.png' },
+  { name: 'リン',       image: 'avatars/players/PLR03_rin/icon.png' },
+  { name: '蓮',         image: 'avatars/players/PLR04_ren/icon.png' },
+  { name: '千歳',       image: 'avatars/players/PLR05_chitose/icon.png' },
+  { name: '晴',         image: 'avatars/players/PLR06_haru/icon.png' },
+  { name: 'カイ',       image: 'avatars/players/PLR07_kai/icon.png' },
+  { name: '千夏',       image: 'avatars/players/PLR08_chinatsu/icon.png' },
+  { name: '透',         image: 'avatars/players/PLR09_toru/icon.png' },
+  { name: 'ノア',       image: 'avatars/players/PLR10_noa/icon.png' },
+  { name: '凪',         image: 'avatars/players/PLR11_nagi/icon.png' },
+  { name: 'エル',       image: 'avatars/players/PLR12_el/icon.png' },
+  { name: 'イレウユ',   image: 'avatars/players/PLR13_yreuyu/icon.png' },
+  { name: '葉月',       image: 'avatars/players/PLR14_hazuki/icon.png' },
+  { name: 'ジエンド',   image: 'avatars/players/PLR15_theend/icon.png' },
+  { name: 'ひかり',     image: 'avatars/players/PLR16_hikari/icon.png' },
+  { name: 'ヨル',       image: 'avatars/players/PLR17_yoru/icon.png' },
+  { name: '湊',         image: 'avatars/players/PLR18_minato/icon.png' },
+  { name: '奏太',       image: 'avatars/players/PLR19_souta/icon.png' },
+  { name: '悠',         image: 'avatars/players/PLR20_yu/icon.png' },
+  { name: '英霊ハルキ', image: 'avatars/players/PLR01_haruki_heroic/icon.png' },
+];
+
+function makeSlot(patch: Partial<SaveSlot>): SaveSlot {
+  return {
+    id: 1,
+    name: 'Test',
+    avatarIdx: 0,
+    createdAt: 0,
+    lastPlayedAt: 0,
+    storyProgress: 0,
+    lives: 5,
+    totalGames: 0,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    resigns: 0,
+    vsOpponent: {},
+    voidphiEncounterPending: false,
+    unlockedCount: 0,
+    avatarsClearedCh20: [],
+    trueEndingAchieved: false,
+    voidphiAwakened: false,
+    voidphiIntroSeen: false,
+    ...patch,
+  };
+}
+
+describe('getSavePointDisplay', () => {
+  it('fresh slot → PLR00 あなた / ch.0 / max 20', () => {
+    const sp = getSavePointDisplay(makeSlot({}), TEST_AVATARS);
+    expect(sp).toEqual({
+      plrIdx: 0,
+      plrSlug: 'PLR00',
+      plrName: 'あなた',
+      chapter: 0,
+      chapterMax: 20,
+    });
+  });
+
+  it('PLR00 mid-lap (sp=5) → PLR00 あなた / ch.5 / max 20', () => {
+    const sp = getSavePointDisplay(
+      makeSlot({ storyProgress: 5 }),
+      TEST_AVATARS,
+    );
+    expect(sp.plrSlug).toBe('PLR00');
+    expect(sp.plrName).toBe('あなた');
+    expect(sp.chapter).toBe(5);
+    expect(sp.chapterMax).toBe(20);
+  });
+
+  it('post-PLR00 chain advance (sp=0, acclen=[0]) → PLR02 美琴 / ch.0', () => {
+    // The state recordSlotResult leaves after PLR00's ch.20 win
+    // under Design A. The save point identity is "PLR02 lap 序章".
+    const sp = getSavePointDisplay(
+      makeSlot({ storyProgress: 0, avatarsClearedCh20: [0], unlockedCount: 1 }),
+      TEST_AVATARS,
+    );
+    expect(sp.plrIdx).toBe(1);
+    expect(sp.plrSlug).toBe('PLR02');
+    expect(sp.plrName).toBe('美琴');
+    expect(sp.chapter).toBe(0);
+    expect(sp.chapterMax).toBe(20);
+  });
+
+  it('mid-PLR03-lap (sp=15, acclen=[0,1]) → PLR03 リン / ch.15', () => {
+    const sp = getSavePointDisplay(
+      makeSlot({
+        storyProgress: 15,
+        avatarsClearedCh20: [0, 1],
+        unlockedCount: 2,
+      }),
+      TEST_AVATARS,
+    );
+    expect(sp.plrSlug).toBe('PLR03');
+    expect(sp.plrName).toBe('リン');
+    expect(sp.chapter).toBe(15);
+    expect(sp.chapterMax).toBe(20);
+  });
+
+  it('chain complete, PLR01 lap 序章 (acclen=[0..19], !trueEnd) → PLR01 英霊ハルキ / ch.0 / max 21', () => {
+    const sp = getSavePointDisplay(
+      makeSlot({
+        storyProgress: 0,
+        avatarsClearedCh20: Array.from({ length: 20 }, (_, i) => i),
+        unlockedCount: 20,
+        trueEndingAchieved: false,
+      }),
+      TEST_AVATARS,
+    );
+    expect(sp.plrIdx).toBe(20);
+    expect(sp.plrSlug).toBe('PLR01');
+    expect(sp.plrName).toBe('英霊ハルキ');
+    expect(sp.chapter).toBe(0);
+    expect(sp.chapterMax).toBe(21);
+  });
+
+  it('PLR01 mid-lap (sp=15, acclen=[0..19]) → PLR01 英霊ハルキ / ch.15 / max 21', () => {
+    const sp = getSavePointDisplay(
+      makeSlot({
+        storyProgress: 15,
+        avatarsClearedCh20: Array.from({ length: 20 }, (_, i) => i),
+        unlockedCount: 20,
+        trueEndingAchieved: false,
+      }),
+      TEST_AVATARS,
+    );
+    expect(sp.plrSlug).toBe('PLR01');
+    expect(sp.chapter).toBe(15);
+    expect(sp.chapterMax).toBe(21);
+  });
+
+  it('true ending achieved (any sp) → PLR01 英霊ハルキ / ch.21 / max 21', () => {
+    const sp = getSavePointDisplay(
+      makeSlot({
+        storyProgress: 20,
+        avatarsClearedCh20: Array.from({ length: 20 }, (_, i) => i),
+        unlockedCount: 20,
+        trueEndingAchieved: true,
+      }),
+      TEST_AVATARS,
+    );
+    expect(sp.plrSlug).toBe('PLR01');
+    expect(sp.plrName).toBe('英霊ハルキ');
+    expect(sp.chapter).toBe(21);
+    expect(sp.chapterMax).toBe(21);
   });
 });
