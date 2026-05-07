@@ -86,7 +86,7 @@ export function TitleScreen({
           aria-hidden
           onError={() => setBgOk(false)}
           className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ opacity: 0.6 }}
+          style={{ opacity: 0.78 }}
         />
       )}
       {/* Dark vignette over the bg image so foreground text stays
@@ -158,16 +158,19 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.39 — switches color from amber to
-            pure white. The bg illustration is amber/brown; an amber
-            subtitle blended into it ("茶色の中にうまっていて見えない")
-            no matter how big the size or strong the shadow. White
-            breaks out of the warm palette and reads clearly while
-            still feeling on-brand thanks to the italic serif glyph
-            and the ornament dashes. */}
+        {/* Latin subtitle. v0.36.40 — cool sky-blue tone (color
+            opposite of amber on the wheel) so the text breaks out
+            of the warm bg illustration's tonal range. White at
+            v0.36.39 was still too close in luminance to the bright
+            bg highlights; sky-blue + the new -webkit-text-stroke
+            outline gives a chiseled cool-on-warm look that reads
+            from any region of the bg. */}
         <div
-          className="latin-display italic ornament font-semibold text-white text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
-          style={{ textShadow: '0 0 16px rgba(10,8,5,0.95), 0 2px 4px rgba(0,0,0,0.95)' }}
+          className="latin-display italic ornament font-semibold text-sky-200 text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
+          style={{
+            textShadow: '0 0 16px rgba(10,8,5,0.95), 0 2px 4px rgba(0,0,0,0.95)',
+            WebkitTextStroke: '0.5px rgba(10,8,5,0.85)',
+          }}
         >
           — Summoned as an Othello Player —
         </div>
