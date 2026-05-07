@@ -6061,22 +6061,33 @@ export default function App() {
                   </div>
 
                   {aiMode === 'story' && (() => {
+                    // ch.21 = the post-true-ending Void-φ encounter
+                    // chain (20-B → 20-C → 20-D → opp22.intro →
+                    // OPP22 battle), surfaced in the chapter
+                    // browser once the slot has reached the true
+                    // ending. Acts as a replay entry-point for the
+                    // cinematic — same effect as the resume-from-
+                    // home path triggered by `voidphiEncounterPending`,
+                    // but available indefinitely after first clear.
+                    const ch21Available = trueEndingAchieved;
+                    const cursorCap = ch21Available ? 21 : 20;
                     const isComplete = storyProgress >= 20;
                     const maxCursor = Math.min(
                       Math.max(storyProgress + 1, 1),
-                      20,
+                      cursorCap,
                     );
                     const cursor = Math.min(
                       Math.max(chapterCursor, 1),
                       maxCursor,
                     );
-                    const targetLevel = cursor;
+                    const isCh21 = cursor === 21;
+                    const targetLevel = isCh21 ? 22 : cursor;
                     const oppIdx = COMPUTERS.findIndex(
                       (c) => c.level === targetLevel,
                     );
                     const opp = COMPUTERS[oppIdx];
                     const isFrontier = !isComplete && cursor === storyProgress + 1;
-                    const isPast = cursor <= storyProgress;
+                    const isPast = !isCh21 && cursor <= storyProgress;
                     const showEnding = isComplete && cursor === 20;
                     return (
                       <div className="space-y-4 mb-2">
@@ -6115,11 +6126,12 @@ export default function App() {
                               {t.chapterListLabel}
                             </div>
                             <div className="grid grid-cols-10 gap-1">
-                              {Array.from({ length: 20 }, (_, i) => {
+                              {Array.from({ length: cursorCap }, (_, i) => {
                                 const n = i + 1;
                                 const isAvailable = n <= maxCursor;
                                 const isCleared = n <= storyProgress;
                                 const isHere = n === cursor;
+                                const isVoidphi = n === 21;
                                 return (
                                   <button
                                     key={n}
@@ -6129,12 +6141,16 @@ export default function App() {
                                     aria-current={isHere ? 'true' : undefined}
                                     className={`latin-display tabular-nums text-xs py-1 rounded-sm border transition-colors ${
                                       isHere
-                                        ? 'bg-amber-200/20 border-amber-200/80 text-amber-50'
-                                        : isCleared
-                                          ? 'bg-emerald-300/[0.04] border-emerald-200/30 text-emerald-200/85 hover:border-emerald-200/60'
-                                          : isAvailable
-                                            ? 'border-amber-200/30 text-amber-100/75 hover:border-amber-200/60'
-                                            : 'border-zinc-800/60 text-zinc-600 cursor-not-allowed'
+                                        ? isVoidphi
+                                          ? 'bg-violet-300/15 border-violet-200/80 text-violet-50'
+                                          : 'bg-amber-200/20 border-amber-200/80 text-amber-50'
+                                        : isVoidphi && isAvailable
+                                          ? 'bg-violet-300/[0.05] border-violet-300/40 text-violet-200/85 hover:border-violet-300/70'
+                                          : isCleared
+                                            ? 'bg-emerald-300/[0.04] border-emerald-200/30 text-emerald-200/85 hover:border-emerald-200/60'
+                                            : isAvailable
+                                              ? 'border-amber-200/30 text-amber-100/75 hover:border-amber-200/60'
+                                              : 'border-zinc-800/60 text-zinc-600 cursor-not-allowed'
                                     }`}
                                   >
                                     {n}
@@ -6203,11 +6219,22 @@ export default function App() {
                           </p>
                         )}
 
-                        <div className="border border-amber-200/30 bg-amber-200/[0.04] rounded-sm p-4">
+                        <div
+                          className={`border rounded-sm p-4 ${
+                            isCh21
+                              ? 'border-violet-300/40 bg-violet-300/[0.04]'
+                              : 'border-amber-200/30 bg-amber-200/[0.04]'
+                          }`}
+                        >
                           <div className="latin-display italic ornament text-[10px] uppercase mb-2">
-                            — Chapter {targetLevel} —
+                            — {isCh21 ? 'Chapter 21' : `Chapter ${targetLevel}`} —
                           </div>
-                          <ChapterArt srcBase={opp.chapterArtBase} alt={opp.name} />
+                          {!isCh21 && opp.chapterArtBase && (
+                            <ChapterArt
+                              srcBase={opp.chapterArtBase}
+                              alt={opp.name}
+                            />
+                          )}
                           <div className="flex items-center gap-3 mb-3">
                             <AvatarBadge
                               kanji={opp.kanji}
@@ -6217,7 +6244,7 @@ export default function App() {
                             />
                             <div className="min-w-0">
                               <div className="jp-display text-amber-100 text-base md:text-lg truncate">
-                                {t.footerChapter(targetLevel, opp.name)}
+                                {t.footerChapter(cursor, opp.name)}
                               </div>
                               <div className="latin-display italic text-amber-200/50 text-xs tracking-wider">
                                 Lv.{opp.level} {getLevelLabel(opp.level, t)}
@@ -6231,25 +6258,33 @@ export default function App() {
                               cleared (cursor <= storyProgress) so it
                               doesn't spoil the bridge to the next master
                               for unexplored chapters. */}
-                          {(() => {
-                            const story = t.story.chapterStories[cursor - 1];
-                            const cleared = cursor <= storyProgress;
-                            return (
-                              <div className="space-y-3">
-                                <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
-                                  {renderEmphasized(story.intro)}
-                                </p>
-                                <p className="jp-display italic text-amber-200/85 text-sm leading-relaxed">
-                                  「{renderEmphasized(story.bossPre)}」
-                                </p>
-                                {cleared && (
-                                  <p className="jp-display italic text-amber-200/60 text-xs leading-relaxed whitespace-pre-line pt-2 border-t border-amber-200/15">
-                                    {renderEmphasized(story.victoryNarration)}
+                          {isCh21 ? (
+                            <div className="space-y-3">
+                              <p className="jp-display text-violet-100/85 text-sm leading-relaxed whitespace-pre-line">
+                                {renderEmphasized(t.story.opp22.intro.text)}
+                              </p>
+                            </div>
+                          ) : (
+                            (() => {
+                              const story = t.story.chapterStories[cursor - 1];
+                              const cleared = cursor <= storyProgress;
+                              return (
+                                <div className="space-y-3">
+                                  <p className="jp-display text-amber-100/80 text-sm leading-relaxed whitespace-pre-line">
+                                    {renderEmphasized(story.intro)}
                                   </p>
-                                )}
-                              </div>
-                            );
-                          })()}
+                                  <p className="jp-display italic text-amber-200/85 text-sm leading-relaxed">
+                                    「{renderEmphasized(story.bossPre)}」
+                                  </p>
+                                  {cleared && (
+                                    <p className="jp-display italic text-amber-200/60 text-xs leading-relaxed whitespace-pre-line pt-2 border-t border-amber-200/15">
+                                      {renderEmphasized(story.victoryNarration)}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()
+                          )}
                         </div>
 
                         {showEnding && (
@@ -6267,14 +6302,39 @@ export default function App() {
                         )}
 
                         <button
-                          onClick={() =>
-                            startStoryChapter(cursor, isFrontier)
-                          }
-                          className={`btn w-full ${isFrontier ? 'btn-active' : ''}`}
+                          onClick={() => {
+                            if (isCh21) {
+                              // Ch.21 = post-true-ending Void-φ
+                              // encounter chain. Same setup as the
+                              // resume-from-home path: skip the
+                              // regular story-mode startStoryChapter
+                              // (which expects an OPP at level 1..20)
+                              // and trigger the cinematic chain
+                              // 20-B → 20-C → 20-D → opp22.intro →
+                              // OPP22 battle directly.
+                              setSettingsOpen(false);
+                              setGameMode('ai');
+                              setAiMode('free');
+                              reset({ gameMode: 'ai', aiMode: 'free' });
+                              setStoryOverlay('narrative:trueEnding20B');
+                              setScreen('game');
+                              return;
+                            }
+                            startStoryChapter(cursor, isFrontier);
+                          }}
+                          className={`btn w-full ${
+                            isCh21
+                              ? 'btn-active'
+                              : isFrontier
+                                ? 'btn-active'
+                                : ''
+                          }`}
                         >
-                          {isFrontier
-                            ? t.chapterPlayCurrent
-                            : t.chapterPlayReplay}
+                          {isCh21
+                            ? '🌌 ' + t.opp22IntroStartLabel
+                            : isFrontier
+                              ? t.chapterPlayCurrent
+                              : t.chapterPlayReplay}
                         </button>
 
                         <p className="jp-display italic text-amber-200/55 text-[11px] text-center">
