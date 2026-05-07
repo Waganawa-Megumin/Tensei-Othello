@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.38 · card-backdrop-only';
+const BUILD_TAG = 'v0.36.39 · subtitle-white-bg-vivid';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -90,7 +90,7 @@ export function TitleScreen({
           aria-hidden
           onError={() => setBgOk(false)}
           className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ opacity: 0.45 }}
+          style={{ opacity: 0.6 }}
         />
       )}
       {/* Dark vignette over the bg image so foreground text stays
@@ -162,14 +162,16 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.35 — another size bump (text-base
-            mobile / text-lg desktop) so the line stops disappearing
-            against the bright bg illustration even with the new
-            tighter vignette. Real italic-600 glyph (Google Fonts
-            import added 1,600 in v0.36.32). */}
+        {/* Latin subtitle. v0.36.39 — switches color from amber to
+            pure white. The bg illustration is amber/brown; an amber
+            subtitle blended into it ("茶色の中にうまっていて見えない")
+            no matter how big the size or strong the shadow. White
+            breaks out of the warm palette and reads clearly while
+            still feeling on-brand thanks to the italic serif glyph
+            and the ornament dashes. */}
         <div
-          className="latin-display italic ornament font-semibold text-amber-100 text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
-          style={{ textShadow: '0 0 14px rgba(10,8,5,0.95), 0 2px 4px rgba(0,0,0,0.95)' }}
+          className="latin-display italic ornament font-semibold text-white text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
+          style={{ textShadow: '0 0 16px rgba(10,8,5,0.95), 0 2px 4px rgba(0,0,0,0.95)' }}
         >
           — Summoned as an Othello Player —
         </div>
