@@ -2687,6 +2687,31 @@ export default function App() {
         setScreen('game');
         return;
       }
+      // v0.36.30 — "全章クリア済" slot replay path. Without this, a
+      // slot at storyProgress=20 + trueEndingAchieved=true would
+      // fall through to the clamp below and restart at ch.20 — i.e.
+      // the user would tap "Story → 続きから" on a fully-cleared
+      // slot and be sent BACKWARDS to ch.20 (which they have
+      // obviously already cleared). The chapter browser inside
+      // Settings has a cursor=21 entry for this case (= replay the
+      // Void-φ encounter chain 20-B → 20-C → 20-D → opp22.intro →
+      // OPP22 battle), but the title-screen Story card never
+      // exposed it. Match that browser path so the click means
+      // "advance / replay the highest content I've reached" rather
+      // than "rewind to ch.20".
+      if (
+        activeSlot &&
+        activeSlot.storyProgress >= 20 &&
+        activeSlot.trueEndingAchieved
+      ) {
+        logDiag('voidphi.replay_from_title', { slotId: activeSlotId });
+        setGameMode('ai');
+        setAiMode('free');
+        reset({ gameMode: 'ai', aiMode: 'free' });
+        setStoryOverlay('narrative:trueEnding20B');
+        setScreen('game');
+        return;
+      }
       // Route through the multi-step intro instead of dropping the
       // player onto the board. `reset()` and the screen flip to 'game'
       // happen in `onIntroComplete` once the player taps "begin the
@@ -2753,6 +2778,25 @@ export default function App() {
     // in-session post-victory flow the user expects.
     if (picked?.voidphiEncounterPending) {
       logDiag('voidphi.resume_from_slot', { slotId: id });
+      setGameMode('ai');
+      setAiMode('free');
+      reset({ gameMode: 'ai', aiMode: 'free' });
+      setStoryOverlay('narrative:trueEnding20B');
+      setScreen('game');
+      return;
+    }
+    // v0.36.30 — match the "全章クリア済" replay path in startGame()
+    // when the user picks a fully-cleared slot from SlotPicker
+    // (instead of from the title-screen Story card). Without this,
+    // picking a fully-done slot would land the player on ch.20
+    // IntroSequence — backwards motion that contradicts the
+    // 「全章クリア済」 footer.
+    if (
+      picked &&
+      picked.storyProgress >= 20 &&
+      picked.trueEndingAchieved
+    ) {
+      logDiag('voidphi.replay_from_slot', { slotId: id });
       setGameMode('ai');
       setAiMode('free');
       reset({ gameMode: 'ai', aiMode: 'free' });
