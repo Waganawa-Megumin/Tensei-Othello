@@ -3,6 +3,7 @@ import { BookOpen, Sparkles, Swords, Users } from 'lucide-react';
 import type { Locale, Messages } from '../i18n/messages';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { renderEmphasized } from '../i18n/story/render';
+import { getSavePointDisplay, type SaveSlot } from '../storage/saveSlots';
 
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
@@ -21,34 +22,28 @@ interface TitleScreenProps {
   locale: Locale;
   onLocaleChange: (locale: Locale) => void;
   /** Active save slot (if any). Shown on the Story card so the user
-   *  knows which save resumes when they tap. */
+   *  knows which save resumes when they tap. v0.36.40 — pass the
+   *  raw slot + the avatars view, the title screen calls
+   *  `getSavePointDisplay()` itself to derive (plrSlug, plrName,
+   *  chapter, chapterMax) and feeds them to the new
+   *  `slotInUseFooter` signature. */
   activeSlot: {
-    name: string;
-    lives: number;
-    storyProgress: number;
-    /** Localized opponent name at the slot's next chapter
-     *  (`storyProgress + 1`, capped at 20). Empty string when the
-     *  slot has cleared all 20 chapters — the footer renderer uses
-     *  that to switch to a "全章クリア済 / All chapters cleared"
-     *  variant. */
+    /** Raw slot record from storage. */
+    slot: SaveSlot;
+    /** Localized opponent name at the active PLR's next chapter
+     *  (= `chapter + 1`, capped at the PLR's chapterMax). Empty
+     *  when there is no next opponent (e.g. PLR01 ch.21 = post-true-
+     *  ending state). */
     opponentName: string;
-    /** Localized name of the avatar currently selected for this
-     *  slot (PLR00 default / 美琴 / 英霊ハルキ / etc.). Surfaced in
-     *  the footer so the user sees at a glance which PLR is at
-     *  which chapter — fixes the "セーブ情報を、正確に。PLR どれが
-     *  何章まで」report from v0.36.10. */
-    playerName: string;
-    /** True iff the slot is at storyProgress=0 AND has not yet
-     *  seen the prologue overlay. Footer then shows 「序章」 instead
-     *  of 「第1章 vs いちか」 so the framing matches the user's
-     *  actual narrative position (the prologue hasn't fired yet). */
+    /** True iff the slot is at chapter 0 AND has not yet seen the
+     *  prologue overlay. Footer then shows 「序章」 instead of
+     *  「第1章 vs いちか」 so the framing matches the user's actual
+     *  narrative position. */
     inPrologue: boolean;
-    /** v0.36.36 — gates the "全章クリア済（21/21）" footer wording.
-     *  Without this, a slot at storyProgress=20 but trueEnding=false
-     *  was shown as fully done, even though ch.21 (Void-φ encounter)
-     *  hadn't been completed. */
-    trueEndingAchieved: boolean;
   } | null;
+  /** Slim AVATARS view (locale-applied name + image path) for
+   *  `getSavePointDisplay()` when the active slot is non-null. */
+  avatars: ReadonlyArray<{ name: string; image: string }>;
   /** Opens the slot picker so the user can switch save. */
   onSwitchSlot: () => void;
   /** True iff the active slot has at least one previously-seen story
@@ -65,6 +60,7 @@ export function TitleScreen({
   locale,
   onLocaleChange,
   activeSlot,
+  avatars,
   onSwitchSlot,
   archiveAvailable,
   onOpenArchive,
@@ -232,15 +228,19 @@ export function TitleScreen({
                   giving a two-line summary instead of a single
                   ellipsized line. */}
               <span className="jp-display text-amber-100/90 text-xs whitespace-pre-line leading-relaxed min-w-0">
-                {t.slotInUseFooter(
-                  activeSlot.name,
-                  activeSlot.lives,
-                  Math.min(activeSlot.storyProgress + 1, 20),
-                  activeSlot.opponentName,
-                  activeSlot.playerName,
-                  activeSlot.inPrologue,
-                  activeSlot.trueEndingAchieved,
-                )}
+                {(() => {
+                  const sp = getSavePointDisplay(activeSlot.slot, avatars);
+                  return t.slotInUseFooter(
+                    activeSlot.slot.name,
+                    activeSlot.slot.lives,
+                    sp.plrSlug,
+                    sp.plrName,
+                    sp.chapter,
+                    sp.chapterMax,
+                    activeSlot.opponentName,
+                    activeSlot.inPrologue,
+                  );
+                })()}
               </span>
               <span className="flex items-center gap-2 shrink-0">
                 {/* Archive icon — opens scene archive. Inlined here

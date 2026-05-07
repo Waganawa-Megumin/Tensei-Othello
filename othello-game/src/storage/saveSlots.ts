@@ -180,6 +180,60 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
 
+/** v0.36.40 — chain-progression invariant.
+ *
+ *  Under Design A (v0.36.40+), each chain step PLR plays its own full
+ *  ch.1-20 lap. After ch.20 win, `slot.storyProgress` is reset to 0
+ *  and `avatarsClearedCh20` grows by 1, so the new PLR's lap starts
+ *  fresh.
+ *
+ *  This means the steady-state invariant is:
+ *    `storyProgress < 20`  OR  `trueEndingAchieved === true`  OR
+ *    (sp == 20 AND active PLR is mid-fight on the boss)
+ *
+ *  A legacy slot from Design B (v0.36.26 ~ v0.36.39) can have
+ *  `storyProgress === 20 && trueEnd === false && acclen < 20` —
+ *  i.e. PLR0M cleared ch.20 historically but the chain advance + sp
+ *  reset never fired together. Same shape comes from the spell warp
+ *  `…NN20` (= "PLR NN about to fight ch.20").
+ *
+ *  This helper normalizes that on read: if the slot has cleared ch.20
+ *  but the chain isn't fully advanced, push the chain by 1 and reset
+ *  sp=0. Run from `migrateSlot` once on first read, then re-saved in
+ *  the new shape. Subsequent reads are no-ops. */
+export function normalizePostClearState(input: {
+  storyProgress: number;
+  avatarsClearedCh20: number[];
+  trueEndingAchieved: boolean;
+}): {
+  storyProgress: number;
+  avatarsClearedCh20: number[];
+  unlockedCount: number;
+} {
+  let sp = input.storyProgress;
+  const acc = [...input.avatarsClearedCh20];
+  const trueEnd = input.trueEndingAchieved;
+  if (sp >= 20 && acc.length < 20 && !trueEnd) {
+    // Chain step PLR has cleared ch.20 but hasn't been advanced. Push
+    // the next AVATARS index (= acc.length, since acc is sorted dense
+    // 0..acc.length-1 by the chain assumption) and rewind sp to the
+    // new PLR's prologue.
+    const nextIdx = acc.length;
+    if (nextIdx >= 0 && nextIdx < 20 && !acc.includes(nextIdx)) {
+      acc.push(nextIdx);
+      acc.sort((a, b) => a - b);
+    }
+    sp = 0;
+  }
+  // PLR01 ch.20 win + trueEnd not yet flipped: don't auto-flip on read
+  // (the cinematic chain might still be playing). Leave to runtime.
+  return {
+    storyProgress: sp,
+    avatarsClearedCh20: acc,
+    unlockedCount: acc.length,
+  };
+}
+
 /** v0.36.26 — pure helper for avatarsClearedCh20 / unlockedCount
  *  reconciliation, used by both `migrateSlot` (read path) and the
  *  saveSlots unit tests. Rules:
@@ -220,24 +274,41 @@ export function reconcileAvatarsCleared(
 function migrateSlot(raw: unknown, id: number): SaveSlot {
   const base = defaultSlot(id);
   if (!isObject(raw)) return base;
-  const { avatarsClearedCh20, unlockedCount } = reconcileAvatarsCleared(
+  const reconciled = reconcileAvatarsCleared(
     raw.avatarsClearedCh20,
     raw.unlockedCount,
   );
+  // v0.36.40 — accept storyProgress 0..21 (PLR01 lap can reach 21).
+  const rawSp =
+    typeof raw.storyProgress === 'number' &&
+    raw.storyProgress >= 0 &&
+    raw.storyProgress <= 21
+      ? raw.storyProgress
+      : base.storyProgress;
+  const trueEnd =
+    typeof raw.trueEndingAchieved === 'boolean'
+      ? raw.trueEndingAchieved
+      : false;
+  // v0.36.40 — normalize legacy "sp=20 + chain not advanced" state into
+  // "next PLR ch.0". See normalizePostClearState for the rationale.
+  const normalized = normalizePostClearState({
+    storyProgress: rawSp,
+    avatarsClearedCh20: reconciled.avatarsClearedCh20,
+    trueEndingAchieved: trueEnd,
+  });
+  const { avatarsClearedCh20, unlockedCount } = normalized;
   return {
     ...base,
     name: typeof raw.name === 'string' ? raw.name : base.name,
+    // v0.36.40 — accept avatarIdx 0..20 (was 0..19); idx=20 is PLR01.
     avatarIdx:
-      typeof raw.avatarIdx === 'number' && raw.avatarIdx >= 0 && raw.avatarIdx < 20
+      typeof raw.avatarIdx === 'number' && raw.avatarIdx >= 0 && raw.avatarIdx <= 20
         ? raw.avatarIdx
         : base.avatarIdx,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : base.createdAt,
     lastPlayedAt:
       typeof raw.lastPlayedAt === 'number' ? raw.lastPlayedAt : base.lastPlayedAt,
-    storyProgress:
-      typeof raw.storyProgress === 'number' && raw.storyProgress >= 0 && raw.storyProgress <= 20
-        ? raw.storyProgress
-        : base.storyProgress,
+    storyProgress: normalized.storyProgress,
     lives:
       typeof raw.lives === 'number' && raw.lives >= 0
         ? Math.min(raw.lives, MAX_LIVES)
@@ -267,6 +338,78 @@ function migrateSlot(raw: unknown, id: number): SaveSlot {
         ? raw.voidphiIntroSeen
         : false,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Display helpers                                                    */
+/* ------------------------------------------------------------------ */
+
+export interface SavePointDisplay {
+  /** AVATARS array index of the PLR currently active on this slot.
+   *  0 = PLR00 (default), 1..19 = PLR02..PLR20 (chain steps),
+   *  20 = PLR01 (heroic spirit, chain reward). */
+  plrIdx: number;
+  /** Strict slug "PLR00" / "PLR01" / "PLR02" / ... / "PLR20". Parsed
+   *  from the avatar's image path (`avatars/players/PLRxx_slug/...`). */
+  plrSlug: string;
+  /** Localized display name (`あなた` / `美琴` / etc.). Already
+   *  locale-applied by the caller via the AVATARS array passed in. */
+  plrName: string;
+  /** Current chapter (= lap progress for the active PLR). 0..20 for
+   *  chain-step PLRs, 0..21 for PLR01 (ch.21 = post-true-ending). */
+  chapter: number;
+  /** Max chapter for the active PLR. 21 if PLR01, 20 otherwise. */
+  chapterMax: number;
+}
+
+/** v0.36.40 — pure save-point display helper. Derives the
+ *  `(currentPLR, currentChapter)` tuple that should be shown for a
+ *  slot from the slot's chain state. After the Design A migration,
+ *  `slot.storyProgress` already represents the per-PLR lap progress
+ *  (resets to 0 on chain advance), and `avatarsClearedCh20.length`
+ *  encodes the chain frontier directly.
+ *
+ *  The `avatars` arg is a slim view of the locale-applied AVATARS
+ *  array (just `name` and `image` fields needed). Pass
+ *  `[DEFAULT_AVATAR, ...AVATARS_DATA]` from App.tsx so PLR01 (last
+ *  entry, idx 20) is at `avatars[20]`. */
+export function getSavePointDisplay(
+  slot: SaveSlot,
+  avatars: ReadonlyArray<{ name: string; image: string }>,
+): SavePointDisplay {
+  const acclen = (slot.avatarsClearedCh20 ?? []).length;
+  const trueEnd = slot.trueEndingAchieved ?? false;
+  const sp = slot.storyProgress ?? 0;
+
+  // Chain frontier = next PLR to be played. For trueEnd slots, the
+  // frontier is locked to PLR01 (idx 20); otherwise it's the count of
+  // chain-step PLRs already cleared (0=PLR00, 1=PLR02, ..., 19=PLR20,
+  // 20=PLR01-just-unlocked).
+  const plrIdx = trueEnd ? 20 : Math.min(acclen, 20);
+  const chapterMax = plrIdx === 20 ? 21 : 20;
+
+  // Chapter:
+  //  - PLR01 + trueEnd → 21 (post-true-ending state)
+  //  - PLR01 + !trueEnd → sp (PLR01's lap, can reach 20 before true ending)
+  //  - chain-step PLR → sp (this PLR's lap, 0..20)
+  // Defensively clamp to chapterMax.
+  let chapter: number;
+  if (plrIdx === 20 && trueEnd) chapter = 21;
+  else chapter = Math.min(Math.max(sp, 0), chapterMax);
+
+  const safeIdx = Math.max(0, Math.min(plrIdx, avatars.length - 1));
+  const plrName = avatars[safeIdx]?.name ?? '';
+  const plrSlug = slugFromAvatarImage(avatars[safeIdx]?.image ?? '');
+  return { plrIdx, plrSlug, plrName, chapter, chapterMax };
+}
+
+/** Extracts the strict PLR slug ("PLR00" .. "PLR20") from an avatar's
+ *  image path, e.g.
+ *  "avatars/players/PLR02_mikoto/icon.png" → "PLR02". Returns "PLR??"
+ *  if the path doesn't match the canonical layout (defensive). */
+export function slugFromAvatarImage(image: string): string {
+  const m = image.match(/PLR(\d{2})_/);
+  return m ? `PLR${m[1]}` : 'PLR??';
 }
 
 export async function getSlots(): Promise<SaveSlot[]> {
@@ -422,14 +565,15 @@ export async function recordSlotResult(input: RecordSlotResultInput): Promise<Sa
     if (isStory && slot.storyProgress < 20) {
       slot.storyProgress += 1;
     }
-    // v0.36.26 — chain-unlock: a ch.20 win with a fresh PLR adds that
-    // PLR to avatarsClearedCh20 and bumps unlockedCount. Gate is
-    // intentionally avatar-based (not storyProgress-based) so the
-    // 2nd, 3rd, …, 19th PLRs can each contribute even though the
-    // slot's storyProgress is already capped at 20 after the first
-    // clear. PLR01 (index 20) is excluded because it's the
-    // chain-completion reward, not a chain step.
+    // v0.36.40 — Design A chain-unlock: a ch.20 win with a fresh
+    // chain-step PLR (avatarIdx 0..19) adds that PLR to
+    // avatarsClearedCh20, bumps unlockedCount, AND resets
+    // storyProgress to 0 so the next chain PLR's lap starts fresh
+    // from ch.0 (= 序章). PLR01 (index 20) is excluded — it's the
+    // chain-completion reward, not a chain step, so its ch.20 win
+    // doesn't reset sp (true-ending logic in App.tsx handles it).
     if (
+      isStory &&
       opponentLevel === 20 &&
       typeof playerAvatarIdx === 'number' &&
       playerAvatarIdx >= 0 &&
@@ -441,6 +585,12 @@ export async function recordSlotResult(input: RecordSlotResultInput): Promise<Sa
       );
       slot.avatarsClearedCh20 = next;
       slot.unlockedCount = next.length;
+      // Hard reset the per-PLR lap pointer so the new chain frontier
+      // starts at ch.0. This is the core of Design A — each chain
+      // step replays its own ch.1-20 lap rather than just fighting
+      // ch.20 once. See plan
+      // /root/.claude/plans/plr00-20-iridescent-hartmanis.md
+      slot.storyProgress = 0;
     }
   } else if (result === 'loss') {
     slot.losses += 1;

@@ -100,6 +100,7 @@ import {
 import type { MoveAnnotation, MoveQuality, ReviewAnnotations } from './prompts/review';
 import {
   defaultSlot,
+  getSavePointDisplay,
   getSlots,
   getActiveSlotId,
   setActiveSlotId,
@@ -2699,11 +2700,10 @@ export default function App() {
       // exposed it. Match that browser path so the click means
       // "advance / replay the highest content I've reached" rather
       // than "rewind to ch.20".
-      if (
-        activeSlot &&
-        activeSlot.storyProgress >= 20 &&
-        activeSlot.trueEndingAchieved
-      ) {
+      // v0.36.40 — sole gate is `trueEndingAchieved`. Under Design A
+      // `storyProgress` is per-PLR lap progress (resets on chain
+      // advance), so it's no longer a meaningful "fully done" axis.
+      if (activeSlot && activeSlot.trueEndingAchieved) {
         logDiag('voidphi.replay_from_title', { slotId: activeSlotId });
         setGameMode('ai');
         setAiMode('free');
@@ -2791,11 +2791,8 @@ export default function App() {
     // picking a fully-done slot would land the player on ch.20
     // IntroSequence — backwards motion that contradicts the
     // 「全章クリア済」 footer.
-    if (
-      picked &&
-      picked.storyProgress >= 20 &&
-      picked.trueEndingAchieved
-    ) {
+    // v0.36.40 — same gate as startGame (only trueEndingAchieved).
+    if (picked && picked.trueEndingAchieved) {
       logDiag('voidphi.replay_from_slot', { slotId: id });
       setGameMode('ai');
       setAiMode('free');
@@ -3093,6 +3090,11 @@ export default function App() {
       storyProgress: slotProgress,
       unlockedCount: unlocks,
       avatarsClearedCh20: warpedAvatarsClearedCh20,
+      // v0.36.40 — persist the spell-warped PLR onto the slot so the
+      // slot picker / title footer reflects "PLR PP is the active
+      // PLR on this slot" without depending on the live React
+      // p1Avatar mirror. avatarIdx accepts 0..20 (PLR01 = 20).
+      avatarIdx,
       trueEndingAchieved: isPostTrueEnding,
       voidphiAwakened: isPostTrueEnding,
       voidphiIntroSeen: false,
@@ -4065,54 +4067,42 @@ export default function App() {
           onLocaleChange={setLocale}
           activeSlot={
             activeSlot
-              ? {
-                  name: activeSlot.name,
-                  lives: activeSlot.lives,
-                  storyProgress: activeSlot.storyProgress,
-                  // Opponent at the slot's next chapter, surfaced
-                  // in the title-screen slot footer so the player
-                  // sees "Ch.6 vs つむぎ・♥4" rather than just
-                  // "Ch.6・♥4". Story progress 20 means the slot
-                  // is fully cleared — pass empty string and let
-                  // i18n switch to the "全章クリア済" wording.
-                  opponentName:
-                    activeSlot.storyProgress >= 20
+              ? (() => {
+                  // v0.36.40 — TitleScreen now derives PLR slug +
+                  // chapter via `getSavePointDisplay(slot, avatars)`;
+                  // here we just resolve the OPP at the next chapter
+                  // and the prologue-seen flag.
+                  const sp = getSavePointDisplay(
+                    activeSlot,
+                    AVATARS.map((a) => ({
+                      name: locale === 'ja' ? a.name : a.name_en,
+                      image: a.image,
+                    })),
+                  );
+                  // Next opponent: chapter+1 (= next match). Empty
+                  // when the lap is finished (chapter === chapterMax)
+                  // — i18n then renders the "(クリア)" branch.
+                  const nextChapter = sp.chapter + 1;
+                  const opponentName =
+                    sp.chapter >= sp.chapterMax
                       ? ''
-                      : (COMPUTERS.find(
-                          (c) =>
-                            c.level === activeSlot.storyProgress + 1,
-                        )?.name ?? ''),
-                  // Currently-selected player avatar's localized
-                  // name. p1Avatar drives the in-game player avatar
-                  // and is auto-set to the latest unlocked PLR on
-                  // slot entry, so it's the right source for "which
-                  // PLR is on this slot". Locale switch picks the
-                  // ja/en variant.
-                  playerName:
-                    locale === 'ja'
-                      ? AVATARS[p1Avatar]?.name ?? ''
-                      : AVATARS[p1Avatar]?.name_en ?? '',
-                  // storyProgress=0 + prologue not yet seen ⇢ the
-                  // slot is genuinely pre-prologue. Title footer then
-                  // shows 「序章」 instead of 「第1章 vs いちか」 so
-                  // the framing matches the player's narrative
-                  // position. Once they view the prologue (or finish
-                  // ch.1) the flag flips to false and the regular
-                  // 「vs (opponent)」 wording returns.
-                  inPrologue:
-                    activeSlot.storyProgress === 0 &&
-                    activeSlotId !== null &&
-                    !hasSeenOverlay(String(activeSlotId), 'prologue'),
-                  // v0.36.36 — controls 「全章クリア済（21/21）」 vs
-                  // 「第21章 まで進行（20/21 クリア）」 in the footer.
-                  // Read from the slot directly (not the React state
-                  // mirror) so a freshly-mutated slot reflects the
-                  // current truth even before the next render commit.
-                  trueEndingAchieved:
-                    activeSlot.trueEndingAchieved ?? false,
-                }
+                      : (COMPUTERS.find((c) => c.level === Math.min(nextChapter, 20))
+                          ?.name ?? '');
+                  return {
+                    slot: activeSlot,
+                    opponentName,
+                    inPrologue:
+                      sp.chapter === 0 &&
+                      activeSlotId !== null &&
+                      !hasSeenOverlay(String(activeSlotId), 'prologue'),
+                  };
+                })()
               : null
           }
+          avatars={AVATARS.map((a) => ({
+            name: locale === 'ja' ? a.name : a.name_en,
+            image: a.image,
+          }))}
           onSwitchSlot={() => setSlotPickerOpen(true)}
           archiveAvailable={
             activeSlotId !== null &&
@@ -6164,10 +6154,21 @@ export default function App() {
                         {activeSlot.name}
                       </div>
                       <div className="jp-display text-amber-200/65 text-[11px] mt-0.5">
-                        {t.slotProgress(
-                          activeSlot.storyProgress,
-                          activeSlot.trueEndingAchieved ?? false,
-                        )} ・ ♥ {activeSlot.lives}
+                        {(() => {
+                          const sp = getSavePointDisplay(
+                            activeSlot,
+                            AVATARS.map((a) => ({
+                              name: locale === 'ja' ? a.name : a.name_en,
+                              image: a.image,
+                            })),
+                          );
+                          return t.slotProgress(
+                            sp.plrSlug,
+                            sp.plrName,
+                            sp.chapter,
+                            sp.chapterMax,
+                          );
+                        })()} ・ ♥ {activeSlot.lives}
                       </div>
                     </div>
                     <button
@@ -6314,7 +6315,13 @@ export default function App() {
                     // but available indefinitely after first clear.
                     const ch21Available = trueEndingAchieved;
                     const cursorCap = ch21Available ? 21 : 20;
-                    const isComplete = storyProgress >= 20;
+                    // v0.36.40 — under Design A, storyProgress is
+                    // per-PLR lap progress (resets on chain advance).
+                    // The stable "fully done" axis is now
+                    // trueEndingAchieved alone; sp >= 20 only happens
+                    // transiently between PLR01 ch.20 win and the
+                    // true-ending flip.
+                    const isComplete = trueEndingAchieved;
                     const maxCursor = Math.min(
                       Math.max(storyProgress + 1, 1),
                       cursorCap,
@@ -7039,9 +7046,10 @@ export default function App() {
           setSpellResult(null);
           setSpellOpen(true);
         }}
-        avatarNames={AVATARS.map((a) =>
-          locale === 'ja' ? a.name : a.name_en,
-        )}
+        avatars={AVATARS.map((a) => ({
+          name: locale === 'ja' ? a.name : a.name_en,
+          image: a.image,
+        }))}
         t={t}
       />
 

@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent } from 'react';
 import { Heart, Pencil, RotateCcw } from 'lucide-react';
 import {
   defaultSlot,
+  getSavePointDisplay,
   resetSlot,
   saveSlots,
   type SaveSlot,
@@ -25,11 +26,12 @@ interface SlotPickerProps {
    *  arg the bottom-of-modal shortcut targets whatever slot is
    *  already active. */
   onCastSpell?: (slotId?: number) => void;
-  /** Localized PLR avatar names indexed by AVATARS index (= 0 for
-   *  PLR00 default, 1..19 for PLR02..PLR20, 20 for PLR01 英霊
-   *  ハルキ). Used to show "PLR PP まで unlocked" per slot so the
-   *  user can tell at a glance which slot has which roster. */
-  avatarNames: ReadonlyArray<string>;
+  /** Slim AVATARS view — `name` (locale-applied) and `image` path
+   *  (used to derive the strict PLR slug). Indexed by AVATARS index:
+   *  0 = PLR00 default, 1..19 = PLR02..PLR20, 20 = PLR01 英霊ハルキ.
+   *  Used by `getSavePointDisplay()` to format the per-slot
+   *  save-point line and roster summary. */
+  avatars: ReadonlyArray<{ name: string; image: string }>;
   t: Messages;
 }
 
@@ -61,7 +63,7 @@ export function SlotPicker({
   onClose,
   onSlotsChanged,
   onCastSpell,
-  avatarNames,
+  avatars,
   t,
 }: SlotPickerProps) {
   const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -209,10 +211,15 @@ export function SlotPicker({
                       <>
                         <div className="flex items-center gap-3 mt-1 latin-display italic text-amber-200/55 text-[10px] tracking-wider">
                           <span className="jp-display">
-                            {t.slotProgress(
-                              slot.storyProgress,
-                              slot.trueEndingAchieved ?? false,
-                            )}
+                            {(() => {
+                              const sp = getSavePointDisplay(slot, avatars);
+                              return t.slotProgress(
+                                sp.plrSlug,
+                                sp.plrName,
+                                sp.chapter,
+                                sp.chapterMax,
+                              );
+                            })()}
                           </span>
                           <Lives n={slot.lives} />
                         </div>
@@ -223,7 +230,7 @@ export function SlotPicker({
                             glance. */}
                         {(() => {
                           const u = slot.unlockedCount ?? 0;
-                          const latestName = avatarNames[u] ?? '';
+                          const latestName = avatars[u]?.name ?? '';
                           return (
                             <div className="jp-display text-amber-200/65 text-[10px] mt-0.5 tracking-wider">
                               {t.slotRosterLine(u, latestName)}

@@ -292,12 +292,25 @@ export interface Messages {
    *  ready for ch.1 vs Ichika" without lying about it being
    *  untouched. */
   slotPrologueSeenTag: string;
-  /** v0.36.36 — denominator is 21 (= 20 regular + ch.21 Void-φ
-   *  encounter chain). `trueEndingAchieved` controls the +1 for
-   *  ch.21: a slot at storyProgress=20 with trueEndingAchieved=false
-   *  reads as 20/21 (= 真エンディング未到達), and only flips to 21/21
-   *  / 全章クリア済 once PLR01 has cleared ch.20. */
-  slotProgress: (cleared: number, trueEndingAchieved: boolean) => string;
+  /** v0.36.40 — strict PLR-slug + per-PLR chapter format.
+   *  Format: "${plrSlug} ${plrName}・第${chapter}章（${chapter}/${chapterMax}）"
+   *  e.g. "PLR00 あなた・第5章（5/20）" / "PLR01 英霊ハルキ・第21章（21/21）".
+   *  - `plrSlug`: "PLR00".."PLR20", "PLR01" — strict canonical slug,
+   *    derived via `slugFromAvatarImage(avatar.image)`.
+   *  - `plrName`: localized display name ("あなた" / "美琴" / etc.).
+   *  - `chapter`: per-PLR lap progress (0..20 for chain steps,
+   *    0..21 for PLR01).
+   *  - `chapterMax`: 20 for chain-step PLRs, 21 for PLR01.
+   *  Drops the v0.36.37 "まで" / "進行" / "全章クリア済" wordings —
+   *  they conflated chain-frontier identity with per-PLR lap progress.
+   *  See `getSavePointDisplay()` in `storage/saveSlots.ts` for the
+   *  derivation. */
+  slotProgress: (
+    plrSlug: string,
+    plrName: string,
+    chapter: number,
+    chapterMax: number,
+  ) => string;
   /** Per-slot roster summary — shows how many bonus avatars are
    *  unlocked and who the latest unlocked PLR is. Surfaces the
    *  unlock dimension of slot state in the slot picker so a
@@ -312,30 +325,30 @@ export interface Messages {
   slotReset: string;
   slotResetConfirm: string;
   slotSwitch: string;
-  /** Slot summary shown on the title screen Story card. Returns a
-   *  two-line label (separated by `\n`, render with
-   *  `whitespace-pre-line`): line 1 is the slot name, line 2 the
-   *  current state. `chapter` is the next chapter to play (1..20).
-   *  `opponentName` is the master at that chapter — empty string for
-   *  completed slots (storyProgress=20) where there's no "next
-   *  opponent". `playerName` is the localized name of the avatar
-   *  currently selected for this slot. `inPrologue` is `true` iff
-   *  the slot is at storyProgress=0 AND has not yet seen the
-   *  prologue overlay — in that state we show 「序章」 instead of
-   *  「第1章 vs いちか」 so the user doesn't see a chapter-1 framing
-   *  before they've even viewed the prologue. */
+  /** v0.36.40 — strict PLR-slug + per-PLR chapter format for the
+   *  title-screen Story-card footer. Two-line label (separated by
+   *  `\n`, render with `whitespace-pre-line`): line 1 = slot name,
+   *  line 2 = current PLR + chapter + opponent + lives.
+   *  - `plrSlug` / `plrName`: see `slotProgress`.
+   *  - `chapter`: per-PLR lap progress (0..20 for chain steps,
+   *    0..21 for PLR01); meaning `0` is the prologue / 序章 of the
+   *    current PLR's lap.
+   *  - `chapterMax`: 20 / 21 for chain step / PLR01.
+   *  - `opponentName`: localized name of the OPP at chapter+1
+   *    (= the next match's opponent). Empty when there's no next
+   *    fight (e.g. PLR01 ch.21 = post-true-ending).
+   *  - `inPrologue`: `true` iff the slot is at chapter 0 AND has not
+   *    yet seen the prologue overlay — render as 「序章」 instead of
+   *    「第1章 vs いちか」. */
   slotInUseFooter: (
     name: string,
     lives: number,
+    plrSlug: string,
+    plrName: string,
     chapter: number,
+    chapterMax: number,
     opponentName: string,
-    playerName: string,
     inPrologue: boolean,
-    /** v0.36.36 — when storyProgress >= 20 + trueEndingAchieved=false,
-     *  the slot is at "20/21" (= 真エンディング未到達) rather than fully
-     *  cleared. We branch the no-opponentName form so it reads
-     *  「第21章 まで進行」 instead of the misleading 「全章クリア済」. */
-    trueEndingAchieved: boolean,
   ) => string;
   slotSelect: string;
   slotChooseFirst: string;
@@ -806,11 +819,8 @@ export const ja: Messages = {
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
   slotEmpty: '未使用',
   slotPrologueSeenTag: '序章 視聴済',
-  slotProgress: (cleared, trueEndingAchieved) => {
-    if (cleared >= 20 && trueEndingAchieved) return `全章クリア済（21/21）`;
-    if (cleared >= 20) return `第21章 まで進行（20/21 クリア）`;
-    return `第${cleared + 1}章 まで進行（${cleared}/21 クリア）`;
-  },
+  slotProgress: (plrSlug, plrName, chapter, chapterMax) =>
+    `${plrSlug} ${plrName}・第${chapter}章（${chapter}/${chapterMax}）`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
       ? `ロスター：あなた のみ（0/20 アンロック）`
@@ -825,19 +835,20 @@ export const ja: Messages = {
   slotInUseFooter: (
     name,
     lives,
+    plrSlug,
+    plrName,
     chapter,
+    chapterMax,
     opponentName,
-    playerName,
     inPrologue,
-    trueEndingAchieved,
   ) =>
     inPrologue
-      ? `${name}\n${playerName}・序章・♥${lives}`
+      ? `${name}\n${plrSlug} ${plrName}・序章・♥${lives}`
       : opponentName
-        ? `${name}\n${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
-        : trueEndingAchieved
-          ? `${name}\n${playerName}・全章クリア済・♥${lives}`
-          : `${name}\n${playerName}・第21章 まで進行・♥${lives}`,
+        ? `${name}\n${plrSlug} ${plrName}・第${chapter}章 vs ${opponentName}・♥${lives}`
+        : chapter === chapterMax
+          ? `${name}\n${plrSlug} ${plrName}・第${chapter}章（クリア）・♥${lives}`
+          : `${name}\n${plrSlug} ${plrName}・第${chapter}章・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -1269,11 +1280,8 @@ your journey on the board reaches its close.`,
   slotPickerHint: 'Story progress lives in one of 10 saves. Each save has independent progress, lives and stats.',
   slotEmpty: 'Unused',
   slotPrologueSeenTag: 'Prologue seen',
-  slotProgress: (cleared, trueEndingAchieved) => {
-    if (cleared >= 20 && trueEndingAchieved) return `All chapters cleared (21/21)`;
-    if (cleared >= 20) return `Up to Chapter 21 (20/21 cleared)`;
-    return `Up to Chapter ${cleared + 1} (${cleared}/21 cleared)`;
-  },
+  slotProgress: (plrSlug, plrName, chapter, chapterMax) =>
+    `${plrSlug} ${plrName} · Ch.${chapter} (${chapter}/${chapterMax})`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
       ? `Roster: You only (0/20 unlocked)`
@@ -1289,19 +1297,20 @@ your journey on the board reaches its close.`,
   slotInUseFooter: (
     name,
     lives,
+    plrSlug,
+    plrName,
     chapter,
+    chapterMax,
     opponentName,
-    playerName,
     inPrologue,
-    trueEndingAchieved,
   ) =>
     inPrologue
-      ? `${name}\n${playerName} · Prologue · ♥${lives}`
+      ? `${name}\n${plrSlug} ${plrName} · Prologue · ♥${lives}`
       : opponentName
-        ? `${name}\n${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
-        : trueEndingAchieved
-          ? `${name}\n${playerName} · All chapters cleared · ♥${lives}`
-          : `${name}\n${playerName} · Up to Ch.21 · ♥${lives}`,
+        ? `${name}\n${plrSlug} ${plrName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
+        : chapter === chapterMax
+          ? `${name}\n${plrSlug} ${plrName} · Ch.${chapter} (cleared) · ♥${lives}`
+          : `${name}\n${plrSlug} ${plrName} · Ch.${chapter} · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
