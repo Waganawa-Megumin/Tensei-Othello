@@ -209,7 +209,10 @@ export function SlotPicker({
                       <>
                         <div className="flex items-center gap-3 mt-1 latin-display italic text-amber-200/55 text-[10px] tracking-wider">
                           <span className="jp-display">
-                            {t.slotProgress(slot.storyProgress)}
+                            {t.slotProgress(
+                              slot.storyProgress,
+                              slot.trueEndingAchieved ?? false,
+                            )}
                           </span>
                           <Lives n={slot.lives} />
                         </div>

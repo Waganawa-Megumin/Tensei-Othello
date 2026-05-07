@@ -4103,6 +4103,13 @@ export default function App() {
                     activeSlot.storyProgress === 0 &&
                     activeSlotId !== null &&
                     !hasSeenOverlay(String(activeSlotId), 'prologue'),
+                  // v0.36.36 — controls 「全章クリア済（21/21）」 vs
+                  // 「第21章 まで進行（20/21 クリア）」 in the footer.
+                  // Read from the slot directly (not the React state
+                  // mirror) so a freshly-mutated slot reflects the
+                  // current truth even before the next render commit.
+                  trueEndingAchieved:
+                    activeSlot.trueEndingAchieved ?? false,
                 }
               : null
           }
@@ -6157,7 +6164,10 @@ export default function App() {
                         {activeSlot.name}
                       </div>
                       <div className="jp-display text-amber-200/65 text-[11px] mt-0.5">
-                        {t.slotProgress(activeSlot.storyProgress)} ・ ♥ {activeSlot.lives}
+                        {t.slotProgress(
+                          activeSlot.storyProgress,
+                          activeSlot.trueEndingAchieved ?? false,
+                        )} ・ ♥ {activeSlot.lives}
                       </div>
                     </div>
                     <button
