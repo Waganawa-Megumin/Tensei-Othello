@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.20 · spell-audit-phase-1-2';
+const BUILD_TAG = 'v0.36.21 · title-card-overflow-fix';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -165,11 +165,11 @@ export function TitleScreen({
       </div>
 
       {/* Mode selection cards */}
-      <div className="relative w-full max-w-4xl mx-auto grid md:grid-cols-3 max-lg:landscape:grid-cols-3 gap-3 max-lg:landscape:gap-2 md:gap-4 mb-6 max-lg:landscape:mb-2">
+      <div className="relative w-full grid md:grid-cols-3 max-lg:landscape:grid-cols-3 gap-3 max-lg:landscape:gap-2 md:gap-4 mb-6 max-lg:landscape:mb-2">
         {/* Story mode card */}
         <button
           onClick={() => onStart({ mode: 'ai', sub: 'story' })}
-          className="group relative text-left p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group relative text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
           <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Sparkles
@@ -202,9 +202,9 @@ export function TitleScreen({
                   onSwitchSlot();
                 }
               }}
-              className="mb-3 px-2.5 py-2 bg-amber-200/[0.05] border border-amber-200/20 rounded-sm flex items-center justify-between gap-2 hover:bg-amber-200/[0.08]"
+              className="mb-3 px-2.5 py-2 bg-amber-200/[0.05] border border-amber-200/20 rounded-sm flex items-center justify-between gap-2 min-w-0 hover:bg-amber-200/[0.08]"
             >
-              <span className="jp-display text-amber-100/90 text-xs truncate">
+              <span className="jp-display text-amber-100/90 text-xs truncate min-w-0">
                 {t.slotInUseFooter(
                   activeSlot.name,
                   activeSlot.lives,
@@ -294,7 +294,7 @@ export function TitleScreen({
         {/* Free mode card */}
         <button
           onClick={() => onStart({ mode: 'ai', sub: 'free' })}
-          className="group text-left p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
           <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Swords
@@ -320,7 +320,7 @@ export function TitleScreen({
         {/* Two-player mode card */}
         <button
           onClick={() => onStart({ mode: 'human' })}
-          className="group text-left p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
           <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Users
