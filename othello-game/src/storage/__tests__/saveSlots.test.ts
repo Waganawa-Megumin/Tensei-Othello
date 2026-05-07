@@ -428,18 +428,18 @@ describe('normalizePostClearState', () => {
 
 describe('slugFromAvatarImage', () => {
   it.each([
-    ['avatars/players/PLR00_default/icon.png', 'PLR00'],
-    ['avatars/players/PLR02_mikoto/icon.png', 'PLR02'],
-    ['avatars/players/PLR13_yreuyu/icon.png', 'PLR13'],
-    ['avatars/players/PLR20_yu/icon.png', 'PLR20'],
-    ['avatars/players/PLR01_haruki_heroic/icon.png', 'PLR01'],
+    ['avatars/players/PLR00_default/icon.png', 'P00'],
+    ['avatars/players/PLR02_mikoto/icon.png', 'P02'],
+    ['avatars/players/PLR13_yreuyu/icon.png', 'P13'],
+    ['avatars/players/PLR20_yu/icon.png', 'P20'],
+    ['avatars/players/PLR01_haruki_heroic/icon.png', 'P01'],
   ])('extracts %s → %s', (image, expected) => {
     expect(slugFromAvatarImage(image)).toBe(expected);
   });
 
-  it('falls back to PLR?? when the image path does not match', () => {
-    expect(slugFromAvatarImage('foo/bar.png')).toBe('PLR??');
-    expect(slugFromAvatarImage('')).toBe('PLR??');
+  it('falls back to P?? when the image path does not match', () => {
+    expect(slugFromAvatarImage('foo/bar.png')).toBe('P??');
+    expect(slugFromAvatarImage('')).toBe('P??');
   });
 });
 
@@ -497,43 +497,52 @@ function makeSlot(patch: Partial<SaveSlot>): SaveSlot {
 }
 
 describe('getSavePointDisplay', () => {
-  it('fresh slot → PLR00 あなた / ch.0 / max 20', () => {
+  it('fresh slot → P00 あなた / ch.1 next / cleared 0 / max 20', () => {
+    // v0.36.42: chapter is the next chapter to play; for a brand-new
+    // slot that's ch.1. cleared=0 is the numerator in "(0/20)".
     const sp = getSavePointDisplay(makeSlot({}), TEST_AVATARS);
     expect(sp).toEqual({
       plrIdx: 0,
-      plrSlug: 'PLR00',
+      plrSlug: 'P00',
       plrName: 'あなた',
-      chapter: 0,
+      chapter: 1,
+      chaptersCleared: 0,
       chapterMax: 20,
     });
   });
 
-  it('PLR00 mid-lap (sp=5) → PLR00 あなた / ch.5 / max 20', () => {
+  it('PLR00 mid-lap (sp=2) → P00 あなた / next ch.3 / cleared 2', () => {
+    // Reproduces the user-reported "第2章 vs 朝日" mismatch — at
+    // sp=2 the player has cleared 2 chapters and the OPP they face
+    // next is at level 3 (= 朝日). The display chapter must be 3,
+    // not 2, so it pairs with the OPP correctly.
     const sp = getSavePointDisplay(
-      makeSlot({ storyProgress: 5 }),
+      makeSlot({ storyProgress: 2 }),
       TEST_AVATARS,
     );
-    expect(sp.plrSlug).toBe('PLR00');
+    expect(sp.plrSlug).toBe('P00');
     expect(sp.plrName).toBe('あなた');
-    expect(sp.chapter).toBe(5);
+    expect(sp.chapter).toBe(3);
+    expect(sp.chaptersCleared).toBe(2);
     expect(sp.chapterMax).toBe(20);
   });
 
-  it('post-PLR00 chain advance (sp=0, acclen=[0]) → PLR02 美琴 / ch.0', () => {
-    // The state recordSlotResult leaves after PLR00's ch.20 win
-    // under Design A. The save point identity is "PLR02 lap 序章".
+  it('post-PLR00 chain advance (sp=0, acclen=[0]) → P02 美琴 / next ch.1 / cleared 0', () => {
+    // After PLR00 ch.20 win under Design A, sp resets to 0 and acclen
+    // becomes [0] — the new save point is "P02 about to play ch.1".
     const sp = getSavePointDisplay(
       makeSlot({ storyProgress: 0, avatarsClearedCh20: [0], unlockedCount: 1 }),
       TEST_AVATARS,
     );
     expect(sp.plrIdx).toBe(1);
-    expect(sp.plrSlug).toBe('PLR02');
+    expect(sp.plrSlug).toBe('P02');
     expect(sp.plrName).toBe('美琴');
-    expect(sp.chapter).toBe(0);
+    expect(sp.chapter).toBe(1);
+    expect(sp.chaptersCleared).toBe(0);
     expect(sp.chapterMax).toBe(20);
   });
 
-  it('mid-PLR03-lap (sp=15, acclen=[0,1]) → PLR03 リン / ch.15', () => {
+  it('mid-PLR03-lap (sp=15, acclen=[0,1]) → P03 リン / next ch.16 / cleared 15', () => {
     const sp = getSavePointDisplay(
       makeSlot({
         storyProgress: 15,
@@ -542,13 +551,14 @@ describe('getSavePointDisplay', () => {
       }),
       TEST_AVATARS,
     );
-    expect(sp.plrSlug).toBe('PLR03');
+    expect(sp.plrSlug).toBe('P03');
     expect(sp.plrName).toBe('リン');
-    expect(sp.chapter).toBe(15);
+    expect(sp.chapter).toBe(16);
+    expect(sp.chaptersCleared).toBe(15);
     expect(sp.chapterMax).toBe(20);
   });
 
-  it('chain complete, PLR01 lap 序章 (acclen=[0..19], !trueEnd) → PLR01 英霊ハルキ / ch.0 / max 21', () => {
+  it('chain complete, PLR01 lap 序章 (acclen=[0..19], !trueEnd) → P01 英霊ハルキ / next ch.1 / cleared 0 / max 21', () => {
     const sp = getSavePointDisplay(
       makeSlot({
         storyProgress: 0,
@@ -559,13 +569,14 @@ describe('getSavePointDisplay', () => {
       TEST_AVATARS,
     );
     expect(sp.plrIdx).toBe(20);
-    expect(sp.plrSlug).toBe('PLR01');
+    expect(sp.plrSlug).toBe('P01');
     expect(sp.plrName).toBe('英霊ハルキ');
-    expect(sp.chapter).toBe(0);
+    expect(sp.chapter).toBe(1);
+    expect(sp.chaptersCleared).toBe(0);
     expect(sp.chapterMax).toBe(21);
   });
 
-  it('PLR01 mid-lap (sp=15, acclen=[0..19]) → PLR01 英霊ハルキ / ch.15 / max 21', () => {
+  it('PLR01 mid-lap (sp=15, acclen=[0..19]) → P01 英霊ハルキ / next ch.16 / cleared 15 / max 21', () => {
     const sp = getSavePointDisplay(
       makeSlot({
         storyProgress: 15,
@@ -575,12 +586,15 @@ describe('getSavePointDisplay', () => {
       }),
       TEST_AVATARS,
     );
-    expect(sp.plrSlug).toBe('PLR01');
-    expect(sp.chapter).toBe(15);
+    expect(sp.plrSlug).toBe('P01');
+    expect(sp.chapter).toBe(16);
+    expect(sp.chaptersCleared).toBe(15);
     expect(sp.chapterMax).toBe(21);
   });
 
-  it('true ending achieved (any sp) → PLR01 英霊ハルキ / ch.21 / max 21', () => {
+  it('true ending achieved → P01 英霊ハルキ / chapter 21 (capped) / cleared 21 / max 21', () => {
+    // Lap-finished case: chapter and chaptersCleared both = max.
+    // Footer renders "(クリア)" branch.
     const sp = getSavePointDisplay(
       makeSlot({
         storyProgress: 20,
@@ -590,9 +604,10 @@ describe('getSavePointDisplay', () => {
       }),
       TEST_AVATARS,
     );
-    expect(sp.plrSlug).toBe('PLR01');
+    expect(sp.plrSlug).toBe('P01');
     expect(sp.plrName).toBe('英霊ハルキ');
     expect(sp.chapter).toBe(21);
+    expect(sp.chaptersCleared).toBe(21);
     expect(sp.chapterMax).toBe(21);
   });
 });

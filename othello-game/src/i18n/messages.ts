@@ -292,15 +292,14 @@ export interface Messages {
    *  ready for ch.1 vs Ichika" without lying about it being
    *  untouched. */
   slotPrologueSeenTag: string;
-  /** v0.36.44 — drops the "(N/M)" clear-progress fraction and replaces
-   *  with the next opponent. Reads as "PLR00 あなた・第3章 vs 朝日"
+  /** v0.36.45 — drops the "(N/M)" clear-progress fraction and replaces
+   *  with the next opponent. Reads as "P00 あなた・第3章 vs 朝日"
    *  (= "this PLR is about to play ch.3 against Asahi"). Caller
-   *  computes `nextChapter` as `min(chapter + 1, chapterMax)` and
-   *  `opponentName` from the OPP at that level (PLR01's ch.21 maps to
-   *  Lv.22 ヴォイドφ). The cleared count is no longer surfaced —
-   *  v0.36.41's "(2/20)" framing confused users who read it as cleared
-   *  progress while the slot was actually about to face the *next*
-   *  opponent ("朝日との対決なのに 2/20 はクリア進捗だからズレている"). */
+   *  computes `nextChapter` via `getNextOpponent()` (chapter+1 capped at
+   *  chapterMax; PLR01 ch.21+ maps to Lv.22 ヴォイドφ). The cleared
+   *  count is no longer surfaced — the v0.36.42 "(2/20)" framing
+   *  confused users who read it as cleared progress while the slot was
+   *  actually about to face the next opponent. */
   slotProgress: (
     plrSlug: string,
     plrName: string,
@@ -319,14 +318,15 @@ export interface Messages {
   slotReset: string;
   slotResetConfirm: string;
   slotSwitch: string;
-  /** v0.36.44 — same "vs ${opponent}" framing as `slotProgress` for
+  /** v0.36.45 — same "vs ${opponent}" framing as `slotProgress` for
    *  parity. Two-line label (separated by `\n`, render with
    *  `whitespace-pre-line`): line 1 = slot name, line 2 = current
    *  PLR + next chapter + opponent + lives.
    *  - `plrSlug` / `plrName`: see `slotProgress`.
-   *  - `nextChapter`: caller passes `min(chapter + 1, chapterMax)`.
+   *  - `nextChapter`: caller passes `min(chapter + 1, chapterMax)` via
+   *    `getNextOpponent()`.
    *  - `opponentName`: name of the OPP at `nextChapter` (with PLR01
-   *    ch.21 mapped to Lv.22 ヴォイドφ).
+   *    ch.21+ mapped to Lv.22 ヴォイドφ).
    *  - `inPrologue`: `true` iff at chapter 0 AND prologue not yet
    *    seen — render as 「序章」 instead of 「第1章 vs いちか」. */
   slotInUseFooter: (
@@ -816,7 +816,7 @@ export const ja: Messages = {
   slotRename: '名前を変更',
   slotReset: 'このセーブをリセット',
   slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
-  slotSwitch: 'セーブを変更',
+  slotSwitch: '変更',
   slotInUseFooter: (
     name,
     lives,
@@ -1270,7 +1270,7 @@ your journey on the board reaches its close.`,
   slotReset: 'Reset this save',
   slotResetConfirm:
     'This wipes the save’s progress, stats and lives. Continue?',
-  slotSwitch: 'Switch save',
+  slotSwitch: 'Switch',
   slotInUseFooter: (
     name,
     lives,

@@ -349,15 +349,24 @@ export interface SavePointDisplay {
    *  0 = PLR00 (default), 1..19 = PLR02..PLR20 (chain steps),
    *  20 = PLR01 (heroic spirit, chain reward). */
   plrIdx: number;
-  /** Strict slug "PLR00" / "PLR01" / "PLR02" / ... / "PLR20". Parsed
-   *  from the avatar's image path (`avatars/players/PLRxx_slug/...`). */
+  /** Short slug "P00" / "P01" / ... / "P20" — derived from the
+   *  avatar's image path (`avatars/players/PLRxx_slug/...`). v0.36.42
+   *  shortens the v0.36.40 "PLR00" form: in the slot picker / title
+   *  footer it competes with the chapter / opponent text for line
+   *  width, and "PLR" was just noise (every entry has it). */
   plrSlug: string;
   /** Localized display name (`あなた` / `美琴` / etc.). Already
    *  locale-applied by the caller via the AVATARS array passed in. */
   plrName: string;
-  /** Current chapter (= lap progress for the active PLR). 0..20 for
-   *  chain-step PLRs, 0..21 for PLR01 (ch.21 = post-true-ending). */
+  /** Chapter the player is currently engaged with (= the next
+   *  chapter to play, OR the chapter just cleared if the lap is
+   *  done). For an active mid-lap slot, `chapter = chaptersCleared
+   *  + 1`. For a finished lap (PLR01 + trueEnd), `chapter ===
+   *  chapterMax === chaptersCleared` (= ch.21 final state). */
   chapter: number;
+  /** Number of chapters cleared on the current PLR's lap. Used as
+   *  the numerator in "(N/M)" progress formats. */
+  chaptersCleared: number;
   /** Max chapter for the active PLR. 21 if PLR01, 20 otherwise. */
   chapterMax: number;
 }
@@ -388,22 +397,28 @@ export function getSavePointDisplay(
   const plrIdx = trueEnd ? 20 : Math.min(acclen, 20);
   const chapterMax = plrIdx === 20 ? 21 : 20;
 
-  // Chapter:
-  //  - PLR01 + trueEnd → 21 (post-true-ending state)
-  //  - PLR01 + !trueEnd → sp (PLR01's lap, can reach 20 before true ending)
-  //  - chain-step PLR → sp (this PLR's lap, 0..20)
-  // Defensively clamp to chapterMax.
-  let chapter: number;
-  if (plrIdx === 20 && trueEnd) chapter = 21;
-  else chapter = Math.min(Math.max(sp, 0), chapterMax);
+  // chaptersCleared: how many chapters of the current PLR's lap are
+  // done. Defensively clamp to [0, chapterMax]. The trueEnd state
+  // is the only case where cleared can equal chapterMax for PLR01
+  // (= 21 — ch.21 Void-φ encounter completed).
+  let chaptersCleared: number;
+  if (plrIdx === 20 && trueEnd) chaptersCleared = 21;
+  else chaptersCleared = Math.min(Math.max(sp, 0), chapterMax);
+
+  // chapter: which chapter the player is "at". For an in-progress
+  // lap this is the next chapter to play (= cleared + 1). For a
+  // finished lap (cleared === max) it stays at max (= "Ch.20
+  // (cleared)" for chain steps, "Ch.21 (cleared)" for PLR01+trueEnd).
+  const chapter =
+    chaptersCleared >= chapterMax ? chapterMax : chaptersCleared + 1;
 
   const safeIdx = Math.max(0, Math.min(plrIdx, avatars.length - 1));
   const plrName = avatars[safeIdx]?.name ?? '';
   const plrSlug = slugFromAvatarImage(avatars[safeIdx]?.image ?? '');
-  return { plrIdx, plrSlug, plrName, chapter, chapterMax };
+  return { plrIdx, plrSlug, plrName, chapter, chaptersCleared, chapterMax };
 }
 
-/** v0.36.44 — derives the next match's chapter number and opponent
+/** v0.36.45 — derives the next match's chapter number and opponent
  *  name from a save-point display + the COMPUTERS view. The slot
  *  picker / title footer now show "vs ${opp}" instead of cleared
  *  progress, so callers need both the displayed chapter (= the next
@@ -438,13 +453,16 @@ export function getNextOpponent(
   return { nextChapter, opponentName };
 }
 
-/** Extracts the strict PLR slug ("PLR00" .. "PLR20") from an avatar's
- *  image path, e.g.
- *  "avatars/players/PLR02_mikoto/icon.png" → "PLR02". Returns "PLR??"
- *  if the path doesn't match the canonical layout (defensive). */
+/** Extracts the short PLR slug ("P00" .. "P20") from an avatar's
+ *  image path, e.g. "avatars/players/PLR02_mikoto/icon.png" → "P02".
+ *  v0.36.42 shortens the v0.36.40 "PLR00" form per user feedback
+ *  ("PLR00 って長いから、P00 にしましょう"). The full "PLR" prefix
+ *  is preserved in code identifiers and master_world.md (canonical
+ *  roster naming) — only the user-visible slug shrinks. Returns
+ *  "P??" if the path doesn't match the canonical layout. */
 export function slugFromAvatarImage(image: string): string {
   const m = image.match(/PLR(\d{2})_/);
-  return m ? `PLR${m[1]}` : 'PLR??';
+  return m ? `P${m[1]}` : 'P??';
 }
 
 export async function getSlots(): Promise<SaveSlot[]> {
