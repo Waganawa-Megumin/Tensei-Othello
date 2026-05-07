@@ -6829,6 +6829,9 @@ export default function App() {
           setSpellResult(null);
           setSpellOpen(true);
         }}
+        avatarNames={AVATARS.map((a) =>
+          locale === 'ja' ? a.name : a.name_en,
+        )}
         t={t}
       />
 

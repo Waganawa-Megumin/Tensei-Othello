@@ -287,6 +287,13 @@ export interface Messages {
   slotPickerHint: string;
   slotEmpty: string;
   slotProgress: (cleared: number) => string;
+  /** Per-slot roster summary — shows how many bonus avatars are
+   *  unlocked and who the latest unlocked PLR is. Surfaces the
+   *  unlock dimension of slot state in the slot picker so a
+   *  spell-warped or PLR-progressed slot is visually distinct
+   *  from a fresh one. `latestName` is the localized name of the
+   *  highest-index unlocked avatar (= AVATARS[unlocks].name). */
+  slotRosterLine: (unlocks: number, latestName: string) => string;
   slotLives: (n: number) => string;
   slotLastPlayed: string;
   slotDefaultName: (n: number) => string;
@@ -751,6 +758,10 @@ export const ja: Messages = {
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
   slotEmpty: '未使用',
   slotProgress: (cleared) => `第${Math.min(cleared + 1, 20)}章 まで進行（${cleared}/20 クリア）`,
+  slotRosterLine: (unlocks, latestName) =>
+    unlocks === 0
+      ? `ロスター：あなた のみ（0/20 アンロック）`
+      : `ロスター：${latestName} まで（${unlocks}/20 アンロック）`,
   slotLives: (n) => `残機 ${n}`,
   slotLastPlayed: '最終プレイ',
   slotDefaultName: (n) => `セーブ ${n}`,
@@ -1171,6 +1182,10 @@ your journey on the board reaches its close.`,
   slotPickerHint: 'Story progress lives in one of 10 saves. Each save has independent progress, lives and stats.',
   slotEmpty: 'Unused',
   slotProgress: (cleared) => `Up to Chapter ${Math.min(cleared + 1, 20)} (${cleared}/20 cleared)`,
+  slotRosterLine: (unlocks, latestName) =>
+    unlocks === 0
+      ? `Roster: You only (0/20 unlocked)`
+      : `Roster: through ${latestName} (${unlocks}/20 unlocked)`,
   slotLives: (n) => `${n} lives`,
   slotLastPlayed: 'Last played',
   slotDefaultName: (n) => `Save ${n}`,

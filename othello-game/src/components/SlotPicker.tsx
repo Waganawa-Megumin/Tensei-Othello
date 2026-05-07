@@ -22,6 +22,11 @@ interface SlotPickerProps {
   /** Opens the magic-spell modal. Surfaced here so a tester can
    *  warp slot state without first having to enter a match. */
   onCastSpell?: () => void;
+  /** Localized PLR avatar names indexed by AVATARS index (= 0 for
+   *  PLR00 default, 1..19 for PLR02..PLR20, 20 for PLR01 英霊
+   *  ハルキ). Used to show "PLR PP まで unlocked" per slot so the
+   *  user can tell at a glance which slot has which roster. */
+  avatarNames: ReadonlyArray<string>;
   t: Messages;
 }
 
@@ -53,6 +58,7 @@ export function SlotPicker({
   onClose,
   onSlotsChanged,
   onCastSpell,
+  avatarNames,
   t,
 }: SlotPickerProps) {
   const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -161,12 +167,32 @@ export function SlotPicker({
                       </div>
                     )}
                     {!isUnused && (
-                      <div className="flex items-center gap-3 mt-1 latin-display italic text-amber-200/55 text-[10px] tracking-wider">
-                        <span className="jp-display">
-                          {t.slotProgress(slot.storyProgress)}
-                        </span>
-                        <Lives n={slot.lives} />
-                      </div>
+                      <>
+                        <div className="flex items-center gap-3 mt-1 latin-display italic text-amber-200/55 text-[10px] tracking-wider">
+                          <span className="jp-display">
+                            {t.slotProgress(slot.storyProgress)}
+                          </span>
+                          <Lives n={slot.lives} />
+                        </div>
+                        {/* Per-slot roster line — shows the latest
+                            PLR character unlocked on this slot so
+                            spell-warps (`…1601` ⇒ PLR16) and natural
+                            chapter clears are both visible at a
+                            glance. Without this the picker only
+                            showed storyProgress / lives, and a
+                            spell-warped slot at storyProgress=0 looked
+                            indistinguishable from an untouched slot
+                            ("0001 のスタート" report). */}
+                        {(() => {
+                          const u = slot.unlockedCount ?? 0;
+                          const latestName = avatarNames[u] ?? '';
+                          return (
+                            <div className="jp-display text-amber-200/65 text-[10px] mt-0.5 tracking-wider">
+                              {t.slotRosterLine(u, latestName)}
+                            </div>
+                          );
+                        })()}
+                      </>
                     )}
                     {!isUnused && slot.lastPlayedAt > 0 && (
                       <div className="latin-display italic text-amber-200/40 text-[10px] mt-0.5 tracking-wider">
