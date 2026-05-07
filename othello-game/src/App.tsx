@@ -176,29 +176,45 @@ const DEFAULT_AVATAR_DATA: AvatarEntry = {
   setting_en: 'Traveler of Bansho Sekai',
   quote: 'いざ、参る',
   quote_en: 'Here I go.',
-  image: 'avatars/players/PLR00_default.png',
+  image: 'avatars/players/PLR00_default/icon.png',
 };
 
+// Wave 3 (2026-05-06): all 20 bonus avatars migrated from a single
+// flat 512×512 PNG to the 4/4 folder format mirroring OPP layout —
+// `PLRxx_slug/{character.png,background.png,icon.png,spec.md}`. The
+// canonical UI image is `icon.png` (1024×1024 RGBA composite).
+// Author-approved metadata changes alongside the asset swap:
+//   PLR10 ノア:    archetype 未来から来た少女 → アイドル
+//   PLR12 エル:    archetype 元魔王、転校生 → 森の精霊
+//   PLR13 (rename) PLR13_sumire (スミレ) → PLR13_yreuyu (イレウユ);
+//                  archetype 記憶喪失の冒険者 → 記憶喪失の浮遊霊
+//   PLR15 (rename) PLR15_hayato (隼人) → PLR15_theend (ジエンド);
+//                  archetype 凄腕ガンナー → 凄腕ガンナーカウボーイ
+//   PLR16 ひかり:  archetype 光の精霊使い → ジムにいたお姉さん♡
+//   PLR17 ヨル:    archetype 半吸血鬼 → 吸血鬼 (純化)
+//   PLR20 悠:      archetype 神話の英雄 → 神話の姫
+// Quotes refreshed where the old line tied to the old archetype.
+// Old 512×512 PNGs preserved at `avatars-old/players/PLRxx_<oldslug>.png`.
 const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
-  { kanji: '琴', name: '美琴',     name_en: 'Mikoto',    setting: '魔法学園の天才',        setting_en: 'Magic Academy Prodigy',      quote: '論理と魔法は同じ',       quote_en: 'Logic and magic are one.',           image: 'avatars/players/PLR02_mikoto.png' },
-  { kanji: '凛', name: 'リン',     name_en: 'Rin',       setting: 'VRMMOの最強プレイヤー', setting_en: 'VRMMO Top Player',           quote: '現実より、得意なんだ',   quote_en: "I'm better here than in reality.",   image: 'avatars/players/PLR03_rin.png' },
-  { kanji: '蓮', name: '蓮',       name_en: 'Ren',       setting: '剣道部主将',            setting_en: 'Kendo Captain',              quote: '正々堂々、参る',         quote_en: 'Fair and square, here I come.',      image: 'avatars/players/PLR04_ren.png' },
-  { kanji: '千', name: '千歳',     name_en: 'Chitose',   setting: 'タイムリープ少女',      setting_en: 'Time-Loop Girl',             quote: 'これで何度目だっけ',     quote_en: 'How many times has it been now?',    image: 'avatars/players/PLR05_chitose.png' },
-  { kanji: '晴', name: '晴',       name_en: 'Haru',      setting: '現代の陰陽師',          setting_en: 'Modern Onmyoji',             quote: '妖、見えてるんだ',       quote_en: 'I can see the spirits.',             image: 'avatars/players/PLR06_haru.png' },
-  { kanji: '海', name: 'カイ',     name_en: 'Kai',       setting: '空の冒険者',            setting_en: 'Sky Adventurer',             quote: '風が呼んでる',           quote_en: 'The wind is calling.',               image: 'avatars/players/PLR07_kai.png' },
-  { kanji: '夏', name: '千夏',     name_en: 'Chinatsu',  setting: '聖剣の村娘',            setting_en: 'Holy Sword Village Girl',    quote: '故郷を、必ず守る',       quote_en: "I'll protect my home, no matter what.", image: 'avatars/players/PLR08_chinatsu.png' },
-  { kanji: '透', name: '透',       name_en: 'Toru',      setting: '学園名探偵',            setting_en: 'School Detective',           quote: '謎には必ず答えがある',   quote_en: 'Every mystery has an answer.',       image: 'avatars/players/PLR09_toru.png' },
-  { kanji: 'ノ', name: 'ノア',     name_en: 'Noa',       setting: '未来から来た少女',      setting_en: 'Girl from the Future',       quote: '2099年から、よろしく',   quote_en: 'From 2099 — pleased to meet you.',   image: 'avatars/players/PLR10_noa.png' },
-  { kanji: '凪', name: '凪',       name_en: 'Nagi',      setting: '異世界料理人',          setting_en: 'Isekai Chef',                quote: 'お腹空いてる？',         quote_en: 'Hungry?',                            image: 'avatars/players/PLR11_nagi.png' },
-  { kanji: 'エ', name: 'エル',     name_en: 'El',        setting: '元魔王、今は転校生',    setting_en: 'Ex-Demon King Transfer',     quote: 'ふふ、内緒だよ',         quote_en: "Hee hee, it's a secret.",            image: 'avatars/players/PLR12_el.png' },
-  { kanji: '菫', name: 'スミレ',   name_en: 'Sumire',    setting: '記憶喪失の冒険者',      setting_en: 'Amnesiac Adventurer',        quote: '私は…誰なの？',          quote_en: 'Who… am I?',                         image: 'avatars/players/PLR13_sumire.png' },
-  { kanji: '葉', name: '葉月',     name_en: 'Hazuki',    setting: '機械工学の天才',        setting_en: 'Steampunk Genius',           quote: 'これ、私が作ったの！',   quote_en: 'I built this myself!',               image: 'avatars/players/PLR14_hazuki.png' },
-  { kanji: '隼', name: '隼人',     name_en: 'Hayato',    setting: '凄腕ガンナー',          setting_en: 'Master Gunner',              quote: '撃つときは迷わない',     quote_en: "When I shoot, I don't hesitate.",    image: 'avatars/players/PLR15_hayato.png' },
-  { kanji: '光', name: 'ひかり',   name_en: 'Hikari',    setting: '光の精霊使い',          setting_en: 'Light Spirit User',          quote: 'みんな、笑ってほしい',   quote_en: 'I want everyone to smile.',          image: 'avatars/players/PLR16_hikari.png' },
-  { kanji: '夜', name: 'ヨル',     name_en: 'Yoru',      setting: '半吸血鬼',              setting_en: 'Half-Vampire',               quote: '血は、欲しくない',       quote_en: "I don't want blood.",                image: 'avatars/players/PLR17_yoru.png' },
-  { kanji: '湊', name: '湊',       name_en: 'Minato',    setting: '海の冒険者',            setting_en: 'Sea Adventurer',             quote: '世界の果てへ',           quote_en: 'To the ends of the earth.',          image: 'avatars/players/PLR18_minato.png' },
-  { kanji: '奏', name: '奏太',     name_en: 'Souta',     setting: '天才ピアニスト',        setting_en: 'Prodigy Pianist',            quote: 'この旋律、聴いてくれ',   quote_en: 'Listen to this melody.',             image: 'avatars/players/PLR19_souta.png' },
-  { kanji: '悠', name: '悠',       name_en: 'Yu',        setting: '神話の英雄',            setting_en: 'Mythic Hero',                quote: '神々よ、いざ尋常に',     quote_en: 'Gods, let us duel honorably.',       image: 'avatars/players/PLR20_yu.png' },
+  { kanji: '琴', name: '美琴',     name_en: 'Mikoto',    setting: '魔法学園の天才',        setting_en: 'Magic Academy Prodigy',      quote: '論理と魔法は同じ',       quote_en: 'Logic and magic are one.',           image: 'avatars/players/PLR02_mikoto/icon.png' },
+  { kanji: '凛', name: 'リン',     name_en: 'Rin',       setting: 'VRMMOの最強プレイヤー', setting_en: 'VRMMO Top Player',           quote: '現実より、得意なんだ',   quote_en: "I'm better here than in reality.",   image: 'avatars/players/PLR03_rin/icon.png' },
+  { kanji: '蓮', name: '蓮',       name_en: 'Ren',       setting: '剣道部主将',            setting_en: 'Kendo Captain',              quote: '正々堂々、参る',         quote_en: 'Fair and square, here I come.',      image: 'avatars/players/PLR04_ren/icon.png' },
+  { kanji: '千', name: '千歳',     name_en: 'Chitose',   setting: 'タイムリープ少女',      setting_en: 'Time-Loop Girl',             quote: 'これで何度目だっけ',     quote_en: 'How many times has it been now?',    image: 'avatars/players/PLR05_chitose/icon.png' },
+  { kanji: '晴', name: '晴',       name_en: 'Haru',      setting: '現代の陰陽師',          setting_en: 'Modern Onmyoji',             quote: '妖、見えてるんだ',       quote_en: 'I can see the spirits.',             image: 'avatars/players/PLR06_haru/icon.png' },
+  { kanji: '海', name: 'カイ',     name_en: 'Kai',       setting: '空の冒険者',            setting_en: 'Sky Adventurer',             quote: '風が呼んでる',           quote_en: 'The wind is calling.',               image: 'avatars/players/PLR07_kai/icon.png' },
+  { kanji: '夏', name: '千夏',     name_en: 'Chinatsu',  setting: '聖剣の村娘',            setting_en: 'Holy Sword Village Girl',    quote: '故郷を、必ず守る',       quote_en: "I'll protect my home, no matter what.", image: 'avatars/players/PLR08_chinatsu/icon.png' },
+  { kanji: '透', name: '透',       name_en: 'Toru',      setting: '学園名探偵',            setting_en: 'School Detective',           quote: '謎には必ず答えがある',   quote_en: 'Every mystery has an answer.',       image: 'avatars/players/PLR09_toru/icon.png' },
+  { kanji: 'ノ', name: 'ノア',     name_en: 'Noa',       setting: 'アイドル',              setting_en: 'Idol Singer',                quote: 'みんな、聴いて♪',        quote_en: 'Listen to me, everyone ♪',           image: 'avatars/players/PLR10_noa/icon.png' },
+  { kanji: '凪', name: '凪',       name_en: 'Nagi',      setting: '異世界料理人',          setting_en: 'Otherworld Chef',            quote: '腕の見せどころだ！',     quote_en: 'Time to show off my skills!',        image: 'avatars/players/PLR11_nagi/icon.png' },
+  { kanji: 'エ', name: 'エル',     name_en: 'El',        setting: '森の精霊',              setting_en: 'Forest Spirit',              quote: '森が、教えてくれるの',   quote_en: 'The forest will guide me.',          image: 'avatars/players/PLR12_el/icon.png' },
+  { kanji: 'イ', name: 'イレウユ', name_en: 'Yre Uyu',   setting: '記憶喪失の浮遊霊',      setting_en: 'Wandering Amnesiac Spirit',  quote: 'ぼくの名前、わすれちゃった……でもオセロは、なぜか覚えてる', quote_en: 'I forgot my name… but I still remember Othello.', image: 'avatars/players/PLR13_yreuyu/icon.png' },
+  { kanji: '葉', name: '葉月',     name_en: 'Hazuki',    setting: '機械工学の天才',        setting_en: 'Steampunk Prodigy',          quote: 'これは……まだ未完成。でも、もうすぐ動くわ♡', quote_en: "It's not finished yet. But it'll move soon ♡", image: 'avatars/players/PLR14_hazuki/icon.png' },
+  { kanji: 'ジ', name: 'ジエンド', name_en: 'The End',   setting: '凄腕ガンナーカウボーイ', setting_en: 'Master Gunslinger Cowboy',  quote: '最後の弾は、必ず仕留める', quote_en: 'The last bullet always finds its mark.', image: 'avatars/players/PLR15_theend/icon.png' },
+  { kanji: '光', name: 'ひかり',   name_en: 'Hikari',    setting: 'ジムにいたお姉さん',    setting_en: 'Gym Onee-san',               quote: 'お疲れさまっ♡',         quote_en: 'Good workout ♡',                     image: 'avatars/players/PLR16_hikari/icon.png' },
+  { kanji: '夜', name: 'ヨル',     name_en: 'Yoru',      setting: '吸血鬼',                setting_en: 'Vampire',                    quote: '夜は、永遠に続く',       quote_en: 'The night is eternal.',              image: 'avatars/players/PLR17_yoru/icon.png' },
+  { kanji: '湊', name: '湊',       name_en: 'Minato',    setting: '海の冒険者',            setting_en: 'Ocean Wanderer',             quote: '次は、どこに行こうか',   quote_en: 'Where shall we sail next?',          image: 'avatars/players/PLR18_minato/icon.png' },
+  { kanji: '奏', name: '奏太',     name_en: 'Souta',     setting: '天才ピアニスト',        setting_en: 'Virtuoso Pianist',           quote: '鍵盤が、ぼくの言葉だ',   quote_en: 'The keys are my words.',             image: 'avatars/players/PLR19_souta/icon.png' },
+  { kanji: '悠', name: '悠',       name_en: 'Yu',        setting: '神話の姫',              setting_en: 'Mythical Princess',          quote: '天運は、確かに在る',     quote_en: "Heaven's fortune is real, indeed.",  image: 'avatars/players/PLR20_yu/icon.png' },
   // Special 20th-clear reward — PLR01 Heroic Spirit Haruki
   // (英霊ハルキ). Phase 3 swapped the asset from the legacy
   // single PNG `PLR01_haruki.png` to the v3 folder
