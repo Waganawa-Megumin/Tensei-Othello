@@ -137,8 +137,15 @@ export function SlotPicker({
                     : 'border-amber-200/15 bg-amber-200/[0.02]'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.25em] uppercase w-9 shrink-0">
+                {/* Top row: #ID + slot details. v0.36.24 splits the
+                    action buttons onto a second row because adding
+                    the per-slot 🪄 button (v0.36.20) made the
+                    button column eat enough horizontal space on
+                    mobile that the middle column collapsed to ~1
+                    char wide and every CJK glyph wrapped to its
+                    own line ("文字が縦長" report). */}
+                <div className="flex items-start gap-3">
+                  <div className="latin-display italic text-amber-200/55 text-[10px] tracking-[0.25em] uppercase w-9 shrink-0 mt-1">
                     #{String(id).padStart(2, '0')}
                   </div>
 
@@ -181,11 +188,7 @@ export function SlotPicker({
                             PLR character unlocked on this slot so
                             spell-warps (`…1601` ⇒ PLR16) and natural
                             chapter clears are both visible at a
-                            glance. Without this the picker only
-                            showed storyProgress / lives, and a
-                            spell-warped slot at storyProgress=0 looked
-                            indistinguishable from an untouched slot
-                            ("0001 のスタート" report). */}
+                            glance. */}
                         {(() => {
                           const u = slot.unlockedCount ?? 0;
                           const latestName = avatarNames[u] ?? '';
@@ -203,53 +206,48 @@ export function SlotPicker({
                       </div>
                     )}
                   </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    {!isRenaming && (
-                      <>
-                        <button
-                          onClick={() => startRename(slot)}
-                          className="btn text-xs px-2 py-1.5"
-                          title={t.slotRename}
-                          aria-label={t.slotRename}
-                        >
-                          <Pencil size={14} strokeWidth={1.5} />
-                        </button>
-                        {!isUnused && (
-                          <button
-                            onClick={() => void handleReset(id)}
-                            className="btn text-xs px-2 py-1.5"
-                            title={t.slotReset}
-                            aria-label={t.slotReset}
-                          >
-                            <RotateCcw size={14} strokeWidth={1.5} />
-                          </button>
-                        )}
-                        {/* v0.36.20 — per-slot 🪄 cast button. Lets a
-                            tester target a specific row without first
-                            having to switch the active slot via the
-                            "選ぶ" button. The bottom shortcut still
-                            uses the currently-active slot. */}
-                        {onCastSpell && (
-                          <button
-                            onClick={() => onCastSpell(id)}
-                            className="btn text-xs px-2 py-1.5"
-                            title={t.spellRowButtonTitle(slot.name)}
-                            aria-label={t.spellRowButtonTitle(slot.name)}
-                          >
-                            🪄
-                          </button>
-                        )}
-                        <button
-                          onClick={() => onSelect(id)}
-                          className={`btn text-xs px-3 py-1.5 ${isActive ? 'btn-active' : ''}`}
-                        >
-                          {t.slotSelect}
-                        </button>
-                      </>
-                    )}
-                  </div>
                 </div>
+
+                {/* Bottom row: action buttons, right-aligned. Stays
+                    on the same logical card via the outer border. */}
+                {!isRenaming && (
+                  <div className="flex items-center justify-end gap-1 mt-2">
+                    <button
+                      onClick={() => startRename(slot)}
+                      className="btn text-xs px-2 py-1.5"
+                      title={t.slotRename}
+                      aria-label={t.slotRename}
+                    >
+                      <Pencil size={14} strokeWidth={1.5} />
+                    </button>
+                    {!isUnused && (
+                      <button
+                        onClick={() => void handleReset(id)}
+                        className="btn text-xs px-2 py-1.5"
+                        title={t.slotReset}
+                        aria-label={t.slotReset}
+                      >
+                        <RotateCcw size={14} strokeWidth={1.5} />
+                      </button>
+                    )}
+                    {onCastSpell && (
+                      <button
+                        onClick={() => onCastSpell(id)}
+                        className="btn text-xs px-2 py-1.5"
+                        title={t.spellRowButtonTitle(slot.name)}
+                        aria-label={t.spellRowButtonTitle(slot.name)}
+                      >
+                        🪄
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onSelect(id)}
+                      className={`btn text-xs px-3 py-1.5 ${isActive ? 'btn-active' : ''}`}
+                    >
+                      {t.slotSelect}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
