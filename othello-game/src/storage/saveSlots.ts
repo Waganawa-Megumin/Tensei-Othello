@@ -66,6 +66,14 @@ export interface SaveSlot {
   resigns: number;
   /** Per-opponent record, keyed by opponent level (1-20). */
   vsOpponent: Record<number, OpponentRecord>;
+  /** Phase 4 v0.36.10 — set true when PLR01 英霊ハルキ has just won
+   *  ch.20 in this slot and the post-victory cinematic chain
+   *  (trueEnding20B → 20C → 20D → opp22.intro → OPP22 battle) has
+   *  not yet been completed. On slot re-entry from the title screen
+   *  we use this to skip the regular IntroSequence and resume the
+   *  cinematic from 20-B. Cleared after the OPP22 battle ends
+   *  (win or lose) so a future PLR01 ch.20 win re-arms it. */
+  voidphiEncounterPending?: boolean;
 }
 
 export interface FreeStats {
@@ -103,6 +111,7 @@ export function defaultSlot(id: number): SaveSlot {
     draws: 0,
     resigns: 0,
     vsOpponent: {},
+    voidphiEncounterPending: false,
   };
 }
 
@@ -158,6 +167,10 @@ function migrateSlot(raw: unknown, id: number): SaveSlot {
     draws: typeof raw.draws === 'number' ? raw.draws : 0,
     resigns: typeof raw.resigns === 'number' ? raw.resigns : 0,
     vsOpponent: isObject(raw.vsOpponent) ? (raw.vsOpponent as Record<number, OpponentRecord>) : {},
+    voidphiEncounterPending:
+      typeof raw.voidphiEncounterPending === 'boolean'
+        ? raw.voidphiEncounterPending
+        : false,
   };
 }
 

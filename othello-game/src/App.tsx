@@ -105,6 +105,7 @@ import {
   resetSlot as resetStoredSlot,
   recordSlotResult,
   recordFreeResult,
+  updateSlot as storageUpdateSaveSlot,
   getCharacterUnlocks,
   setCharacterUnlocks,
   getTrueEndingAchieved,
@@ -2169,6 +2170,18 @@ export default function App() {
       // win so the player can re-experience the finale by simply
       // beating ゼロ as PLR01 again.
       setStoryOverlay('narrative:trueEnding20B');
+      // Persist a per-slot "Void-φ encounter is queued" flag so
+      // that if the player hits Home in the middle of the
+      // cinematic chain (or before tapping "begin Void-φ" on the
+      // intro overlay), re-entering the slot from the title
+      // screen restarts the chain at 20-B → 20-C → 20-D →
+      // opp22.intro → battle. Cleared after the OPP22 battle ends
+      // (see the result===22 branch below).
+      if (activeSlotId !== null) {
+        void storageUpdateSaveSlot(activeSlotId, {
+          voidphiEncounterPending: true,
+        }).then(setSlots);
+      }
     }
     // OPP22 ヴォイドφ post-victory narrative. Fires after the
     // player wins any free-mode match against OPP22 (auto-launched
@@ -2177,8 +2190,19 @@ export default function App() {
     // standard GameOver modal — the OPP22 defeat narrative is in
     // i18n (`opp22.bossPost.defeat`) but in-battle integration of
     // both bossPre and bossPost is a follow-up patch.
-    if (gameMode === 'ai' && result === 'win' && opponentLevel === 22) {
-      setStoryOverlay('narrative:opp22.victoryNarration');
+    if (gameMode === 'ai' && opponentLevel === 22) {
+      if (result === 'win') {
+        setStoryOverlay('narrative:opp22.victoryNarration');
+      }
+      // Clear the per-slot Void-φ pending flag. The encounter has
+      // resolved (win or lose), so the resume cinematic shouldn't
+      // auto-fire on the next slot entry. A future PLR01 ch.20 win
+      // will re-arm it.
+      if (activeSlotId !== null) {
+        void storageUpdateSaveSlot(activeSlotId, {
+          voidphiEncounterPending: false,
+        }).then(setSlots);
+      }
     }
     setResultRecorded(true);
   }, [
@@ -2611,6 +2635,20 @@ export default function App() {
         setSlotPickerOpen(true);
         return;
       }
+      // Resume the Void-φ encounter cinematic if the active slot
+      // has it queued (set by the PLR01 ch.20 win in the gameOver
+      // effect, cleared after OPP22 battle ends). Skips the
+      // chapter-20 IntroSequence and replays
+      // 20-B → 20-C → 20-D → opp22.intro → battle.
+      if (activeSlot?.voidphiEncounterPending) {
+        logDiag('voidphi.resume_from_title', { slotId: activeSlotId });
+        setGameMode('ai');
+        setAiMode('free');
+        reset({ gameMode: 'ai', aiMode: 'free' });
+        setStoryOverlay('narrative:trueEnding20B');
+        setScreen('game');
+        return;
+      }
       // Route through the multi-step intro instead of dropping the
       // player onto the board. `reset()` and the screen flip to 'game'
       // happen in `onIntroComplete` once the player taps "begin the
@@ -2654,6 +2692,24 @@ export default function App() {
     // (avoid relying on the in-flight `activeSlot` derivation, which
     // is keyed off the stale `activeSlotId` until React re-renders).
     const picked = slots.find((s) => s.id === id);
+    // Resume the post-PLR01-victory cinematic if the chain was
+    // interrupted (player tapped Home before reaching/finishing
+    // the OPP22 battle). The flag is set in the gameOver effect
+    // when PLR01 wins ch.20 and cleared after the OPP22 battle
+    // resolves. Skip IntroSequence and drop the player straight
+    // onto the game screen with `narrative:trueEnding20B` queued —
+    // its dismiss chain carries through 20-C → 20-D → opp22.intro
+    // → auto-launched OPP22 battle, exactly mirroring the
+    // in-session post-victory flow the user expects.
+    if (picked?.voidphiEncounterPending) {
+      logDiag('voidphi.resume_from_slot', { slotId: id });
+      setGameMode('ai');
+      setAiMode('free');
+      reset({ gameMode: 'ai', aiMode: 'free' });
+      setStoryOverlay('narrative:trueEnding20B');
+      setScreen('game');
+      return;
+    }
     const targetChapter = Math.min(
       Math.max((picked?.storyProgress ?? 0) + 1, 1),
       20,
