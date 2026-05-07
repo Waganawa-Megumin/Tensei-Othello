@@ -5,13 +5,21 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-06 by `claude/othello-ui-autosave-bPnmY` (v0.36.0 + Phase 4 Step 3)
+Last updated: 2026-05-08 by `claude/othello-ui-autosave-bPnmY` (v0.36.20 spell audit Phase 1+2)
 
 ---
 
 ## 🔥 In Progress
 
-なし。
+- **呪文機能 統合監査 + Phase 1+2 修正 (v0.36.20)** —
+  owner: `claude/othello-ui-autosave-bPnmY` — started: 2026-05-08
+  - lives ハードコード→INITIAL_LIVES、戦績もリセット、非 PLR01 ch.21
+    を reject、失敗メッセージ 4 種分岐、IntroSequence firstTime に
+    hasSeenOverlay 反映、呪文モーダルに対象スロット表示 + submit
+    disable、SlotPicker の各行に per-slot 🪄 ボタン、bare cipher
+    確認ダイアログ + cinematic 自動再生分岐、spellSuccess 適用内容
+    反映、roster ラベル微調整。Phase 3+4 (定数化 / docs / unit test
+    等) は follow-up として保留。
 
 ---
 
