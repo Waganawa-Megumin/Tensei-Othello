@@ -4068,10 +4068,11 @@ export default function App() {
           activeSlot={
             activeSlot
               ? (() => {
-                  // v0.36.40 — TitleScreen now derives PLR slug +
-                  // chapter via `getSavePointDisplay(slot, avatars)`;
-                  // here we just resolve the OPP at the next chapter
-                  // and the prologue-seen flag.
+                  // v0.36.42 — `chapter` is now the next chapter to
+                  // play (= cleared+1, capped at max), so the OPP
+                  // lookup is `level === chapter`. Lap-finished slots
+                  // have `chaptersCleared === chapterMax`; in that
+                  // case there's no next match so opponentName="".
                   const sp = getSavePointDisplay(
                     activeSlot,
                     AVATARS.map((a) => ({
@@ -4079,20 +4080,17 @@ export default function App() {
                       image: a.image,
                     })),
                   );
-                  // Next opponent: chapter+1 (= next match). Empty
-                  // when the lap is finished (chapter === chapterMax)
-                  // — i18n then renders the "(クリア)" branch.
-                  const nextChapter = sp.chapter + 1;
-                  const opponentName =
-                    sp.chapter >= sp.chapterMax
-                      ? ''
-                      : (COMPUTERS.find((c) => c.level === Math.min(nextChapter, 20))
-                          ?.name ?? '');
+                  const lapDone = sp.chaptersCleared >= sp.chapterMax;
+                  const opponentName = lapDone
+                    ? ''
+                    : (COMPUTERS.find(
+                        (c) => c.level === Math.min(sp.chapter, 20),
+                      )?.name ?? '');
                   return {
                     slot: activeSlot,
                     opponentName,
                     inPrologue:
-                      sp.chapter === 0 &&
+                      sp.chaptersCleared === 0 &&
                       activeSlotId !== null &&
                       !hasSeenOverlay(String(activeSlotId), 'prologue'),
                   };
@@ -6166,6 +6164,7 @@ export default function App() {
                             sp.plrSlug,
                             sp.plrName,
                             sp.chapter,
+                            sp.chaptersCleared,
                             sp.chapterMax,
                           );
                         })()} ・ ♥ {activeSlot.lives}

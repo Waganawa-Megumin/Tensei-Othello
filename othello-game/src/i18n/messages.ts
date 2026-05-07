@@ -292,23 +292,24 @@ export interface Messages {
    *  ready for ch.1 vs Ichika" without lying about it being
    *  untouched. */
   slotPrologueSeenTag: string;
-  /** v0.36.40 — strict PLR-slug + per-PLR chapter format.
-   *  Format: "${plrSlug} ${plrName}・第${chapter}章（${chapter}/${chapterMax}）"
-   *  e.g. "PLR00 あなた・第5章（5/20）" / "PLR01 英霊ハルキ・第21章（21/21）".
-   *  - `plrSlug`: "PLR00".."PLR20", "PLR01" — strict canonical slug,
-   *    derived via `slugFromAvatarImage(avatar.image)`.
+  /** v0.36.42 — short slug + chapter (= currently engaged) +
+   *  chaptersCleared (= numerator in N/M progress).
+   *  Format: "${plrSlug} ${plrName}・第${chapter}章（${chaptersCleared}/${chapterMax}）"
+   *  e.g. "P00 あなた・第3章（2/20）" = "Ch.3 next, 2 of 20 cleared".
+   *  - `plrSlug`: "P00".."P20", "P01" — short slug (v0.36.42 shortens
+   *    the v0.36.40 "PLR00" form per user feedback).
    *  - `plrName`: localized display name ("あなた" / "美琴" / etc.).
-   *  - `chapter`: per-PLR lap progress (0..20 for chain steps,
-   *    0..21 for PLR01).
-   *  - `chapterMax`: 20 for chain-step PLRs, 21 for PLR01.
-   *  Drops the v0.36.37 "まで" / "進行" / "全章クリア済" wordings —
-   *  they conflated chain-frontier identity with per-PLR lap progress.
-   *  See `getSavePointDisplay()` in `storage/saveSlots.ts` for the
-   *  derivation. */
+   *  - `chapter`: chapter the player is engaged with (= the next
+   *    chapter to play; clamped at chapterMax once the lap is done).
+   *    Chosen so "vs OPP" wordings stay consistent — the OPP at
+   *    chapter level matches the displayed chapter.
+   *  - `chaptersCleared`: cleared count (= numerator).
+   *  - `chapterMax`: 20 for chain-step PLRs, 21 for PLR01. */
   slotProgress: (
     plrSlug: string,
     plrName: string,
     chapter: number,
+    chaptersCleared: number,
     chapterMax: number,
   ) => string;
   /** Per-slot roster summary — shows how many bonus avatars are
@@ -325,21 +326,18 @@ export interface Messages {
   slotReset: string;
   slotResetConfirm: string;
   slotSwitch: string;
-  /** v0.36.40 — strict PLR-slug + per-PLR chapter format for the
-   *  title-screen Story-card footer. Two-line label (separated by
-   *  `\n`, render with `whitespace-pre-line`): line 1 = slot name,
-   *  line 2 = current PLR + chapter + opponent + lives.
+  /** v0.36.42 — short-slug + chapter (= currently engaged) + opp +
+   *  lives format for the title-screen Story-card footer.
    *  - `plrSlug` / `plrName`: see `slotProgress`.
-   *  - `chapter`: per-PLR lap progress (0..20 for chain steps,
-   *    0..21 for PLR01); meaning `0` is the prologue / 序章 of the
-   *    current PLR's lap.
-   *  - `chapterMax`: 20 / 21 for chain step / PLR01.
-   *  - `opponentName`: localized name of the OPP at chapter+1
-   *    (= the next match's opponent). Empty when there's no next
-   *    fight (e.g. PLR01 ch.21 = post-true-ending).
-   *  - `inPrologue`: `true` iff the slot is at chapter 0 AND has not
-   *    yet seen the prologue overlay — render as 「序章」 instead of
-   *    「第1章 vs いちか」. */
+   *  - `chapter`: chapter currently engaged (= next to play, capped
+   *    at chapterMax once the lap is done). Pairs with `opponentName`
+   *    so they read consistently — fixes the v0.36.40 "第2章 vs 朝日"
+   *    mismatch (cleared count vs OPP at level cleared+1).
+   *  - `chapterMax`: 20 / 21 (chain step / PLR01).
+   *  - `opponentName`: OPP at the displayed chapter. Empty when
+   *    there's no next fight.
+   *  - `inPrologue`: `true` iff the slot has chaptersCleared=0 AND
+   *    has not yet seen the prologue overlay — render as 「序章」. */
   slotInUseFooter: (
     name: string,
     lives: number,
@@ -819,8 +817,8 @@ export const ja: Messages = {
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
   slotEmpty: '未使用',
   slotPrologueSeenTag: '序章 視聴済',
-  slotProgress: (plrSlug, plrName, chapter, chapterMax) =>
-    `${plrSlug} ${plrName}・第${chapter}章（${chapter}/${chapterMax}）`,
+  slotProgress: (plrSlug, plrName, chapter, chaptersCleared, chapterMax) =>
+    `${plrSlug} ${plrName}・第${chapter}章（${chaptersCleared}/${chapterMax}）`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
       ? `ロスター：あなた のみ（0/20 アンロック）`
@@ -831,7 +829,7 @@ export const ja: Messages = {
   slotRename: '名前を変更',
   slotReset: 'このセーブをリセット',
   slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
-  slotSwitch: 'セーブを変更',
+  slotSwitch: '変更',
   slotInUseFooter: (
     name,
     lives,
@@ -1280,8 +1278,8 @@ your journey on the board reaches its close.`,
   slotPickerHint: 'Story progress lives in one of 10 saves. Each save has independent progress, lives and stats.',
   slotEmpty: 'Unused',
   slotPrologueSeenTag: 'Prologue seen',
-  slotProgress: (plrSlug, plrName, chapter, chapterMax) =>
-    `${plrSlug} ${plrName} · Ch.${chapter} (${chapter}/${chapterMax})`,
+  slotProgress: (plrSlug, plrName, chapter, chaptersCleared, chapterMax) =>
+    `${plrSlug} ${plrName} · Ch.${chapter} (${chaptersCleared}/${chapterMax})`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
       ? `Roster: You only (0/20 unlocked)`
@@ -1293,7 +1291,7 @@ your journey on the board reaches its close.`,
   slotReset: 'Reset this save',
   slotResetConfirm:
     'This wipes the save’s progress, stats and lives. Continue?',
-  slotSwitch: 'Switch save',
+  slotSwitch: 'Switch',
   slotInUseFooter: (
     name,
     lives,

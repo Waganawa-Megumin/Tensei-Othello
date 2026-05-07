@@ -217,6 +217,7 @@ export function SlotPicker({
                                 sp.plrSlug,
                                 sp.plrName,
                                 sp.chapter,
+                                sp.chaptersCleared,
                                 sp.chapterMax,
                               );
                             })()}
