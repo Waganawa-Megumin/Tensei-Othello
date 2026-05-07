@@ -9,7 +9,6 @@ export interface Messages {
   worldName: string;
 
   // Title screen
-  titleSubhead: string;
   titleStoryLabel: string;
   titleFreeLabel: string;
   titleTwoPlayersLabel: string;
@@ -531,7 +530,6 @@ export const ja: Messages = {
   appSubtitle: 'Summoned as an Othello Player',
   worldName: '盤上世界',
 
-  titleSubhead: '盤と語る、20 の物語',
   titleStoryLabel: 'Story',
   titleFreeLabel: 'Free',
   titleTwoPlayersLabel: 'Two Players',
@@ -981,7 +979,6 @@ export const en: Messages = {
   appSubtitle: '召喚されたらオセロ世界でした！',
   worldName: 'Bansho Sekai',
 
-  titleSubhead: 'Twenty stories, told across the board.',
   titleStoryLabel: 'Story',
   titleFreeLabel: 'Free',
   titleTwoPlayersLabel: 'Two Players',

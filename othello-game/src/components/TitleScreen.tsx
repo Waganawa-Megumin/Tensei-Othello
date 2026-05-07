@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.33 · title-polish';
+const BUILD_TAG = 'v0.36.34 · title-block-simplify';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -158,15 +158,14 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.32 swaps to a real italic-600 glyph
-            (Google Fonts import now includes ital,wght 1,600) instead
-            of relying on browser-synthesized bold over the loaded
-            italic 400 — synthesized bold on Cormorant Garamond looked
-            uneven in the bg-illustration's bright regions. Opacity
-            also bumped to /85; textShadow kept from v0.36.31. */}
+        {/* Latin subtitle. v0.36.34 — bigger size + brighter color
+            for legibility against the bright bg illustration. Real
+            italic-600 glyph (Google Fonts import added 1,600 in
+            v0.36.32). Tagline / h1 / latin subtitle all carry the
+            same text-shadow pair. */}
         <div
-          className="latin-display italic ornament font-semibold text-amber-200/85 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
-          style={{ textShadow: '0 0 14px rgba(10,8,5,0.85), 0 1px 2px rgba(0,0,0,0.7)' }}
+          className="latin-display italic ornament font-semibold text-amber-100/95 text-sm max-lg:landscape:text-[10px] md:text-base uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
+          style={{ textShadow: '0 0 14px rgba(10,8,5,0.95), 0 1px 3px rgba(0,0,0,0.85)' }}
         >
           — Summoned as an Othello Player —
         </div>
@@ -176,9 +175,6 @@ export function TitleScreen({
         >
           召喚されたら<br className="md:hidden max-lg:landscape:hidden" />オセロ世界でした！
         </h1>
-        <p className="jp-display italic text-amber-200/60 text-sm md:text-base tracking-wider max-lg:landscape:hidden">
-          {t.titleSubhead}
-        </p>
       </div>
 
       {/* Mode selection cards */}
