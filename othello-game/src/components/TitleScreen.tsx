@@ -90,16 +90,19 @@ export function TitleScreen({
           aria-hidden
           onError={() => setBgOk(false)}
           className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ opacity: 0.45 }}
+          style={{ opacity: 0.28 }}
         />
       )}
       {/* Dark vignette over the bg image so foreground text stays
-          readable even on bright illustration regions. */}
+          readable even on bright illustration regions. v0.36.35
+          adds a partial dim even at the visual center (was fully
+          transparent there) so the latin subtitle + tagline stop
+          competing with the bright bg-illustration mid-band. */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 90% 70% at 50% 50%, transparent 30%, rgba(10,8,5,0.55) 75%, rgba(10,8,5,0.85) 100%)',
+            'radial-gradient(ellipse 90% 70% at 50% 50%, rgba(10,8,5,0.30) 0%, rgba(10,8,5,0.65) 70%, rgba(10,8,5,0.90) 100%)',
         }}
       />
 
@@ -154,23 +157,22 @@ export function TitleScreen({
       {/* Title block */}
       <div className="relative text-center mb-10 max-lg:landscape:mb-3 md:mb-12">
         {/* Tagline from the finished scenario — shown as a small
-            poetic line above the work title. textShadow matches the
-            <h1> below so it stays readable when the bg illustration
-            has bright regions. */}
+            poetic line above the work title. v0.36.35 bumps weight
+            to medium for parity with the latin subtitle below. */}
         <p
-          className="jp-display italic text-amber-100/90 text-sm max-lg:landscape:text-xs md:text-base tracking-wider mb-3 max-lg:landscape:mb-1"
-          style={{ textShadow: '0 0 18px rgba(10,8,5,0.85), 0 1px 2px rgba(0,0,0,0.7)' }}
+          className="jp-display italic font-medium text-amber-100/95 text-base max-lg:landscape:text-xs md:text-lg tracking-wider mb-3 max-lg:landscape:mb-1"
+          style={{ textShadow: '0 0 18px rgba(10,8,5,0.95), 0 1px 2px rgba(0,0,0,0.85)' }}
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.34 — bigger size + brighter color
-            for legibility against the bright bg illustration. Real
-            italic-600 glyph (Google Fonts import added 1,600 in
-            v0.36.32). Tagline / h1 / latin subtitle all carry the
-            same text-shadow pair. */}
+        {/* Latin subtitle. v0.36.35 — another size bump (text-base
+            mobile / text-lg desktop) so the line stops disappearing
+            against the bright bg illustration even with the new
+            tighter vignette. Real italic-600 glyph (Google Fonts
+            import added 1,600 in v0.36.32). */}
         <div
-          className="latin-display italic ornament font-semibold text-amber-100/95 text-sm max-lg:landscape:text-[10px] md:text-base uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
-          style={{ textShadow: '0 0 14px rgba(10,8,5,0.95), 0 1px 3px rgba(0,0,0,0.85)' }}
+          className="latin-display italic ornament font-semibold text-amber-100 text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
+          style={{ textShadow: '0 0 14px rgba(10,8,5,0.95), 0 2px 4px rgba(0,0,0,0.95)' }}
         >
           — Summoned as an Othello Player —
         </div>
