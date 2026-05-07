@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-08 by `claude/othello-ui-autosave-bPnmY` (v0.36.20 spell audit Phase 1+2)
+Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.29 PLR01 chain unlock)
 
 ---
 
@@ -95,6 +95,30 @@ Last updated: 2026-05-08 by `claude/othello-ui-autosave-bPnmY` (v0.36.20 spell a
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **PLR01 アンロック条件 世界観整合 + 実装修正 (v0.36.29)** —
+      completed: 2026-05-07 — by: `claude/game-overview-docs-DjBxK`
+      — commit: `928bf87` (feature) + merge resolution (BUILD_TAG bumped to .29 to avoid clash with concurrent .26-.28 spell-fresh-reset chain landed on main) —
+      ユーザー指摘「英霊ハルキは PLR20 で章 20 クリアしないと解放
+      されないはず」をきっかけに 3 重食い違いを発見: (a) コード実体
+      は `slotBefore.storyProgress === 19` ガードで 1 スロットあたり
+      unlockedCount 最大 +1、PLR01 は事実上 spell warp 専用、(b) GAME_
+      OVERVIEW.md / CLAUDE.md / master_world.md は「PLR00 で章 20
+      クリア → PLR01 即解放」、(c) WORLD_BIBLE / part4 は「PLR02〜
+      PLR20 全 19 体での章 20 制覇後、最後の特別枠として PLR01 召喚」。
+      ユーザー判断で世界観 (c) を正として実装とドキュメントを統一。
+      実装: `SaveSlot.avatarsClearedCh20: number[]` (chain step 蓄積)
+      + `unlockedCount = avatarsClearedCh20.length` 派生 / 純関数
+      `reconcileAvatarsCleared` で legacy slot back-derive / `record
+      SlotResult` に `playerAvatarIdx` 引数追加し ch.20 win 時に
+      atomic +1 / `castSpell` で `unlockedCount` と同期書き込み /
+      App.tsx gameOver 効果は returned slot 差分で unlock UI 発火。
+      新規 `saveSlots.test.ts` 12 ケース (reconcile 5 + chain 6 +
+      migration 1)。docs: GAME_OVERVIEW.md §3.2/§3.3/§4.3 / CLAUDE.md
+      §4.2 / master_world.md §3.3/§4.2/§4.3/§6/§10.1 + v1.2 改訂履歴。
+      検証: typecheck pass / 78 tests pass (66+12) / build OK
+      (433 kB JS, 288 PWA precache)。BUILD_TAG `v0.36.28 · prologue-
+      seen-chip` (post-merge) → `v0.36.29 · plr01-chain-unlock`。
 
 - [x] **呪文機能 統合監査 + Phase 1+2 修正 (v0.36.20)** —
       completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY`

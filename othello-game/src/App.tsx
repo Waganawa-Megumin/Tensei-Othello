@@ -2127,38 +2127,44 @@ export default function App() {
     const opponentLevel = COMPUTERS[computerChar].level;
     const isStory = aiMode === 'story';
     if (isStory && activeSlotId !== null) {
-      // Detect "story just cleared" before recordSlotResult mutates
-      // storyProgress (it caps at 20). Old slot tells us where we
-      // were; if old=19 and we just won the chapter-20 fight, this
-      // run earned the next bonus character.
-      const slotBefore = activeSlot;
-      const justClearedStory =
-        result === 'win' &&
-        slotBefore !== null &&
-        slotBefore.storyProgress === 19;
+      // v0.36.26 — chain-unlock semantics. The previous gate
+      // (`slotBefore.storyProgress === 19`) only fired once per slot
+      // (after the first ch.20 clear, storyProgress sticks at 20),
+      // which capped the canonical path at unlockedCount=1 and made
+      // PLR01 effectively reachable only via the spell-warp. The
+      // WORLD_BIBLE intent: each of PLR02〜PLR20 must defeat ZERO,
+      // and only after all 19 have done so does PLR01 英霊ハルキ get
+      // summoned. We now pass `playerAvatarIdx: p1Avatar` to
+      // `recordSlotResult`, which atomically appends a fresh PLR's
+      // chapter-20 clear to `slot.avatarsClearedCh20` and bumps
+      // `slot.unlockedCount = avatarsClearedCh20.length`. The local
+      // unlock UI fires off the diff between slotBefore.unlockedCount
+      // and the just-persisted slot's unlockedCount.
+      const slotBeforeUnlocks = activeSlot?.unlockedCount ?? 0;
       void recordSlotResult({
         slotId: activeSlotId,
         result,
         opponentLevel,
         isStory: true,
-      }).then(setSlots);
-      if (justClearedStory && unlockedCount < TOTAL_BONUS_AVATARS) {
-        const nextUnlocks = unlockedCount + 1;
-        setUnlockedCount(nextUnlocks);
-        // v0.36.12: per-slot unlocks. Persist to the active slot
-        // and let the activeSlot-sync effect keep the UI in line.
-        // Pre-v0.36.12 we also wrote to the legacy global key —
-        // that path is dropped now to keep slots independent.
-        void storageUpdateSaveSlot(activeSlotId, {
-          unlockedCount: nextUnlocks,
-        }).then(setSlots);
-        // The newly unlocked avatar lives at AVATARS[nextUnlocks]
-        // (index 0 = default, 1..20 = bonus). Surface it on the
-        // GameOver modal and auto-select it as the player's next
-        // protagonist — they can flip back via Settings.
-        setUnlockedThisRun(nextUnlocks);
-        setP1Avatar(nextUnlocks);
-      }
+        playerAvatarIdx: p1Avatar,
+      }).then((nextSlots) => {
+        setSlots(nextSlots);
+        const updated = nextSlots.find((s) => s.id === activeSlotId);
+        const nextUnlocks = updated?.unlockedCount ?? slotBeforeUnlocks;
+        if (nextUnlocks > slotBeforeUnlocks && nextUnlocks <= TOTAL_BONUS_AVATARS) {
+          setUnlockedCount(nextUnlocks);
+          // The newly unlocked avatar lives at AVATARS[nextUnlocks]
+          // (index 0 = default, 1..19 = bonus PLR02..PLR20, 20 =
+          // PLR01 英霊ハルキ). Surface it on the GameOver modal and
+          // auto-select it as the player's next protagonist — they
+          // can flip back via Settings. Auto-selecting is what makes
+          // the chain ergonomic: the player can immediately fight
+          // ch.20 again with the next PLR without manually navigating
+          // to the avatar picker between every clear.
+          setUnlockedThisRun(nextUnlocks);
+          setP1Avatar(nextUnlocks);
+        }
+      });
     } else if (!isStory) {
       void recordFreeResult({ result, opponentLevel });
     }
@@ -3025,12 +3031,24 @@ export default function App() {
     // storyProgress = chapter - 1; 21 → 20 (post-true-ending).
     const slotProgress =
       chapter === 0 ? 0 : chapter <= 20 ? chapter - 1 : 20;
+    // v0.36.29 — keep the new `avatarsClearedCh20` chain field in
+    // sync with the spell-warped `unlockedCount`. Same chain
+    // assumption as the legacy migration: `unlockedCount = N`
+    // implies AVATARS indices [0..N-1] all cleared ch.20 in
+    // sequence. Without this, a `…1801` warp would leave PLR18 at
+    // unlockedCount=17 but with avatarsClearedCh20=[] — the next
+    // ch.20 win would only bump unlocked to 1, undoing the warp.
+    const warpedAvatarsClearedCh20: number[] = [];
+    for (let i = 0; i < unlocks && i < 20; i++) {
+      warpedAvatarsClearedCh20.push(i);
+    }
 
     const now = Date.now();
     const currentSlot = slots.find((s) => s.id === activeSlotId);
     const patch: Partial<SaveSlot> = {
       storyProgress: slotProgress,
       unlockedCount: unlocks,
+      avatarsClearedCh20: warpedAvatarsClearedCh20,
       trueEndingAchieved: isPostTrueEnding,
       voidphiAwakened: isPostTrueEnding,
       voidphiIntroSeen: false,
