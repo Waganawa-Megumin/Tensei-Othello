@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.35 · slot-progress-shows-cleared';
+const BUILD_TAG = 'v0.36.37 · slot-progress-21-denominator';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -43,6 +43,11 @@ interface TitleScreenProps {
      *  of 「第1章 vs いちか」 so the framing matches the user's
      *  actual narrative position (the prologue hasn't fired yet). */
     inPrologue: boolean;
+    /** v0.36.36 — gates the "全章クリア済（21/21）" footer wording.
+     *  Without this, a slot at storyProgress=20 but trueEnding=false
+     *  was shown as fully done, even though ch.21 (Void-φ encounter)
+     *  hadn't been completed. */
+    trueEndingAchieved: boolean;
   } | null;
   /** Opens the slot picker so the user can switch save. */
   onSwitchSlot: () => void;
@@ -230,6 +235,7 @@ export function TitleScreen({
                   activeSlot.opponentName,
                   activeSlot.playerName,
                   activeSlot.inPrologue,
+                  activeSlot.trueEndingAchieved,
                 )}
               </span>
               <span className="flex items-center gap-2 shrink-0">
