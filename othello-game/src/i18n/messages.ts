@@ -531,7 +531,7 @@ export const ja: Messages = {
   appSubtitle: 'Summoned as an Othello Player',
   worldName: '盤上世界',
 
-  titleSubhead: '20 の達人を、打ち破れ',
+  titleSubhead: '盤と語る、20 の物語',
   titleStoryLabel: 'Story',
   titleFreeLabel: 'Free',
   titleTwoPlayersLabel: 'Two Players',
@@ -981,7 +981,7 @@ export const en: Messages = {
   appSubtitle: '召喚されたらオセロ世界でした！',
   worldName: 'Bansho Sekai',
 
-  titleSubhead: 'Defeat the 20 masters.',
+  titleSubhead: 'Twenty stories, told across the board.',
   titleStoryLabel: 'Story',
   titleFreeLabel: 'Free',
   titleTwoPlayersLabel: 'Two Players',

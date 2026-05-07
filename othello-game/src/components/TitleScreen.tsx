@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.31 · subtitle-readable';
+const BUILD_TAG = 'v0.36.32 · title-polish';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -158,11 +158,14 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.31 bumps the opacity (50 → 75) and
-            adds the same text-shadow as the tagline / h1 so it stays
-            legible across bright bg-illustration regions. */}
+        {/* Latin subtitle. v0.36.32 swaps to a real italic-600 glyph
+            (Google Fonts import now includes ital,wght 1,600) instead
+            of relying on browser-synthesized bold over the loaded
+            italic 400 — synthesized bold on Cormorant Garamond looked
+            uneven in the bg-illustration's bright regions. Opacity
+            also bumped to /85; textShadow kept from v0.36.31. */}
         <div
-          className="latin-display italic ornament text-amber-200/75 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
+          className="latin-display italic ornament font-semibold text-amber-200/85 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
           style={{ textShadow: '0 0 14px rgba(10,8,5,0.85), 0 1px 2px rgba(0,0,0,0.7)' }}
         >
           — Summoned as an Othello Player —

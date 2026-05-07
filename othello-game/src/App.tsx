@@ -3490,7 +3490,7 @@ export default function App() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&display=swap');
 
         .jp-display { font-family: 'Shippori Mincho', 'Noto Serif JP', serif; font-feature-settings: "palt"; }
         .latin-display { font-family: 'Cormorant Garamond', 'Shippori Mincho', serif; }
