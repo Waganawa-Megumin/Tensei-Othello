@@ -8,7 +8,7 @@ import { getSavePointDisplay, type SaveSlot } from '../storage/saveSlots';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.42 · subtitle-white-stroke';
+const BUILD_TAG = 'v0.36.43 · subtitle-no-stroke';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -158,18 +158,19 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.41 — back to pure white but keep
-            the dark text-stroke + strong shadow halo from v0.36.40.
-            Sky-blue made it harder to read against the brighter bg
-            (luminance dropped relative to bg highlights); white is
-            the highest-luminance fill. The thin black stroke is what
-            gives the glyph definition over the warm illustration —
-            the v0.36.39 white-only attempt didn't have that. */}
+        {/* Latin subtitle. v0.36.43 — drops the WebkitTextStroke.
+            On a 16-18px italic semibold glyph the 0.5-0.6px stroke
+            was wider than the glyph's hairline stems, so the dark
+            stroke ate the white fill entirely and the line rendered
+            as a near-black silhouette ("更に見にくくなった" report).
+            Pure white fill + a layered halo shadow is enough — the
+            shadow gives the dark edge needed to pop the glyph off
+            the warm bg without touching the fill itself. */}
         <div
           className="latin-display italic ornament font-semibold text-white text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
           style={{
-            textShadow: '0 0 18px rgba(10,8,5,0.95), 0 2px 6px rgba(0,0,0,0.95)',
-            WebkitTextStroke: '0.6px rgba(10,8,5,0.9)',
+            textShadow:
+              '0 0 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 0 24px rgba(10,8,5,0.7), 0 2px 4px rgba(0,0,0,0.95)',
           }}
         >
           — Summoned as an Othello Player —
