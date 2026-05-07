@@ -100,6 +100,7 @@ import {
 import type { MoveAnnotation, MoveQuality, ReviewAnnotations } from './prompts/review';
 import {
   defaultSlot,
+  getNextOpponent,
   getSavePointDisplay,
   getSlots,
   getActiveSlotId,
@@ -4067,42 +4068,20 @@ export default function App() {
           onLocaleChange={setLocale}
           activeSlot={
             activeSlot
-              ? (() => {
-                  // v0.36.40 — TitleScreen now derives PLR slug +
-                  // chapter via `getSavePointDisplay(slot, avatars)`;
-                  // here we just resolve the OPP at the next chapter
-                  // and the prologue-seen flag.
-                  const sp = getSavePointDisplay(
-                    activeSlot,
-                    AVATARS.map((a) => ({
-                      name: locale === 'ja' ? a.name : a.name_en,
-                      image: a.image,
-                    })),
-                  );
-                  // Next opponent: chapter+1 (= next match). Empty
-                  // when the lap is finished (chapter === chapterMax)
-                  // — i18n then renders the "(クリア)" branch.
-                  const nextChapter = sp.chapter + 1;
-                  const opponentName =
-                    sp.chapter >= sp.chapterMax
-                      ? ''
-                      : (COMPUTERS.find((c) => c.level === Math.min(nextChapter, 20))
-                          ?.name ?? '');
-                  return {
-                    slot: activeSlot,
-                    opponentName,
-                    inPrologue:
-                      sp.chapter === 0 &&
-                      activeSlotId !== null &&
-                      !hasSeenOverlay(String(activeSlotId), 'prologue'),
-                  };
-                })()
+              ? {
+                  slot: activeSlot,
+                  inPrologue:
+                    (activeSlot.storyProgress ?? 0) === 0 &&
+                    activeSlotId !== null &&
+                    !hasSeenOverlay(String(activeSlotId), 'prologue'),
+                }
               : null
           }
           avatars={AVATARS.map((a) => ({
             name: locale === 'ja' ? a.name : a.name_en,
             image: a.image,
           }))}
+          opponents={COMPUTERS.map((c) => ({ level: c.level, name: c.name }))}
           onSwitchSlot={() => setSlotPickerOpen(true)}
           archiveAvailable={
             activeSlotId !== null &&
@@ -6162,11 +6141,15 @@ export default function App() {
                               image: a.image,
                             })),
                           );
+                          const next = getNextOpponent(
+                            sp,
+                            COMPUTERS.map((c) => ({ level: c.level, name: c.name })),
+                          );
                           return t.slotProgress(
                             sp.plrSlug,
                             sp.plrName,
-                            sp.chapter,
-                            sp.chapterMax,
+                            next.nextChapter,
+                            next.opponentName,
                           );
                         })()} ・ ♥ {activeSlot.lives}
                       </div>
@@ -7050,6 +7033,7 @@ export default function App() {
           name: locale === 'ja' ? a.name : a.name_en,
           image: a.image,
         }))}
+        opponents={COMPUTERS.map((c) => ({ level: c.level, name: c.name }))}
         t={t}
       />
 

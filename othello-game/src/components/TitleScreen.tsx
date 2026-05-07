@@ -3,12 +3,16 @@ import { BookOpen, Sparkles, Swords, Users } from 'lucide-react';
 import type { Locale, Messages } from '../i18n/messages';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { renderEmphasized } from '../i18n/story/render';
-import { getSavePointDisplay, type SaveSlot } from '../storage/saveSlots';
+import {
+  getNextOpponent,
+  getSavePointDisplay,
+  type SaveSlot,
+} from '../storage/saveSlots';
 
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.43 · subtitle-no-stroke';
+const BUILD_TAG = 'v0.36.45 · vs-opponent-everywhere';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -22,19 +26,13 @@ interface TitleScreenProps {
   locale: Locale;
   onLocaleChange: (locale: Locale) => void;
   /** Active save slot (if any). Shown on the Story card so the user
-   *  knows which save resumes when they tap. v0.36.40 — pass the
-   *  raw slot + the avatars view, the title screen calls
-   *  `getSavePointDisplay()` itself to derive (plrSlug, plrName,
-   *  chapter, chapterMax) and feeds them to the new
-   *  `slotInUseFooter` signature. */
+   *  knows which save resumes when they tap. v0.36.44 — TitleScreen
+   *  derives PLR slug + chapter + opponent itself via
+   *  `getSavePointDisplay()` + `getNextOpponent()`; caller only needs
+   *  to pass the raw slot and the prologue-seen flag. */
   activeSlot: {
     /** Raw slot record from storage. */
     slot: SaveSlot;
-    /** Localized opponent name at the active PLR's next chapter
-     *  (= `chapter + 1`, capped at the PLR's chapterMax). Empty
-     *  when there is no next opponent (e.g. PLR01 ch.21 = post-true-
-     *  ending state). */
-    opponentName: string;
     /** True iff the slot is at chapter 0 AND has not yet seen the
      *  prologue overlay. Footer then shows 「序章」 instead of
      *  「第1章 vs いちか」 so the framing matches the user's actual
@@ -44,6 +42,9 @@ interface TitleScreenProps {
   /** Slim AVATARS view (locale-applied name + image path) for
    *  `getSavePointDisplay()` when the active slot is non-null. */
   avatars: ReadonlyArray<{ name: string; image: string }>;
+  /** Slim COMPUTERS view — `level` + locale-applied `name`. Used by
+   *  `getNextOpponent()` to show 「第N章 vs ${opp}」 in the footer. */
+  opponents: ReadonlyArray<{ level: number; name: string }>;
   /** Opens the slot picker so the user can switch save. */
   onSwitchSlot: () => void;
   /** True iff the active slot has at least one previously-seen story
@@ -61,6 +62,7 @@ export function TitleScreen({
   onLocaleChange,
   activeSlot,
   avatars,
+  opponents,
   onSwitchSlot,
   archiveAvailable,
   onOpenArchive,
@@ -158,22 +160,22 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.43 — drops the WebkitTextStroke.
-            On a 16-18px italic semibold glyph the 0.5-0.6px stroke
-            was wider than the glyph's hairline stems, so the dark
-            stroke ate the white fill entirely and the line rendered
-            as a near-black silhouette ("更に見にくくなった" report).
-            Pure white fill + a layered halo shadow is enough — the
-            shadow gives the dark edge needed to pop the glyph off
-            the warm bg without touching the fill itself. */}
-        <div
-          className="latin-display italic ornament font-semibold text-white text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
-          style={{
-            textShadow:
-              '0 0 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 0 24px rgba(10,8,5,0.7), 0 2px 4px rgba(0,0,0,0.95)',
-          }}
-        >
-          — Summoned as an Othello Player —
+        {/* Latin subtitle. v0.36.44 — bold visual change per user
+            request 「思い切りよく変更してください」: wrap the line in
+            a dark pill chip with backdrop-blur. The bg illustration
+            no longer competes with the glyph's hairline stems
+            because the chip itself dims a strip of bg behind the
+            text. White fill + tight shadow halo for the final
+            edge definition. */}
+        <div className="text-center mb-4 max-lg:landscape:mb-1">
+          <span
+            className="inline-block latin-display italic ornament font-semibold text-white text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] px-5 py-1.5 rounded-sm bg-zinc-950/65 backdrop-blur-sm"
+            style={{
+              textShadow: '0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.95)',
+            }}
+          >
+            — Summoned as an Othello Player —
+          </span>
         </div>
         <h1
           className="jp-display text-amber-100 text-3xl max-lg:landscape:text-xl md:text-5xl font-bold tracking-[0.15em] mb-3 max-lg:landscape:mb-1 leading-tight"
@@ -231,14 +233,14 @@ export function TitleScreen({
               <span className="jp-display text-amber-100/90 text-xs whitespace-pre-line leading-relaxed min-w-0">
                 {(() => {
                   const sp = getSavePointDisplay(activeSlot.slot, avatars);
+                  const next = getNextOpponent(sp, opponents);
                   return t.slotInUseFooter(
                     activeSlot.slot.name,
                     activeSlot.slot.lives,
                     sp.plrSlug,
                     sp.plrName,
-                    sp.chapter,
-                    sp.chapterMax,
-                    activeSlot.opponentName,
+                    next.nextChapter,
+                    next.opponentName,
                     activeSlot.inPrologue,
                   );
                 })()}

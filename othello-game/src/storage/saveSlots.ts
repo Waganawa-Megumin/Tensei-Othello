@@ -403,6 +403,41 @@ export function getSavePointDisplay(
   return { plrIdx, plrSlug, plrName, chapter, chapterMax };
 }
 
+/** v0.36.44 — derives the next match's chapter number and opponent
+ *  name from a save-point display + the COMPUTERS view. The slot
+ *  picker / title footer now show "vs ${opp}" instead of cleared
+ *  progress, so callers need both the displayed chapter (= the next
+ *  match's chapter number) and the opponent's localized name.
+ *
+ *  - `nextChapter`: `min(display.chapter + 1, display.chapterMax)`.
+ *    For mid-lap states (chapter=2 → ch.3), this is the chapter
+ *    about to be played. For end-of-lap states (chapter=chapterMax)
+ *    it stays at chapterMax — for PLR01 that means a Void-φ replay.
+ *  - `opponentName`: the OPP at the resolved level. PLR01 chapter
+ *    21+ resolves to Lv.22 ヴォイドφ rather than the chapter number
+ *    directly, so post-true-ending replay slots still surface
+ *    「vs ヴォイドφ」 cleanly. */
+export interface NextOpponent {
+  nextChapter: number;
+  opponentName: string;
+}
+export function getNextOpponent(
+  display: SavePointDisplay,
+  opponents: ReadonlyArray<{ level: number; name: string }>,
+): NextOpponent {
+  const nextChapter =
+    display.chapter < display.chapterMax
+      ? display.chapter + 1
+      : display.chapterMax;
+  const isPLR01 = display.plrIdx === 20;
+  // PLR01 ch.21 (= post-true-ending) faces ヴォイドφ (Lv.22), not the
+  // hooded ゼロ at Lv.20. Other slots map chapter → level 1:1.
+  const oppLevel = isPLR01 && nextChapter >= 21 ? 22 : nextChapter;
+  const opponentName =
+    opponents.find((o) => o.level === oppLevel)?.name ?? '';
+  return { nextChapter, opponentName };
+}
+
 /** Extracts the strict PLR slug ("PLR00" .. "PLR20") from an avatar's
  *  image path, e.g.
  *  "avatars/players/PLR02_mikoto/icon.png" → "PLR02". Returns "PLR??"

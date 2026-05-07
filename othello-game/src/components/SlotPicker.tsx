@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent } from 'react';
 import { Heart, Pencil, RotateCcw } from 'lucide-react';
 import {
   defaultSlot,
+  getNextOpponent,
   getSavePointDisplay,
   resetSlot,
   saveSlots,
@@ -32,6 +33,9 @@ interface SlotPickerProps {
    *  Used by `getSavePointDisplay()` to format the per-slot
    *  save-point line and roster summary. */
   avatars: ReadonlyArray<{ name: string; image: string }>;
+  /** Slim COMPUTERS view — `level` + locale-applied `name`. Used by
+   *  `getNextOpponent()` to format 「第N章 vs ${opp}」 per slot. */
+  opponents: ReadonlyArray<{ level: number; name: string }>;
   t: Messages;
 }
 
@@ -64,6 +68,7 @@ export function SlotPicker({
   onSlotsChanged,
   onCastSpell,
   avatars,
+  opponents,
   t,
 }: SlotPickerProps) {
   const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -213,27 +218,25 @@ export function SlotPicker({
                           <span className="jp-display">
                             {(() => {
                               const sp = getSavePointDisplay(slot, avatars);
+                              const next = getNextOpponent(sp, opponents);
                               return t.slotProgress(
                                 sp.plrSlug,
                                 sp.plrName,
-                                sp.chapter,
-                                sp.chapterMax,
+                                next.nextChapter,
+                                next.opponentName,
                               );
                             })()}
                           </span>
                           <Lives n={slot.lives} />
                         </div>
-                        {/* Per-slot roster line — shows the latest
-                            PLR character unlocked on this slot so
-                            spell-warps (`…1601` ⇒ PLR16) and natural
-                            chapter clears are both visible at a
-                            glance. */}
+                        {/* Per-slot roster line — current PLR. v0.36.44
+                            simplified to "現在 ロスター：${name}",
+                            dropping the cleared-count fraction. */}
                         {(() => {
-                          const u = slot.unlockedCount ?? 0;
-                          const latestName = avatars[u]?.name ?? '';
+                          const sp = getSavePointDisplay(slot, avatars);
                           return (
                             <div className="jp-display text-amber-200/65 text-[10px] mt-0.5 tracking-wider">
-                              {t.slotRosterLine(u, latestName)}
+                              {t.slotRosterLine(sp.plrName)}
                             </div>
                           );
                         })()}
