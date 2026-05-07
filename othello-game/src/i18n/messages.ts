@@ -297,12 +297,16 @@ export interface Messages {
   /** Slot summary shown on the title screen Story card. `chapter`
    *  is the next chapter to play (1..20). `opponentName` is the
    *  master at that chapter — empty string for completed slots
-   *  (storyProgress=20) where there's no "next opponent". */
+   *  (storyProgress=20) where there's no "next opponent".
+   *  `playerName` is the localized name of the avatar currently
+   *  selected for this slot, so the footer makes the answer to
+   *  "which PLR is at which chapter" obvious at a glance. */
   slotInUseFooter: (
     name: string,
     lives: number,
     chapter: number,
     opponentName: string,
+    playerName: string,
   ) => string;
   slotSelect: string;
   slotChooseFirst: string;
@@ -754,10 +758,10 @@ export const ja: Messages = {
   slotReset: 'このセーブをリセット',
   slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
   slotSwitch: 'セーブを変更',
-  slotInUseFooter: (name, lives, chapter, opponentName) =>
+  slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
     opponentName
-      ? `セーブ：${name}・第${chapter}章 vs ${opponentName}・♥${lives}`
-      : `セーブ：${name}・全章クリア済・♥${lives}`,
+      ? `セーブ：${name}・${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
+      : `セーブ：${name}・${playerName}・全章クリア済・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -792,7 +796,7 @@ export const ja: Messages = {
   spellModalTitle: '🪄 魔法の呪文',
   spellModalSubtitle: '盤上世界の鍵を、ことばで開く。',
   spellModalHint:
-    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。',
+    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n（呪文の後ろに **01〜21** を付けると、その章のセーブポイントへ跳べる）',
   spellPlaceholder: '呪文をひらがなで入力',
   spellSubmitLabel: '唱える',
   spellCancelLabel: '閉じる',
@@ -1175,10 +1179,10 @@ your journey on the board reaches its close.`,
   slotResetConfirm:
     'This wipes the save’s progress, stats and lives. Continue?',
   slotSwitch: 'Switch save',
-  slotInUseFooter: (name, lives, chapter, opponentName) =>
+  slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
     opponentName
-      ? `Save: ${name} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
-      : `Save: ${name} · All chapters cleared · ♥${lives}`,
+      ? `Save: ${name} · ${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
+      : `Save: ${name} · ${playerName} · All chapters cleared · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
@@ -1215,7 +1219,7 @@ your journey on the board reaches its close.`,
   spellModalTitle: '🪄 Magic Spell',
   spellModalSubtitle: 'Open the gate of the Board World with a word.',
   spellModalHint:
-    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**",
+    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\n(Append **01–21** to the spell to warp the active save to that chapter's checkpoint.)",
   spellPlaceholder: 'whisper the spell',
   spellSubmitLabel: 'cast',
   spellCancelLabel: 'close',

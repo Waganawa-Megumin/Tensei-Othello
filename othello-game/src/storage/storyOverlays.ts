@@ -75,7 +75,7 @@ export function markOverlaySeen(slotId: string, overlay: OverlayKey): void {
  * Returned in canonical story order (prologue → narrative inserts →
  * ending) regardless of localStorage iteration order.
  */
-const OVERLAY_ORDER: readonly OverlayKey[] = [
+export const OVERLAY_ORDER: readonly OverlayKey[] = [
   'prologue',
   'intro:falling',
   'intro:arrival',

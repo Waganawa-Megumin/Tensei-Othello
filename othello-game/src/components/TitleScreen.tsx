@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.10 · voidphi-resume-on-home';
+const BUILD_TAG = 'v0.36.11 · slot-footer-plr-and-spell-warp';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -33,6 +33,12 @@ interface TitleScreenProps {
      *  that to switch to a "全章クリア済 / All chapters cleared"
      *  variant. */
     opponentName: string;
+    /** Localized name of the avatar currently selected for this
+     *  slot (PLR00 default / 美琴 / 英霊ハルキ / etc.). Surfaced in
+     *  the footer so the user sees at a glance which PLR is at
+     *  which chapter — fixes the "セーブ情報を、正確に。PLR どれが
+     *  何章まで」report from v0.36.10. */
+    playerName: string;
   } | null;
   /** Opens the slot picker so the user can switch save. */
   onSwitchSlot: () => void;
@@ -189,6 +195,7 @@ export function TitleScreen({
                   activeSlot.lives,
                   Math.min(activeSlot.storyProgress + 1, 20),
                   activeSlot.opponentName,
+                  activeSlot.playerName,
                 )}
               </span>
               <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">

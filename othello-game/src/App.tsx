@@ -66,6 +66,7 @@ import {
   markOverlaySeen,
   getArchiveScenes,
   getOrderedArchiveScenes,
+  OVERLAY_ORDER,
   type ArchiveScene,
   resetOverlaysSeen,
   type OverlayKey,
@@ -1630,7 +1631,11 @@ export default function App() {
   } | null>(null);
   /** Title-screen "scene archive" modal toggle. */
   const [archiveOpen, setArchiveOpen] = useState(false);
-  /** Spell-cast modal — types-the-magic-words → unlock-all path. */
+  /** Spell-cast modal — types-the-magic-words → unlock-all path.
+   *  v0.36.11: spell can carry a 2-digit suffix (01..21) so the
+   *  developer can warp a save slot to that chapter; bare spell
+   *  caps the slot to all-cleared + true-ending + every overlay
+   *  marked seen so the archive is fully populated. */
   const [spellOpen, setSpellOpen] = useState(false);
   const [spellInput, setSpellInput] = useState('');
   const [spellResult, setSpellResult] = useState<'success' | 'failure' | null>(
@@ -2867,6 +2872,97 @@ export default function App() {
     }
   }
 
+  /** Magic-spell handler. Called from the spell modal (Enter key
+   *  or 🪄 button). Shape:
+   *
+   *  - bare cipher (e.g. 「ばんじょうぜんてんかいほう」) →
+   *    "master" mode: unlock every bonus avatar, mark every story
+   *    overlay seen for the active slot, and stamp the slot to
+   *    a fully-cleared + true-ending state so the archive
+   *    surfaces every scene.
+   *  - cipher + 2-digit suffix (`01`..`21`) → "warp" mode: jump
+   *    the active slot's `storyProgress` to that chapter (1..20)
+   *    and unlocks to match. `21` extends master mode (all 20
+   *    cleared + true ending + voidphi awakening).
+   *
+   *  Returns `true` when the input matched either form (so the
+   *  caller can flip the success/failure UI bit). The actual
+   *  state mutations are fire-and-forget — `setSlots` re-fetches
+   *  after the slot patch lands so the title-screen footer
+   *  reflects the new chapter immediately. */
+  function castSpell(): boolean {
+    const norm = (s: string) =>
+      s
+        .normalize('NFKC')
+        .toLowerCase()
+        .replace(/[\s、。！!？?「」・]/g, '');
+    const cipher = norm(t.spellCipher);
+    const inputN = norm(spellInput);
+    if (cipher.length === 0) return false;
+
+    let chapter: number | null = null;
+    let isMaster = false;
+    if (inputN === cipher) {
+      // Bare cipher → master mode.
+      isMaster = true;
+    } else if (inputN.startsWith(cipher)) {
+      const suffix = inputN.slice(cipher.length);
+      if (/^\d{2}$/.test(suffix)) {
+        const n = Number(suffix);
+        if (n >= 1 && n <= 21) {
+          chapter = n;
+          if (n === 21) isMaster = true;
+        }
+      }
+    }
+    if (!isMaster && chapter === null) return false;
+
+    // Unlock bonus avatars. For master mode, full roster (incl
+    // PLR01 英霊ハルキ). For warp mode (1..20), unlock proportional
+    // to chapter progress: clearing ch.N gives PLR(N+1) (= avatar
+    // index N - 1 in AVATARS_DATA), and clearing ch.20 with PLR00
+    // grants PLR01 as the 20th bonus.
+    const targetUnlocks = isMaster
+      ? TOTAL_BONUS_AVATARS
+      : Math.min(chapter ?? 0, TOTAL_BONUS_AVATARS);
+    setUnlockedCount(targetUnlocks);
+    void setCharacterUnlocks(targetUnlocks);
+
+    // True-ending + voidphi flags. Master mode flips both on so
+    // the OPP21 / OPP22 selection gates open. Warp mode keeps
+    // them as-is (we don't want chapter-5 warp to silently grant
+    // the true-ending flag).
+    if (isMaster) {
+      setTrueEndingAchievedState(true);
+      void setTrueEndingAchieved(true);
+      setVoidphiAwakenedState(true);
+      void setVoidphiAwakened(true);
+    }
+
+    // Active slot patch. storyProgress + lives reset for warp mode,
+    // and we always mark every story overlay seen so the archive
+    // becomes fully populated (the user explicitly asked for "回想
+    // シーンの閲覧やプログレスなど全て見える状態に").
+    const slotProgress = isMaster ? 20 : Math.min(chapter ?? 0, 20);
+    if (activeSlotId !== null) {
+      void storageUpdateSaveSlot(activeSlotId, {
+        storyProgress: slotProgress,
+        // Top up lives so the warp-target chapter is playable.
+        // Master mode also resets lives; harmless side-effect.
+        lives: 3,
+        // Clear voidphi pending so master / warp doesn't drag the
+        // user into the trueEnding cinematic on slot re-entry.
+        voidphiEncounterPending: false,
+      }).then(setSlots);
+      const slotKey = String(activeSlotId);
+      for (const key of OVERLAY_ORDER) {
+        markOverlaySeen(slotKey, key);
+      }
+    }
+    logDiag('spell.cast', { isMaster, chapter, targetUnlocks });
+    return true;
+  }
+
   /* ----- Auto-play replay ----- */
 
   /** Speed presets in cadence-ms. Cycled by the speed button next to
@@ -3745,6 +3841,16 @@ export default function App() {
                           (c) =>
                             c.level === activeSlot.storyProgress + 1,
                         )?.name ?? ''),
+                  // Currently-selected player avatar's localized
+                  // name. p1Avatar drives the in-game player avatar
+                  // and is auto-set to the latest unlocked PLR on
+                  // slot entry, so it's the right source for "which
+                  // PLR is on this slot". Locale switch picks the
+                  // ja/en variant.
+                  playerName:
+                    locale === 'ja'
+                      ? AVATARS[p1Avatar]?.name ?? ''
+                      : AVATARS[p1Avatar]?.name_en ?? '',
                 }
               : null
           }
@@ -6600,7 +6706,7 @@ export default function App() {
               </p>
             </div>
             <div className="px-5 py-5 space-y-3">
-              <p className="jp-display italic text-amber-200/75 text-[12px] leading-relaxed">
+              <p className="jp-display italic text-amber-200/75 text-[12px] leading-relaxed whitespace-pre-line">
                 {renderEmphasized(t.spellModalHint)}
               </p>
               <input
@@ -6613,18 +6719,7 @@ export default function App() {
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter') return;
                   e.preventDefault();
-                  const norm = (s: string) =>
-                    s
-                      .normalize('NFKC')
-                      .toLowerCase()
-                      .replace(/[\s、。！!？?「」・]/g, '');
-                  if (norm(spellInput) === norm(t.spellCipher)) {
-                    setUnlockedCount(TOTAL_BONUS_AVATARS);
-                    void setCharacterUnlocks(TOTAL_BONUS_AVATARS);
-                    setSpellResult('success');
-                  } else {
-                    setSpellResult('failure');
-                  }
+                  setSpellResult(castSpell() ? 'success' : 'failure');
                 }}
                 placeholder={t.spellPlaceholder}
                 autoFocus
@@ -6650,18 +6745,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => {
-                  const norm = (s: string) =>
-                    s
-                      .normalize('NFKC')
-                      .toLowerCase()
-                      .replace(/[\s、。！!?？「」・]/g, '');
-                  if (norm(spellInput) === norm(t.spellCipher)) {
-                    setUnlockedCount(TOTAL_BONUS_AVATARS);
-                    void setCharacterUnlocks(TOTAL_BONUS_AVATARS);
-                    setSpellResult('success');
-                  } else {
-                    setSpellResult('failure');
-                  }
+                  setSpellResult(castSpell() ? 'success' : 'failure');
                 }}
                 className="px-4 py-1.5 border border-amber-200/70 text-amber-100 bg-amber-200/[0.06] hover:bg-amber-200/[0.12] rounded-sm jp-display text-xs tracking-wider"
               >
