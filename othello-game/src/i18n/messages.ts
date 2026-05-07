@@ -286,6 +286,13 @@ export interface Messages {
   slotPickerSubtitle: string;
   slotPickerHint: string;
   slotEmpty: string;
+  /** Inline tag shown next to the slot name when the prologue has
+   *  been viewed but the slot still has no battle results / unlocks
+   *  / progress. Distinct from `slotEmpty` (= "(未使用)") so the
+   *  picker can communicate "this slot has watched the prologue,
+   *  ready for ch.1 vs Ichika" without lying about it being
+   *  untouched. */
+  slotPrologueSeenTag: string;
   slotProgress: (cleared: number) => string;
   /** Per-slot roster summary — shows how many bonus avatars are
    *  unlocked and who the latest unlocked PLR is. Surfaces the
@@ -790,6 +797,7 @@ export const ja: Messages = {
   slotPickerSubtitle: 'Choose a save',
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
   slotEmpty: '未使用',
+  slotPrologueSeenTag: '序章 視聴済',
   slotProgress: (cleared) => `第${Math.min(cleared + 1, 20)}章 まで進行（${cleared}/20 クリア）`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
@@ -1239,6 +1247,7 @@ your journey on the board reaches its close.`,
   slotPickerSubtitle: 'Save Slots',
   slotPickerHint: 'Story progress lives in one of 10 saves. Each save has independent progress, lives and stats.',
   slotEmpty: 'Unused',
+  slotPrologueSeenTag: 'Prologue seen',
   slotProgress: (cleared) => `Up to Chapter ${Math.min(cleared + 1, 20)} (${cleared}/20 cleared)`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0

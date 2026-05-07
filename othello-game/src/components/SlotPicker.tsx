@@ -140,6 +140,16 @@ export function SlotPicker({
               slot.storyProgress === 0 &&
               (slot.unlockedCount ?? 0) === 0 &&
               !prologueSeen;
+            // Distinct intermediate state: prologue dismissed but
+            // no battle finished. We surface this as a chip so the
+            // picker doesn't conflate it with either "(未使用)" or
+            // a played-and-progressing slot.
+            const isPrologueOnly =
+              prologueSeen &&
+              slot.lastPlayedAt === 0 &&
+              slot.totalGames === 0 &&
+              slot.storyProgress === 0 &&
+              (slot.unlockedCount ?? 0) === 0;
             const isRenaming = renamingId === id;
 
             return (
@@ -186,6 +196,11 @@ export function SlotPicker({
                         {isUnused && (
                           <span className="latin-display italic text-amber-200/45 text-[10px] ml-2 tracking-wider">
                             ({t.slotEmpty})
+                          </span>
+                        )}
+                        {isPrologueOnly && (
+                          <span className="jp-display italic text-amber-200/65 text-[10px] ml-2 tracking-wider">
+                            ({t.slotPrologueSeenTag})
                           </span>
                         )}
                       </div>
