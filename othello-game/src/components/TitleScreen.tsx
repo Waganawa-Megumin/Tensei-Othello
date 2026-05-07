@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.36 · title-contrast';
+const BUILD_TAG = 'v0.36.38 · card-backdrop-only';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -85,19 +85,16 @@ export function TitleScreen({
           aria-hidden
           onError={() => setBgOk(false)}
           className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-          style={{ opacity: 0.28 }}
+          style={{ opacity: 0.45 }}
         />
       )}
       {/* Dark vignette over the bg image so foreground text stays
-          readable even on bright illustration regions. v0.36.35
-          adds a partial dim even at the visual center (was fully
-          transparent there) so the latin subtitle + tagline stop
-          competing with the bright bg-illustration mid-band. */}
+          readable even on bright illustration regions. */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 90% 70% at 50% 50%, rgba(10,8,5,0.30) 0%, rgba(10,8,5,0.65) 70%, rgba(10,8,5,0.90) 100%)',
+            'radial-gradient(ellipse 90% 70% at 50% 50%, transparent 30%, rgba(10,8,5,0.55) 75%, rgba(10,8,5,0.85) 100%)',
         }}
       />
 
@@ -184,7 +181,7 @@ export function TitleScreen({
         {/* Story mode card */}
         <button
           onClick={() => onStart({ mode: 'ai', sub: 'story' })}
-          className="group relative text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group relative text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-zinc-950/45 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
           <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Sparkles
@@ -303,7 +300,7 @@ export function TitleScreen({
         {/* Free mode card */}
         <button
           onClick={() => onStart({ mode: 'ai', sub: 'free' })}
-          className="group text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-zinc-950/45 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
           <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Swords
@@ -329,7 +326,7 @@ export function TitleScreen({
         {/* Two-player mode card */}
         <button
           onClick={() => onStart({ mode: 'human' })}
-          className="group text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
+          className="group text-left min-w-0 p-5 max-lg:landscape:p-3 md:p-6 border border-amber-200/30 hover:border-amber-200/70 bg-zinc-950/45 bg-gradient-to-br from-amber-200/[0.04] to-transparent hover:from-amber-200/[0.08] rounded-sm transition-all"
         >
           <div className="flex items-center gap-2 mb-3 max-lg:landscape:mb-1.5">
             <Users
