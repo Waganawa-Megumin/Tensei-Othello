@@ -5,13 +5,28 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-08 by `claude/othello-ui-autosave-bPnmY` (v0.36.20 spell audit Phase 1+2)
+Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (PLR01 アンロック世界観整合 + 実装修正)
 
 ---
 
 ## 🔥 In Progress
 
-なし。
+- **PLR01 アンロック条件 世界観整合 + 実装修正** —
+  owner: `claude/game-overview-docs-DjBxK` — started: 2026-05-07 —
+  ユーザー指摘「英霊ハルキは PLR20 で章 20 クリアしないと解放されない
+  はず」をきっかけに、(1) コード実体は「PLR00 で 1 回章 20 を勝つと
+  unlockedCount が +1 → 以後同スロットでは発火しない」で 1 スロット
+  あたり最大 +1 しか進まず PLR01 に到達不能 (spell warp 専用状態)、
+  (2) GAME_OVERVIEW.md / CLAUDE.md / master_world.md は「PLR00 で章 20
+  クリア → PLR01 即解放」と書いており実装ともコード意図とも乖離、
+  (3) WORLD_BIBLE / part4 の世界観は「PLR02〜PLR20 全 19 体での
+  章 20 制覇後、最後の特別枠として PLR01 が召喚される」、という
+  3 重食い違いを発見。本タスクで世界観上の理想形を実装し、ドキュ
+  メントもそれに統一する。スコープ: `SaveSlot.avatarsClearedCh20`
+  追加 / `recordSlotResult` の初出 avatarIdx +1 ロジック / アバター
+  切替時の storyProgress リセット / spell warp の同期更新 / 既存
+  legacy slot からの migration / saveSlots unit test / 3 ドキュメント
+  全面書き換え。
 
 ---
 
