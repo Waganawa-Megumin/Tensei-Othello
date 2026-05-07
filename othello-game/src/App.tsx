@@ -2709,21 +2709,33 @@ export default function App() {
     setActiveSlotIdState(id);
     void setActiveSlotId(id);
     setSlotPickerOpen(false);
-    // Default the player avatar to the latest unlocked character.
-    // Without this, a player with PLR01 英霊ハルキ unlocked
-    // (= unlockedCount === 20) would still drop into chapter
-    // selection as PLR00 default, and they'd have to dig into the
-    // settings modal to switch — surprising for a "the canon
-    // protagonist for this save" expectation. unlockedCount=0
-    // (= no bonus avatars yet) leaves p1Avatar=0 (PLR00) untouched.
-    if (unlockedCount > 0 && unlockedCount < AVATARS.length) {
-      setP1Avatar(unlockedCount);
-    }
-    // Route through the intro flow. `slots` already contains the
-    // freshly-selected slot, so we look up its storyProgress directly
-    // (avoid relying on the in-flight `activeSlot` derivation, which
-    // is keyed off the stale `activeSlotId` until React re-renders).
+    // Look up the slot we're switching INTO. Don't rely on the
+    // `unlockedCount` / `activeSlot` React state here — those are
+    // still keyed off the previously-active slot until the next
+    // render commits.
     const picked = slots.find((s) => s.id === id);
+    // Default the player avatar to the latest unlocked character
+    // ON THE NEW SLOT. Without this, a player on slot A with PLR01
+    // ハルキ unlocked (= unlockedCount === 20) would carry that
+    // p1Avatar into a fresh slot B with unlockedCount=0 — the
+    // fresh slot's intro sequence would render PLR01 even though
+    // PLR01 isn't supposed to be unlocked yet there.
+    const pickedUnlocks = picked?.unlockedCount ?? 0;
+    if (pickedUnlocks > 0 && pickedUnlocks < AVATARS.length) {
+      setP1Avatar(pickedUnlocks);
+    } else {
+      setP1Avatar(0);
+    }
+    // Defensive: an "unused" slot (no plays, no record) should
+    // start with a clean overlay-seen state so the prologue + intro
+    // sequence is guaranteed to fire. Without this, legacy
+    // localStorage flags from an old play-then-reset cycle on this
+    // slot can short-circuit `firstTime` in IntroSequence and drop
+    // the player straight onto the chapter card ("未使用 セーブを
+    // 選んでも序章がみれない" report).
+    if (picked && picked.lastPlayedAt === 0 && picked.totalGames === 0) {
+      resetOverlaysSeen(String(id));
+    }
     // Resume the post-PLR01-victory cinematic if the chain was
     // interrupted (player tapped Home before reaching/finishing
     // the OPP22 battle). The flag is set in the gameOver effect
