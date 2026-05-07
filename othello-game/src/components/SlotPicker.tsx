@@ -7,7 +7,7 @@ import {
   type SaveSlot,
   MAX_SLOTS,
 } from '../storage/saveSlots';
-import { resetOverlaysSeen } from '../storage/storyOverlays';
+import { hasSeenOverlay, resetOverlaysSeen } from '../storage/storyOverlays';
 import type { Messages } from '../i18n/messages';
 
 interface SlotPickerProps {
@@ -125,7 +125,31 @@ export function SlotPicker({
             const id = i + 1;
             const slot = slots.find((s) => s.id === id) ?? defaultSlot(id);
             const isActive = activeSlotId === id;
-            const isUnused = slot.lastPlayedAt === 0 && slot.totalGames === 0;
+            // v0.36.27 — "未使用" requires *all* slot fields to be at
+            // their default state, not just lastPlayedAt + totalGames.
+            // A slot whose prologue has been viewed (or which carries
+            // unlock / progress state from a spell-warp) shouldn't be
+            // surfaced as unused even if no match has finished —
+            // otherwise picker rows that say 「(未使用)」 actually drop
+            // the player straight into the chapter-1 fight, which is
+            // the bug the v0.36.27 release fixes.
+            const prologueSeen = hasSeenOverlay(String(id), 'prologue');
+            const isUnused =
+              slot.lastPlayedAt === 0 &&
+              slot.totalGames === 0 &&
+              slot.storyProgress === 0 &&
+              (slot.unlockedCount ?? 0) === 0 &&
+              !prologueSeen;
+            // Distinct intermediate state: prologue dismissed but
+            // no battle finished. We surface this as a chip so the
+            // picker doesn't conflate it with either "(未使用)" or
+            // a played-and-progressing slot.
+            const isPrologueOnly =
+              prologueSeen &&
+              slot.lastPlayedAt === 0 &&
+              slot.totalGames === 0 &&
+              slot.storyProgress === 0 &&
+              (slot.unlockedCount ?? 0) === 0;
             const isRenaming = renamingId === id;
 
             return (
@@ -172,6 +196,11 @@ export function SlotPicker({
                         {isUnused && (
                           <span className="latin-display italic text-amber-200/45 text-[10px] ml-2 tracking-wider">
                             ({t.slotEmpty})
+                          </span>
+                        )}
+                        {isPrologueOnly && (
+                          <span className="jp-display italic text-amber-200/65 text-[10px] ml-2 tracking-wider">
+                            ({t.slotPrologueSeenTag})
                           </span>
                         )}
                       </div>

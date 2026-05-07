@@ -286,6 +286,13 @@ export interface Messages {
   slotPickerSubtitle: string;
   slotPickerHint: string;
   slotEmpty: string;
+  /** Inline tag shown next to the slot name when the prologue has
+   *  been viewed but the slot still has no battle results / unlocks
+   *  / progress. Distinct from `slotEmpty` (= "(未使用)") so the
+   *  picker can communicate "this slot has watched the prologue,
+   *  ready for ch.1 vs Ichika" without lying about it being
+   *  untouched. */
+  slotPrologueSeenTag: string;
   slotProgress: (cleared: number) => string;
   /** Per-slot roster summary — shows how many bonus avatars are
    *  unlocked and who the latest unlocked PLR is. Surfaces the
@@ -308,15 +315,18 @@ export interface Messages {
    *  `opponentName` is the master at that chapter — empty string for
    *  completed slots (storyProgress=20) where there's no "next
    *  opponent". `playerName` is the localized name of the avatar
-   *  currently selected for this slot, so the second line makes
-   *  the answer to "which PLR is at which chapter" obvious at a
-   *  glance. */
+   *  currently selected for this slot. `inPrologue` is `true` iff
+   *  the slot is at storyProgress=0 AND has not yet seen the
+   *  prologue overlay — in that state we show 「序章」 instead of
+   *  「第1章 vs いちか」 so the user doesn't see a chapter-1 framing
+   *  before they've even viewed the prologue. */
   slotInUseFooter: (
     name: string,
     lives: number,
     chapter: number,
     opponentName: string,
     playerName: string,
+    inPrologue: boolean,
   ) => string;
   slotSelect: string;
   slotChooseFirst: string;
@@ -787,6 +797,7 @@ export const ja: Messages = {
   slotPickerSubtitle: 'Choose a save',
   slotPickerHint: 'ストーリーは 10 個のセーブから選んで進めます。各セーブは独立した進捗・残機・戦績を持ちます。',
   slotEmpty: '未使用',
+  slotPrologueSeenTag: '序章 視聴済',
   slotProgress: (cleared) => `第${Math.min(cleared + 1, 20)}章 まで進行（${cleared}/20 クリア）`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
@@ -799,10 +810,12 @@ export const ja: Messages = {
   slotReset: 'このセーブをリセット',
   slotResetConfirm: 'このセーブの進捗・戦績・残機を全て初期化します。よろしいですか？',
   slotSwitch: 'セーブを変更',
-  slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
-    opponentName
-      ? `${name}\n${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
-      : `${name}\n${playerName}・全章クリア済・♥${lives}`,
+  slotInUseFooter: (name, lives, chapter, opponentName, playerName, inPrologue) =>
+    inPrologue
+      ? `${name}\n${playerName}・序章・♥${lives}`
+      : opponentName
+        ? `${name}\n${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
+        : `${name}\n${playerName}・全章クリア済・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -837,7 +850,7 @@ export const ja: Messages = {
   spellModalTitle: '🪄 魔法の呪文',
   spellModalSubtitle: '盤上世界の鍵を、ことばで開く。',
   spellModalHint:
-    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n素のままだと **PLR01・第 21 章** (真エンディング直前) の状態に。\n後ろに **PPCC** (4 桁) を付けると、**PLR PP までアンロック** + **第 CC 章の挿絵** から開始 (CC ≤ 20 は自動で章イントロへ遷移)。例 `…0717` ＝ **PLR07 までアンロック・第 17 章の挿絵から**。CC=21 は PLR01 専用 (post-true-ending)。',
+    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n素のままだと **PLR01・第 21 章** (真エンディング直前) の状態に。\n後ろに **PPCC** (4 桁) を付けると、**PLR PP までアンロック** + **第 CC 章の挿絵** から開始 (CC ≤ 20 は自動で章イントロへ遷移)。例 `…0717` ＝ **PLR07 までアンロック・第 17 章の挿絵から**。**CC=00 は序章状態に初期化** (例 `…0000` で完全リセット、`…0500` で PLR05 までアンロック+序章)。CC=21 は PLR01 専用 (post-true-ending)。',
   spellPlaceholder: '呪文をひらがなで入力',
   spellSubmitLabel: '唱える',
   spellCancelLabel: '閉じる',
@@ -846,6 +859,9 @@ export const ja: Messages = {
       return '── 盤上世界、ひらく。すべての打ち手、解き放たれた。\n（真エンディング直前・PLR01 第 21 章 状態）';
     }
     const plrLabel = plr === 0 ? 'あなた のみ' : `PLR${String(plr).padStart(2, '0')} まで`;
+    if (chapter === 0) {
+      return `── 盤上世界、ひらく。${plrLabel} アンロック・序章状態に初期化された。`;
+    }
     if (chapter === 21) {
       return `── 盤上世界、ひらく。${plrLabel} アンロック・post-true-ending 状態。`;
     }
@@ -853,7 +869,7 @@ export const ja: Messages = {
   },
   spellFailureCipher: '……ふぅん。神々はその名前で呼ばれていないようだ。',
   spellFailureFormat:
-    '……呪文の末尾は **PPCC** の 4 桁 (PP=00〜20、CC=01〜21) で締めなさい。',
+    '……呪文の末尾は **PPCC** の 4 桁 (PP=00〜20、CC=00〜21) で締めなさい。',
   spellFailureNoSlot: '……先にセーブを選んでから呪文を唱えなさい。',
   spellFailureCh21NotPlr01:
     '……第 21 章 (post-true-ending) は **PLR01 英霊ハルキ** 専用です。PP=01 で唱え直しなさい。',
@@ -1231,6 +1247,7 @@ your journey on the board reaches its close.`,
   slotPickerSubtitle: 'Save Slots',
   slotPickerHint: 'Story progress lives in one of 10 saves. Each save has independent progress, lives and stats.',
   slotEmpty: 'Unused',
+  slotPrologueSeenTag: 'Prologue seen',
   slotProgress: (cleared) => `Up to Chapter ${Math.min(cleared + 1, 20)} (${cleared}/20 cleared)`,
   slotRosterLine: (unlocks, latestName) =>
     unlocks === 0
@@ -1244,10 +1261,12 @@ your journey on the board reaches its close.`,
   slotResetConfirm:
     'This wipes the save’s progress, stats and lives. Continue?',
   slotSwitch: 'Switch save',
-  slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
-    opponentName
-      ? `${name}\n${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
-      : `${name}\n${playerName} · All chapters cleared · ♥${lives}`,
+  slotInUseFooter: (name, lives, chapter, opponentName, playerName, inPrologue) =>
+    inPrologue
+      ? `${name}\n${playerName} · Prologue · ♥${lives}`
+      : opponentName
+        ? `${name}\n${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
+        : `${name}\n${playerName} · All chapters cleared · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
@@ -1284,7 +1303,7 @@ your journey on the board reaches its close.`,
   spellModalTitle: '🪄 Magic Spell',
   spellModalSubtitle: 'Open the gate of the Board World with a word.',
   spellModalHint:
-    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\nBare spell ⇢ **PLR01 · Chapter 21** (post-true-ending state).\nAppend **PPCC** (4 digits) to warp: **roster unlocked up to PLR PP** at the **Chapter CC intro illustration** (CC ≤ 20 auto-jumps to the chapter intro). Example `…0717` ⇢ **roster up to PLR07, starting at Chapter 17**. CC=21 is PLR01-only (post-true-ending).",
+    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\nBare spell ⇢ **PLR01 · Chapter 21** (post-true-ending state).\nAppend **PPCC** (4 digits) to warp: **roster unlocked up to PLR PP** at the **Chapter CC intro illustration** (CC ≤ 20 auto-jumps to the chapter intro). Example `…0717` ⇢ **roster up to PLR07, starting at Chapter 17**. **CC=00 resets to the prologue** (e.g. `…0000` full wipe, `…0500` keeps PLR05 unlocks but rewinds to prologue). CC=21 is PLR01-only (post-true-ending).",
   spellPlaceholder: 'whisper the spell',
   spellSubmitLabel: 'cast',
   spellCancelLabel: 'close',
@@ -1293,6 +1312,9 @@ your journey on the board reaches its close.`,
       return '— The Board World opens. Every player has been set free.\n(Post-true-ending state · PLR01 · Chapter 21.)';
     }
     const plrLabel = plr === 0 ? 'You only' : `up to PLR${String(plr).padStart(2, '0')}`;
+    if (chapter === 0) {
+      return `— The Board World opens. Roster ${plrLabel} unlocked · slot reset to the prologue.`;
+    }
     if (chapter === 21) {
       return `— The Board World opens. Roster ${plrLabel} unlocked · post-true-ending state.`;
     }
@@ -1300,7 +1322,7 @@ your journey on the board reaches its close.`,
   },
   spellFailureCipher: "...Hmm. The gods don't seem to know that name.",
   spellFailureFormat:
-    '...The spell needs a **PPCC** suffix (4 digits — PP 00-20, CC 01-21).',
+    '...The spell needs a **PPCC** suffix (4 digits — PP 00-20, CC 00-21).',
   spellFailureNoSlot: '...Pick a save first, then chant the spell.',
   spellFailureCh21NotPlr01:
     '...Chapter 21 (post-true-ending) is reserved for **PLR01 Heroic-Spirit Haruki**. Re-chant with PP=01.',

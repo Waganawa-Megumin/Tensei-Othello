@@ -5,7 +5,7 @@
 > 詳細運用は [`othello-game/CLAUDE.md`](othello-game/CLAUDE.md) の
 > 「0. セッション開始時の必須手順」を参照。
 
-Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.26 PLR01 chain unlock)
+Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.29 PLR01 chain unlock)
 
 ---
 
@@ -96,9 +96,9 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.26 PLR01 ch
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
-- [x] **PLR01 アンロック条件 世界観整合 + 実装修正 (v0.36.26)** —
+- [x] **PLR01 アンロック条件 世界観整合 + 実装修正 (v0.36.29)** —
       completed: 2026-05-07 — by: `claude/game-overview-docs-DjBxK`
-      — commit: `928bf87` —
+      — commit: `928bf87` (feature) + merge resolution (BUILD_TAG bumped to .29 to avoid clash with concurrent .26-.28 spell-fresh-reset chain landed on main) —
       ユーザー指摘「英霊ハルキは PLR20 で章 20 クリアしないと解放
       されないはず」をきっかけに 3 重食い違いを発見: (a) コード実体
       は `slotBefore.storyProgress === 19` ガードで 1 スロットあたり
@@ -117,8 +117,8 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.26 PLR01 ch
       migration 1)。docs: GAME_OVERVIEW.md §3.2/§3.3/§4.3 / CLAUDE.md
       §4.2 / master_world.md §3.3/§4.2/§4.3/§6/§10.1 + v1.2 改訂履歴。
       検証: typecheck pass / 78 tests pass (66+12) / build OK
-      (432 kB JS, 288 PWA precache)。BUILD_TAG `v0.36.25 · fresh-slot-
-      prologue-fix` → `v0.36.26 · plr01-chain-unlock`。
+      (433 kB JS, 288 PWA precache)。BUILD_TAG `v0.36.28 · prologue-
+      seen-chip` (post-merge) → `v0.36.29 · plr01-chain-unlock`。
 
 - [x] **呪文機能 統合監査 + Phase 1+2 修正 (v0.36.20)** —
       completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY`
