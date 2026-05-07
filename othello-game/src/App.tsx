@@ -2944,16 +2944,13 @@ export default function App() {
     //   [PLR00 default, PLR02..PLR20 (19 entries), PLR01 special last].
     // So PLR00 → 0, PLR01 → 20, PLR02..PLR20 → 1..19.
     const avatarIdx = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
-    // unlockedCount = "exactly up to PLR PP".
-    //   spell …0306 ⇢ PP=03 ⇢ unlocks=2 ⇢ only PLR02 + PLR03 selectable
-    //   (= "PLR03 までアンロック" の意味).
-    // The per-chapter natural-progress max from v0.36.14 was wrong —
-    // testers want spell `0306` to put them at ch.6 with the PLR03
-    // roster, not ch.6 with everyone unlocked through PLR06. Drop
-    // the chapter-derived max.
+    // unlockedCount = "exactly up to PLR PP". (See v0.36.16 fix —
+    // testers want spell `0306` ⇢ PLR03 unlocked, NOT max(PP,
+    // chapter-derived unlocks).)
     const unlocks = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
     const slotProgress = chapter <= 20 ? chapter - 1 : 20;
     const isPostTrueEnding = chapter === 21 && plr === 1;
+    const isWarpToChapter = chapter >= 1 && chapter <= 20;
 
     const now = Date.now();
     const currentSlot = slots.find((s) => s.id === activeSlotId);
@@ -2965,12 +2962,8 @@ export default function App() {
       voidphiIntroSeen: false,
       voidphiEncounterPending: isPostTrueEnding,
       lives: 3,
-      // Make the spell-cast moment a real save point — the slot
-      // should look "in use" in the picker (no "(empty)" badge),
-      // and re-entering the slot should resume from this state.
-      // Without lastPlayedAt > 0 the SlotPicker's `isUnused` gate
-      // falsely flagged spell-warped slots as fresh ("カンスト
-      // しているのにセーブデータ無しの初期の状態" report).
+      // Real save point — slot picker shows the spell-warped slot
+      // as "in use" rather than "(empty)".
       lastPlayedAt: now,
       createdAt:
         currentSlot && currentSlot.createdAt > 0
@@ -2978,19 +2971,55 @@ export default function App() {
           : now,
     };
     void storageUpdateSaveSlot(activeSlotId, patch).then(setSlots);
-    // Set p1Avatar directly — the activeSlot-sync effect's clamp
-    // would otherwise pull p1Avatar to `unlocks` and override the
-    // explicit PLR choice (e.g. spell `0001` wants PLR00 even
-    // though PLR02 is unlocked = unlocks ≥ 1).
     setP1Avatar(avatarIdx);
-    // Mark every story overlay as seen so the scene archive shows
-    // every beat — testers casting the spell are exploring state,
-    // not playing through, so a fully-populated archive is what
-    // they want.
+
+    // Overlay-seen reset + selective re-mark. Without this, casting
+    // `…0410` after a master cipher leaves opp22.intro /
+    // victoryNarration / chapter20A* flagged-seen, and the scene
+    // archive still surfaces Void-φ entries even though the slot
+    // is now PLR04 / ch.10 (user report 「04 までなのにヴォイドが
+    // でてしまいます」). Reset every per-slot overlay-seen flag,
+    // then re-mark just enough to match the destination state.
     const slotKey = String(activeSlotId);
-    for (const key of OVERLAY_ORDER) {
-      markOverlaySeen(slotKey, key);
+    resetOverlaysSeen(slotKey);
+    if (isPostTrueEnding) {
+      // Master / post-true-ending state ⇢ assume the player has
+      // experienced every story beat so the archive is fully
+      // populated and post-game scenes (opp22.*) replay-able.
+      for (const key of OVERLAY_ORDER) markOverlaySeen(slotKey, key);
+    } else if (isWarpToChapter) {
+      // Mid-route warp ⇢ assume the prologue + 5-step opening
+      // intro sequence have been viewed (otherwise re-entering
+      // ch.CC would replay the prologue every time). The
+      // chapter narrative scenes (solitude/allies/final/
+      // ending) gate on storyProgress and reappear naturally as
+      // the player clears chapters past the milestone — no need
+      // to mark them here.
+      markOverlaySeen(slotKey, 'prologue');
+      markOverlaySeen(slotKey, 'intro:falling');
+      markOverlaySeen(slotKey, 'intro:arrival');
+      markOverlaySeen(slotKey, 'intro:gatewayClosed');
+      markOverlaySeen(slotKey, 'intro:gatewayOpen');
     }
+    // Else: chapter=21 with PP≠01. Treat as sandbox at end-game;
+    // no overlays marked.
+
+    // Auto-navigate for warp-to-chapter casts so the user lands
+    // on the chapter-CC intro illustration immediately, matching
+    // the request 「10 章の挿絵からスタート」. Bare cipher / 0121
+    // / non-PLR01 chapter-21 casts leave the user where they were
+    // (settings / slot picker / title) so they can verify the new
+    // state via the title-screen footer.
+    if (isWarpToChapter) {
+      setSpellOpen(false);
+      setSlotPickerOpen(false);
+      setSettingsOpen(false);
+      setIntroChapter(chapter);
+      setGameMode('ai');
+      setAiMode('story');
+      setScreen('intro');
+    }
+
     logDiag('spell.cast', {
       plr,
       chapter,
@@ -2998,6 +3027,7 @@ export default function App() {
       unlocks,
       slotProgress,
       isPostTrueEnding,
+      isWarpToChapter,
       slotId: activeSlotId,
     });
     return true;
