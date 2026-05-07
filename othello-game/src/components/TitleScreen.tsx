@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.21 · title-card-overflow-fix';
+const BUILD_TAG = 'v0.36.22 · title-density-pass';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -146,8 +146,13 @@ export function TitleScreen({
       {/* Title block */}
       <div className="relative text-center mb-10 max-lg:landscape:mb-3 md:mb-12">
         {/* Tagline from the finished scenario — shown as a small
-            poetic line above the work title. */}
-        <p className="jp-display italic text-amber-100/85 text-sm max-lg:landscape:text-xs md:text-base tracking-wider mb-3 max-lg:landscape:mb-1">
+            poetic line above the work title. textShadow matches the
+            <h1> below so it stays readable when the bg illustration
+            has bright regions. */}
+        <p
+          className="jp-display italic text-amber-100/90 text-sm max-lg:landscape:text-xs md:text-base tracking-wider mb-3 max-lg:landscape:mb-1"
+          style={{ textShadow: '0 0 18px rgba(10,8,5,0.85), 0 1px 2px rgba(0,0,0,0.7)' }}
+        >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
         <div className="latin-display italic ornament text-amber-200/50 text-xs max-lg:landscape:text-[9px] md:text-sm uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1">
@@ -204,7 +209,12 @@ export function TitleScreen({
               }}
               className="mb-3 px-2.5 py-2 bg-amber-200/[0.05] border border-amber-200/20 rounded-sm flex items-center justify-between gap-2 min-w-0 hover:bg-amber-200/[0.08]"
             >
-              <span className="jp-display text-amber-100/90 text-xs truncate min-w-0">
+              {/* whitespace-pre-line preserves the `\n` between
+                  the slot name (line 1) and the current-state
+                  detail (line 2) emitted by t.slotInUseFooter,
+                  giving a two-line summary instead of a single
+                  ellipsized line. */}
+              <span className="jp-display text-amber-100/90 text-xs whitespace-pre-line leading-relaxed min-w-0">
                 {t.slotInUseFooter(
                   activeSlot.name,
                   activeSlot.lives,

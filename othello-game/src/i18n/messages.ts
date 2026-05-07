@@ -301,13 +301,16 @@ export interface Messages {
   slotReset: string;
   slotResetConfirm: string;
   slotSwitch: string;
-  /** Slot summary shown on the title screen Story card. `chapter`
-   *  is the next chapter to play (1..20). `opponentName` is the
-   *  master at that chapter — empty string for completed slots
-   *  (storyProgress=20) where there's no "next opponent".
-   *  `playerName` is the localized name of the avatar currently
-   *  selected for this slot, so the footer makes the answer to
-   *  "which PLR is at which chapter" obvious at a glance. */
+  /** Slot summary shown on the title screen Story card. Returns a
+   *  two-line label (separated by `\n`, render with
+   *  `whitespace-pre-line`): line 1 is the slot name, line 2 the
+   *  current state. `chapter` is the next chapter to play (1..20).
+   *  `opponentName` is the master at that chapter — empty string for
+   *  completed slots (storyProgress=20) where there's no "next
+   *  opponent". `playerName` is the localized name of the avatar
+   *  currently selected for this slot, so the second line makes
+   *  the answer to "which PLR is at which chapter" obvious at a
+   *  glance. */
   slotInUseFooter: (
     name: string,
     lives: number,
@@ -798,8 +801,8 @@ export const ja: Messages = {
   slotSwitch: 'セーブを変更',
   slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
     opponentName
-      ? `セーブ：${name}・現キャラ：${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
-      : `セーブ：${name}・現キャラ：${playerName}・全章クリア済・♥${lives}`,
+      ? `${name}\n${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
+      : `${name}\n${playerName}・全章クリア済・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -1243,8 +1246,8 @@ your journey on the board reaches its close.`,
   slotSwitch: 'Switch save',
   slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
     opponentName
-      ? `Save: ${name} · Avatar: ${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
-      : `Save: ${name} · Avatar: ${playerName} · All chapters cleared · ♥${lives}`,
+      ? `${name}\n${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
+      : `${name}\n${playerName} · All chapters cleared · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
