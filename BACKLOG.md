@@ -11,15 +11,7 @@ Last updated: 2026-05-08 by `claude/othello-ui-autosave-bPnmY` (v0.36.20 spell a
 
 ## 🔥 In Progress
 
-- **呪文機能 統合監査 + Phase 1+2 修正 (v0.36.20)** —
-  owner: `claude/othello-ui-autosave-bPnmY` — started: 2026-05-08
-  - lives ハードコード→INITIAL_LIVES、戦績もリセット、非 PLR01 ch.21
-    を reject、失敗メッセージ 4 種分岐、IntroSequence firstTime に
-    hasSeenOverlay 反映、呪文モーダルに対象スロット表示 + submit
-    disable、SlotPicker の各行に per-slot 🪄 ボタン、bare cipher
-    確認ダイアログ + cinematic 自動再生分岐、spellSuccess 適用内容
-    反映、roster ラベル微調整。Phase 3+4 (定数化 / docs / unit test
-    等) は follow-up として保留。
+なし。
 
 ---
 
@@ -103,6 +95,25 @@ Last updated: 2026-05-08 by `claude/othello-ui-autosave-bPnmY` (v0.36.20 spell a
 ---
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
+
+- [x] **呪文機能 統合監査 + Phase 1+2 修正 (v0.36.20)** —
+      completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY`
+      — commit: `072c6c1`. v0.36.11〜v0.36.19 で累積した小さな歪みを
+      まとめて整理。castSpell の戻り値を discriminated SpellResult
+      化し、失敗メッセージを cipher / format / noSlot / ch21NotPlr01
+      の 4 種に分岐。lives ハードコード `3` を `INITIAL_LIVES` (= 5)
+      に修正、戦績 (totalGames / wins / losses / draws / resigns /
+      vsOpponent) もリセットして spell-warp が「完全クリーン」セマン
+      ティクスを持つように。非 PLR01 で CC=21 を reject。bare cipher
+      cast に確認ダイアログを追加し OK でヴォイドφ cinematic を
+      自動再生。IntroSequence の `firstTime` を `hasSeenOverlay
+      ('prologue')` でゲートし、`…XX01` warp 後の prologue 再生を
+      防止。呪文モーダルに対象スロット表示 + submit disable。
+      SlotPicker の各行に per-row 🪄 ボタン (該当スロットを active
+      にしてから modal を開く)。spellSuccess を関数化して適用後の
+      PLR + 章を echo。slotInUseFooter を「現キャラ：…」/「Avatar:
+      …」に微調整。Phase 3+4 (POST_TRUE_ENDING_CHAPTER 定数化 /
+      SPELL_SPEC.md / unit test 等) は follow-up として保留。
 
 - [x] **Phase 4 Step 3: ヴォイドφ覚醒シネマ + シナリオ統合 + アンロック
       ゲート分離 (v0.36.0)** — completed: 2026-05-06 — by:
