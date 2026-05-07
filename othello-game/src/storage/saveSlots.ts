@@ -74,6 +74,24 @@ export interface SaveSlot {
    *  cinematic from 20-B. Cleared after the OPP22 battle ends
    *  (win or lose) so a future PLR01 ch.20 win re-arms it. */
   voidphiEncounterPending?: boolean;
+  /** v0.36.12 — per-slot flags. Pre-v0.36.12 these lived in
+   *  global localStorage keys (`othello:character_unlocks` etc.),
+   *  which leaked progress across slots ("表面上初期の状態でも
+   *  カンストしている"). Made per-slot so each save's roster /
+   *  story-arc gates are independent. The boot effect performs a
+   *  one-time migration that seeds the previously-active slot from
+   *  the legacy globals so existing users don't lose progress. */
+  /** Number of bonus avatars unlocked on this slot (0..20).
+   *  unlockedCount === 20 means PLR01 英霊ハルキ is also selectable. */
+  unlockedCount?: number;
+  /** True iff PLR01 has cleared ch.20 on this slot at least once. */
+  trueEndingAchieved?: boolean;
+  /** True iff the 20-D Void-φ awakening cinematic has played on
+   *  this slot, gating OPP22 selection in free mode. */
+  voidphiAwakened?: boolean;
+  /** True iff the player has dismissed `narrative:opp22.intro` on
+   *  this slot at least once. Currently informational only. */
+  voidphiIntroSeen?: boolean;
 }
 
 export interface FreeStats {
@@ -112,6 +130,10 @@ export function defaultSlot(id: number): SaveSlot {
     resigns: 0,
     vsOpponent: {},
     voidphiEncounterPending: false,
+    unlockedCount: 0,
+    trueEndingAchieved: false,
+    voidphiAwakened: false,
+    voidphiIntroSeen: false,
   };
 }
 
@@ -170,6 +192,24 @@ function migrateSlot(raw: unknown, id: number): SaveSlot {
     voidphiEncounterPending:
       typeof raw.voidphiEncounterPending === 'boolean'
         ? raw.voidphiEncounterPending
+        : false,
+    unlockedCount:
+      typeof raw.unlockedCount === 'number' &&
+      raw.unlockedCount >= 0 &&
+      raw.unlockedCount <= 20
+        ? raw.unlockedCount
+        : 0,
+    trueEndingAchieved:
+      typeof raw.trueEndingAchieved === 'boolean'
+        ? raw.trueEndingAchieved
+        : false,
+    voidphiAwakened:
+      typeof raw.voidphiAwakened === 'boolean'
+        ? raw.voidphiAwakened
+        : false,
+    voidphiIntroSeen:
+      typeof raw.voidphiIntroSeen === 'boolean'
+        ? raw.voidphiIntroSeen
         : false,
   };
 }

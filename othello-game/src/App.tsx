@@ -108,12 +108,8 @@ import {
   recordFreeResult,
   updateSlot as storageUpdateSaveSlot,
   getCharacterUnlocks,
-  setCharacterUnlocks,
   getTrueEndingAchieved,
-  setTrueEndingAchieved,
   getVoidphiAwakened,
-  setVoidphiAwakened,
-  setVoidphiIntroSeen,
   TOTAL_BONUS_AVATARS,
   type SaveSlot,
 } from './storage/saveSlots';
@@ -1813,11 +1809,16 @@ export default function App() {
 
   /* ----- Effects ----- */
 
-  // Load persisted save slots + active slot id + unlock counter on mount.
-  // The unlock counter migration (seeding from existing slots that
-  // already cleared) happens inside getCharacterUnlocks itself.
+  // Load persisted save slots + active slot id on mount, then
+  // perform a ONE-TIME migration of the legacy global unlock /
+  // true-ending / voidphi flags into the previously-active slot
+  // (v0.36.12 made these per-slot — see SaveSlot interface).
+  // Without the migration, an existing user upgrading from a build
+  // that wrote globals only would see all slots show as fresh
+  // even though their main save had reached the true ending.
   useEffect(() => {
     let cancelled = false;
+    const MIGRATED_KEY = 'othello:per_slot_flags_migrated';
     Promise.all([
       getSlots(),
       getActiveSlotId(),
@@ -1826,43 +1827,83 @@ export default function App() {
       getVoidphiAwakened(),
     ]).then(([loaded, id, unlocks, trueEnding, voidphi]) => {
       if (cancelled) return;
-      setSlots(loaded);
-      setActiveSlotIdState(id);
-      setUnlockedCount(unlocks);
-      setTrueEndingAchievedState(trueEnding);
-      // Backward-compat migration (v0.36.4): pre-Phase-4-Step-3
-      // semantics had OPP22 unlocked alongside OPP21 the moment the
-      // single `trueEndingAchieved` flag flipped. v0.36.0 introduced
-      // a separate `voidphiAwakened` flag to gate OPP22 behind the
-      // 20-D awakening cinematic, but that broke grandfathered
-      // players: they had `trueEndingAchieved=true` from an earlier
-      // session yet `voidphiAwakened=false` (the storage key didn't
-      // exist back then), so OPP22 silently re-locked itself on
-      // upgrade. Treat any pre-existing true ender as having seen
-      // 20-D — they can re-watch it from the scene archive (added
-      // alongside the migration since the archive entry was also
-      // gated on `voidphiAwakened`).
-      let voidphiResolved = voidphi;
-      if (trueEnding && !voidphi) {
-        voidphiResolved = true;
-        void setVoidphiAwakened(true);
-        logDiag('voidphi.migrated_from_trueending');
+      let alreadyMigrated = false;
+      try {
+        alreadyMigrated =
+          window.localStorage.getItem(MIGRATED_KEY) === '1';
+      } catch {
+        /* private mode */
       }
-      setVoidphiAwakenedState(voidphiResolved);
-      // Default the player avatar to the latest unlocked character
-      // on app boot (mirrors `selectSlot`'s logic). Without this, a
-      // returning player with PLR01 英霊ハルキ unlocked would land
-      // on PLR00 default until they manually picked a slot or
-      // opened settings. Same `unlockedCount > 0` guard keeps fresh
-      // installs on PLR00.
-      if (unlocks > 0 && unlocks < 1 + AVATARS_DATA.length) {
-        setP1Avatar(unlocks);
+      // Pre-Phase-4-Step-3 grandfathering: if the user has the
+      // legacy `trueEndingAchieved` global but no
+      // `voidphiAwakened`, treat them as having seen 20-D so OPP22
+      // doesn't silently re-lock on upgrade.
+      const voidphiResolved = trueEnding && !voidphi ? true : voidphi;
+      if (
+        !alreadyMigrated &&
+        id !== null &&
+        (unlocks > 0 || trueEnding || voidphiResolved)
+      ) {
+        // Seed the previously-active slot from the legacy globals.
+        // Other slots stay on their default (fresh) per-slot
+        // values so the user gets independent saves.
+        void storageUpdateSaveSlot(id, {
+          unlockedCount: unlocks,
+          trueEndingAchieved: trueEnding,
+          voidphiAwakened: voidphiResolved,
+        }).then((after) => {
+          if (cancelled) return;
+          setSlots(after);
+        });
+        logDiag('per_slot_flags.migrated_from_globals', {
+          slotId: id,
+          unlocks,
+          trueEnding,
+          voidphi: voidphiResolved,
+        });
+      } else {
+        setSlots(loaded);
+      }
+      setActiveSlotIdState(id);
+      try {
+        window.localStorage.setItem(MIGRATED_KEY, '1');
+      } catch {
+        /* private mode — re-migrating next session is harmless */
       }
     });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // Active-slot → in-memory state sync. Whenever the active slot
+  // changes (either selectSlot or a per-slot patch via
+  // storageUpdateSaveSlot+setSlots) refresh the unlock / story-flag
+  // state from that slot. This is what makes save slots actually
+  // independent: `unlockedCount` etc. are now derived from the
+  // active slot, not from a global localStorage key. Default the
+  // player avatar to the latest unlocked PLR for "this is the canon
+  // protagonist for the slot I just opened" UX.
+  useEffect(() => {
+    if (!activeSlot) {
+      setUnlockedCount(0);
+      setTrueEndingAchievedState(false);
+      setVoidphiAwakenedState(false);
+      return;
+    }
+    const u = activeSlot.unlockedCount ?? 0;
+    setUnlockedCount(u);
+    setTrueEndingAchievedState(activeSlot.trueEndingAchieved ?? false);
+    setVoidphiAwakenedState(activeSlot.voidphiAwakened ?? false);
+    if (u > 0 && u < 1 + AVATARS_DATA.length) {
+      setP1Avatar(u);
+    }
+  }, [
+    activeSlot?.id,
+    activeSlot?.unlockedCount,
+    activeSlot?.trueEndingAchieved,
+    activeSlot?.voidphiAwakened,
+  ]);
 
   // Sync opponent character/level to story progress when in story mode.
   // Skip while a saved kifu is being viewed — otherwise the opponent we
@@ -2119,7 +2160,13 @@ export default function App() {
       if (justClearedStory && unlockedCount < TOTAL_BONUS_AVATARS) {
         const nextUnlocks = unlockedCount + 1;
         setUnlockedCount(nextUnlocks);
-        void setCharacterUnlocks(nextUnlocks);
+        // v0.36.12: per-slot unlocks. Persist to the active slot
+        // and let the activeSlot-sync effect keep the UI in line.
+        // Pre-v0.36.12 we also wrote to the legacy global key —
+        // that path is dropped now to keep slots independent.
+        void storageUpdateSaveSlot(activeSlotId, {
+          unlockedCount: nextUnlocks,
+        }).then(setSlots);
         // The newly unlocked avatar lives at AVATARS[nextUnlocks]
         // (index 0 = default, 1..20 = bonus). Surface it on the
         // GameOver modal and auto-select it as the player's next
@@ -2164,26 +2211,21 @@ export default function App() {
       willFire: gameMode === 'ai' && wonChapter20 && ranAsPLR01,
     });
     if (gameMode === 'ai' && wonChapter20 && ranAsPLR01) {
-      // Idempotent flag flips — only matter on the first win, but
-      // calling them again is harmless. They keep OPP21 / OPP22 in
-      // their unlocked state across replays.
+      // Per-slot trueEnding flip. Idempotent on subsequent wins.
       if (!trueEndingAchieved) {
         setTrueEndingAchievedState(true);
-        void setTrueEndingAchieved(true);
       }
       // Chain: 20-B → 20-C → 20-D. Re-fires on every qualifying
       // win so the player can re-experience the finale by simply
       // beating ゼロ as PLR01 again.
       setStoryOverlay('narrative:trueEnding20B');
-      // Persist a per-slot "Void-φ encounter is queued" flag so
-      // that if the player hits Home in the middle of the
-      // cinematic chain (or before tapping "begin Void-φ" on the
-      // intro overlay), re-entering the slot from the title
-      // screen restarts the chain at 20-B → 20-C → 20-D →
-      // opp22.intro → battle. Cleared after the OPP22 battle ends
-      // (see the result===22 branch below).
+      // Persist per-slot: trueEnding + the "Void-φ encounter is
+      // queued" flag (so home re-entry resumes the cinematic from
+      // 20-B → 20-C → 20-D → opp22.intro → battle). Cleared after
+      // the OPP22 battle ends (see the level===22 branch below).
       if (activeSlotId !== null) {
         void storageUpdateSaveSlot(activeSlotId, {
+          trueEndingAchieved: true,
           voidphiEncounterPending: true,
         }).then(setSlots);
       }
@@ -2872,24 +2914,30 @@ export default function App() {
     }
   }
 
-  /** Magic-spell handler. Called from the spell modal (Enter key
-   *  or 🪄 button). Shape:
+  /** Magic-spell handler — called from the spell modal (Enter key
+   *  or 🪄 button). All mutations target the **active slot only**
+   *  (v0.36.12 made these flags per-slot — see SaveSlot interface).
+   *  Shape:
    *
    *  - bare cipher (e.g. 「ばんじょうぜんてんかいほう」) →
-   *    "master" mode: unlock every bonus avatar, mark every story
-   *    overlay seen for the active slot, and stamp the slot to
-   *    a fully-cleared + true-ending state so the archive
-   *    surfaces every scene.
-   *  - cipher + 2-digit suffix (`01`..`21`) → "warp" mode: jump
-   *    the active slot's `storyProgress` to that chapter (1..20)
-   *    and unlocks to match. `21` extends master mode (all 20
-   *    cleared + true ending + voidphi awakening).
+   *    "master" mode: full roster unlock + true-ending + voidphi
+   *    awakening on the active slot, plus every story overlay
+   *    marked seen so the scene archive shows everything. The
+   *    encounter-pending flag is cleared (no auto-cinematic on
+   *    home re-entry). Use this to inspect the fully-cleared
+   *    sandbox state.
+   *  - cipher + 2-digit suffix (`01`..`20`) → "warp" mode: drop
+   *    the active slot at the **save point AT chapter NN** =
+   *    storyProgress = NN-1 (= NN-1 chapters cleared, ready to
+   *    play ch.NN next). Bonus avatars unlock proportionally.
+   *  - cipher + `21` → "post-true-ending" warp: storyProgress =
+   *    20, full unlocks (incl. PLR01), trueEnding + voidphi flags
+   *    on, **voidphiEncounterPending = true**. On slot re-entry
+   *    the cinematic chain (20-B → 20-C → 20-D → opp22.intro →
+   *    OPP22 battle) auto-fires. This is the "I want to test the
+   *    Void-φ encounter" warp.
    *
-   *  Returns `true` when the input matched either form (so the
-   *  caller can flip the success/failure UI bit). The actual
-   *  state mutations are fire-and-forget — `setSlots` re-fetches
-   *  after the slot patch lands so the title-screen footer
-   *  reflects the new chapter immediately. */
+   *  Returns `true` when the input matched either form. */
   function castSpell(): boolean {
     const norm = (s: string) =>
       s
@@ -2900,66 +2948,82 @@ export default function App() {
     const inputN = norm(spellInput);
     if (cipher.length === 0) return false;
 
-    let chapter: number | null = null;
-    let isMaster = false;
+    type SpellMode =
+      | { kind: 'master' }
+      | { kind: 'warp'; chapter: number }
+      | { kind: 'voidphi-pending' };
+    let mode: SpellMode | null = null;
     if (inputN === cipher) {
-      // Bare cipher → master mode.
-      isMaster = true;
+      mode = { kind: 'master' };
     } else if (inputN.startsWith(cipher)) {
       const suffix = inputN.slice(cipher.length);
       if (/^\d{2}$/.test(suffix)) {
         const n = Number(suffix);
-        if (n >= 1 && n <= 21) {
-          chapter = n;
-          if (n === 21) isMaster = true;
-        }
+        if (n >= 1 && n <= 20) mode = { kind: 'warp', chapter: n };
+        else if (n === 21) mode = { kind: 'voidphi-pending' };
       }
     }
-    if (!isMaster && chapter === null) return false;
-
-    // Unlock bonus avatars. For master mode, full roster (incl
-    // PLR01 英霊ハルキ). For warp mode (1..20), unlock proportional
-    // to chapter progress: clearing ch.N gives PLR(N+1) (= avatar
-    // index N - 1 in AVATARS_DATA), and clearing ch.20 with PLR00
-    // grants PLR01 as the 20th bonus.
-    const targetUnlocks = isMaster
-      ? TOTAL_BONUS_AVATARS
-      : Math.min(chapter ?? 0, TOTAL_BONUS_AVATARS);
-    setUnlockedCount(targetUnlocks);
-    void setCharacterUnlocks(targetUnlocks);
-
-    // True-ending + voidphi flags. Master mode flips both on so
-    // the OPP21 / OPP22 selection gates open. Warp mode keeps
-    // them as-is (we don't want chapter-5 warp to silently grant
-    // the true-ending flag).
-    if (isMaster) {
-      setTrueEndingAchievedState(true);
-      void setTrueEndingAchieved(true);
-      setVoidphiAwakenedState(true);
-      void setVoidphiAwakened(true);
+    if (mode === null) return false;
+    if (activeSlotId === null) {
+      // Spell needs an active slot to mutate. Fail silently —
+      // the failure UI prompts the user to pick a save first.
+      logDiag('spell.no_active_slot');
+      return false;
     }
 
-    // Active slot patch. storyProgress + lives reset for warp mode,
-    // and we always mark every story overlay seen so the archive
-    // becomes fully populated (the user explicitly asked for "回想
-    // シーンの閲覧やプログレスなど全て見える状態に").
-    const slotProgress = isMaster ? 20 : Math.min(chapter ?? 0, 20);
-    if (activeSlotId !== null) {
-      void storageUpdateSaveSlot(activeSlotId, {
-        storyProgress: slotProgress,
-        // Top up lives so the warp-target chapter is playable.
-        // Master mode also resets lives; harmless side-effect.
-        lives: 3,
-        // Clear voidphi pending so master / warp doesn't drag the
-        // user into the trueEnding cinematic on slot re-entry.
+    // Per-slot patch — exactly mirrors the natural game-progress
+    // semantics so a warp-loaded slot behaves like one earned
+    // through play.
+    let patch: Partial<SaveSlot>;
+    let markAllOverlaysSeen = false;
+    if (mode.kind === 'master') {
+      patch = {
+        storyProgress: 20,
+        unlockedCount: TOTAL_BONUS_AVATARS,
+        trueEndingAchieved: true,
+        voidphiAwakened: true,
+        voidphiIntroSeen: true,
         voidphiEncounterPending: false,
-      }).then(setSlots);
+        lives: 3,
+      };
+      markAllOverlaysSeen = true;
+    } else if (mode.kind === 'voidphi-pending') {
+      // "Save point at ch.21" = PLR01 has just won ch.20 and the
+      // post-victory cinematic chain is queued. Re-entering the
+      // slot from home replays 20-B → 20-C → 20-D → opp22.intro
+      // → battle.
+      patch = {
+        storyProgress: 20,
+        unlockedCount: TOTAL_BONUS_AVATARS,
+        trueEndingAchieved: true,
+        voidphiAwakened: true,
+        voidphiIntroSeen: false,
+        voidphiEncounterPending: true,
+        lives: 3,
+      };
+    } else {
+      // Warp mode 01..20: storyProgress = chapter - 1, ready to
+      // play that chapter. Unlocks scale with how many chapters
+      // would be cleared at this point.
+      const sp = mode.chapter - 1;
+      patch = {
+        storyProgress: sp,
+        unlockedCount: Math.min(sp, TOTAL_BONUS_AVATARS),
+        trueEndingAchieved: false,
+        voidphiAwakened: false,
+        voidphiIntroSeen: false,
+        voidphiEncounterPending: false,
+        lives: 3,
+      };
+    }
+    void storageUpdateSaveSlot(activeSlotId, patch).then(setSlots);
+    if (markAllOverlaysSeen) {
       const slotKey = String(activeSlotId);
       for (const key of OVERLAY_ORDER) {
         markOverlaySeen(slotKey, key);
       }
     }
-    logDiag('spell.cast', { isMaster, chapter, targetUnlocks });
+    logDiag('spell.cast', { mode, slotId: activeSlotId });
     return true;
   }
 
@@ -4097,7 +4161,11 @@ export default function App() {
                 );
               }
               setVoidphiAwakenedState(true);
-              void setVoidphiAwakened(true);
+              if (activeSlotId !== null) {
+                void storageUpdateSaveSlot(activeSlotId, {
+                  voidphiAwakened: true,
+                }).then(setSlots);
+              }
               logDiag('voidphi.awakened');
               // Chain into the OPP22 intro narrative — the
               // "transition from PLR01 to Void-φ" the player
@@ -4131,7 +4199,11 @@ export default function App() {
                   'narrative:opp22.intro',
                 );
               }
-              void setVoidphiIntroSeen(true);
+              if (activeSlotId !== null) {
+                void storageUpdateSaveSlot(activeSlotId, {
+                  voidphiIntroSeen: true,
+                }).then(setSlots);
+              }
               logDiag('voidphi.intro_seen');
               setStoryOverlay(null);
               // Auto-launch the OPP22 battle. Free-mode keeps the
@@ -6496,7 +6568,18 @@ export default function App() {
                       onClick={() => {
                         if (!window.confirm(t.unlockResetConfirm)) return;
                         setUnlockedCount(0);
-                        void setCharacterUnlocks(0);
+                        // v0.36.12: per-slot unlocks. Reset only
+                        // the active slot — other slots keep their
+                        // independent progress.
+                        if (activeSlotId !== null) {
+                          void storageUpdateSaveSlot(activeSlotId, {
+                            unlockedCount: 0,
+                            trueEndingAchieved: false,
+                            voidphiAwakened: false,
+                            voidphiIntroSeen: false,
+                            voidphiEncounterPending: false,
+                          }).then(setSlots);
+                        }
                         setP1Avatar(0);
                         setP2Avatar(0);
                       }}
@@ -6509,31 +6592,30 @@ export default function App() {
                     </p>
                   </>
                 )}
-                {/* Magic-spell unlock-all — counterpart to the
-                    🔒 reset above. Opens a small modal that takes
-                    a phrase; matching the locale's `spellCipher`
-                    sets unlockedCount to TOTAL_BONUS_AVATARS so the
-                    full roster is selectable for the "I just want
-                    to see every avatar" use case. Visible always
-                    so it's discoverable; the gating is the spell
-                    string, not the button visibility. */}
-                {unlockedCount < TOTAL_BONUS_AVATARS && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setSpellInput('');
-                        setSpellResult(null);
-                        setSpellOpen(true);
-                      }}
-                      className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
-                    >
-                      🪄 {t.spellButtonLabel}
-                    </button>
-                    <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
-                      {t.spellButtonDesc}
-                    </p>
-                  </>
-                )}
+                {/* Magic-spell — counterpart to the 🔒 reset above.
+                    Opens a small modal that takes a phrase; matching
+                    the locale's `spellCipher` (with optional
+                    01..21 suffix) mutates the active slot per the
+                    castSpell() spec. v0.36.12 dropped the
+                    `unlockedCount < TOTAL_BONUS_AVATARS` gate that
+                    previously hid the button on a fully-unlocked
+                    slot — the spell is meant to operate on ANY
+                    slot's state (warp / reset to a chapter), so
+                    making it disappear at the master state was a
+                    bug ("カンストしてしまうと呪文書けなくなる"). */}
+                <button
+                  onClick={() => {
+                    setSpellInput('');
+                    setSpellResult(null);
+                    setSpellOpen(true);
+                  }}
+                  className="btn jp-display text-left text-sm px-4 py-2.5 mt-2"
+                >
+                  🪄 {t.spellButtonLabel}
+                </button>
+                <p className="jp-display italic text-amber-200/55 text-[11px] leading-relaxed">
+                  {t.spellButtonDesc}
+                </p>
                 {/* Manual AI worker respawn — softer recovery than the
                     emergency reload. Cancels any in-flight AI request,
                     clears the `aiThinking` flag, and bumps the retry
