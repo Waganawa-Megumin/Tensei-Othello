@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.40 · subtitle-skyblue-stroke';
+const BUILD_TAG = 'v0.36.42 · subtitle-white-stroke';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -162,18 +162,18 @@ export function TitleScreen({
         >
           {renderEmphasized(t.story.prologue.tagline)}
         </p>
-        {/* Latin subtitle. v0.36.40 — cool sky-blue tone (color
-            opposite of amber on the wheel) so the text breaks out
-            of the warm bg illustration's tonal range. White at
-            v0.36.39 was still too close in luminance to the bright
-            bg highlights; sky-blue + the new -webkit-text-stroke
-            outline gives a chiseled cool-on-warm look that reads
-            from any region of the bg. */}
+        {/* Latin subtitle. v0.36.41 — back to pure white but keep
+            the dark text-stroke + strong shadow halo from v0.36.40.
+            Sky-blue made it harder to read against the brighter bg
+            (luminance dropped relative to bg highlights); white is
+            the highest-luminance fill. The thin black stroke is what
+            gives the glyph definition over the warm illustration —
+            the v0.36.39 white-only attempt didn't have that. */}
         <div
-          className="latin-display italic ornament font-semibold text-sky-200 text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
+          className="latin-display italic ornament font-semibold text-white text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] mb-4 max-lg:landscape:mb-1"
           style={{
-            textShadow: '0 0 16px rgba(10,8,5,0.95), 0 2px 4px rgba(0,0,0,0.95)',
-            WebkitTextStroke: '0.5px rgba(10,8,5,0.85)',
+            textShadow: '0 0 18px rgba(10,8,5,0.95), 0 2px 6px rgba(0,0,0,0.95)',
+            WebkitTextStroke: '0.6px rgba(10,8,5,0.9)',
           }}
         >
           — Summoned as an Othello Player —
