@@ -1848,10 +1848,11 @@ export default function App() {
   // state from that slot. This is what makes save slots truly
   // independent: `unlockedCount` etc. are derived from the active
   // slot only, not from any global localStorage key. The player
-  // avatar (p1Avatar) is also clamped to what the new slot has
-  // unlocked — a switch from a maxed slot to a fresh one resets
-  // the player avatar to PLR00 default so a stale PLR01 from the
-  // prior slot doesn't linger as the "selected" avatar.
+  // avatar (p1Avatar) is *clamped* to the slot's unlock range
+  // rather than forced to the latest unlock — so an explicit
+  // selection (settings panel, magic-spell PPCC) survives the
+  // sync, while a stale PLR01 carried over from a previous slot
+  // gets pulled back to a valid index.
   useEffect(() => {
     if (!activeSlot) {
       setUnlockedCount(0);
@@ -1864,11 +1865,12 @@ export default function App() {
     setUnlockedCount(u);
     setTrueEndingAchievedState(activeSlot.trueEndingAchieved ?? false);
     setVoidphiAwakenedState(activeSlot.voidphiAwakened ?? false);
-    if (u === 0) {
-      setP1Avatar(0);
-    } else if (u < 1 + AVATARS_DATA.length) {
-      setP1Avatar(u);
-    }
+    setP1Avatar((current) => {
+      // PLR01 lives at index 20 (last slot in AVATARS); other
+      // bonus avatars at indices 1..19 require unlocks ≥ index.
+      if (current > u) return Math.min(u, AVATARS.length - 1);
+      return current;
+    });
   }, [
     activeSlot?.id,
     activeSlot?.unlockedCount,
@@ -2887,26 +2889,22 @@ export default function App() {
 
   /** Magic-spell handler — called from the spell modal (Enter key
    *  or 🪄 button). All mutations target the **active slot only**
-   *  (v0.36.12 made these flags per-slot — see SaveSlot interface).
-   *  Shape:
+   *  (per-slot flags introduced in v0.36.12). v0.36.14 redesigned
+   *  the suffix syntax per the author's request:
    *
-   *  - bare cipher (e.g. 「ばんじょうぜんてんかいほう」) →
-   *    "master" mode: full roster unlock + true-ending + voidphi
-   *    awakening on the active slot, plus every story overlay
-   *    marked seen so the scene archive shows everything. The
-   *    encounter-pending flag is cleared (no auto-cinematic on
-   *    home re-entry). Use this to inspect the fully-cleared
-   *    sandbox state.
-   *  - cipher + 2-digit suffix (`01`..`20`) → "warp" mode: drop
-   *    the active slot at the **save point AT chapter NN** =
-   *    storyProgress = NN-1 (= NN-1 chapters cleared, ready to
-   *    play ch.NN next). Bonus avatars unlock proportionally.
-   *  - cipher + `21` → "post-true-ending" warp: storyProgress =
-   *    20, full unlocks (incl. PLR01), trueEnding + voidphi flags
-   *    on, **voidphiEncounterPending = true**. On slot re-entry
-   *    the cinematic chain (20-B → 20-C → 20-D → opp22.intro →
-   *    OPP22 battle) auto-fires. This is the "I want to test the
-   *    Void-φ encounter" warp.
+   *  - bare cipher (e.g. 「ばんじょうぜんてんかいほう」) → shorthand
+   *    for PPCC = `0121`: PLR01 英霊ハルキ at chapter 21 (= the
+   *    post-true-ending state with the Void-φ encounter queued).
+   *  - cipher + 4 digits **PPCC** → set the active slot to play as
+   *    PLR PP at chapter CC's save point. PP ∈ {00, 01, 02..20}
+   *    where the PLR id matches the asset folder
+   *    (`PLR03_rin` ⇢ `03`); CC ∈ {01..21} where 01..20 is "ready
+   *    to play chapter CC" (storyProgress=CC-1) and 21 is the
+   *    post-true-ending overlay state. Chapter 21 with PLR01
+   *    flips trueEnding + voidphi + voidphiEncounterPending so the
+   *    cinematic chain auto-fires on slot re-entry; with any other
+   *    PLR it just stamps storyProgress=20 / unlocks=20 (= "all 20
+   *    chapters cleared, but no true ending was earned").
    *
    *  Returns `true` when the input matched either form. */
   function castSpell(): boolean {
@@ -2919,82 +2917,79 @@ export default function App() {
     const inputN = norm(spellInput);
     if (cipher.length === 0) return false;
 
-    type SpellMode =
-      | { kind: 'master' }
-      | { kind: 'warp'; chapter: number }
-      | { kind: 'voidphi-pending' };
-    let mode: SpellMode | null = null;
+    let plr: number;
+    let chapter: number;
     if (inputN === cipher) {
-      mode = { kind: 'master' };
+      plr = 1;
+      chapter = 21;
     } else if (inputN.startsWith(cipher)) {
       const suffix = inputN.slice(cipher.length);
-      if (/^\d{2}$/.test(suffix)) {
-        const n = Number(suffix);
-        if (n >= 1 && n <= 20) mode = { kind: 'warp', chapter: n };
-        else if (n === 21) mode = { kind: 'voidphi-pending' };
-      }
+      if (!/^\d{4}$/.test(suffix)) return false;
+      const pp = Number(suffix.slice(0, 2));
+      const cc = Number(suffix.slice(2));
+      if (pp < 0 || pp > 20) return false;
+      if (cc < 1 || cc > 21) return false;
+      plr = pp;
+      chapter = cc;
+    } else {
+      return false;
     }
-    if (mode === null) return false;
+
     if (activeSlotId === null) {
-      // Spell needs an active slot to mutate. Fail silently —
-      // the failure UI prompts the user to pick a save first.
       logDiag('spell.no_active_slot');
       return false;
     }
 
-    // Per-slot patch — exactly mirrors the natural game-progress
-    // semantics so a warp-loaded slot behaves like one earned
-    // through play.
-    let patch: Partial<SaveSlot>;
-    let markAllOverlaysSeen = false;
-    if (mode.kind === 'master') {
-      patch = {
-        storyProgress: 20,
-        unlockedCount: TOTAL_BONUS_AVATARS,
-        trueEndingAchieved: true,
-        voidphiAwakened: true,
-        voidphiIntroSeen: true,
-        voidphiEncounterPending: false,
-        lives: 3,
-      };
-      markAllOverlaysSeen = true;
-    } else if (mode.kind === 'voidphi-pending') {
-      // "Save point at ch.21" = PLR01 has just won ch.20 and the
-      // post-victory cinematic chain is queued. Re-entering the
-      // slot from home replays 20-B → 20-C → 20-D → opp22.intro
-      // → battle.
-      patch = {
-        storyProgress: 20,
-        unlockedCount: TOTAL_BONUS_AVATARS,
-        trueEndingAchieved: true,
-        voidphiAwakened: true,
-        voidphiIntroSeen: false,
-        voidphiEncounterPending: true,
-        lives: 3,
-      };
-    } else {
-      // Warp mode 01..20: storyProgress = chapter - 1, ready to
-      // play that chapter. Unlocks scale with how many chapters
-      // would be cleared at this point.
-      const sp = mode.chapter - 1;
-      patch = {
-        storyProgress: sp,
-        unlockedCount: Math.min(sp, TOTAL_BONUS_AVATARS),
-        trueEndingAchieved: false,
-        voidphiAwakened: false,
-        voidphiIntroSeen: false,
-        voidphiEncounterPending: false,
-        lives: 3,
-      };
-    }
+    // PLR PP → AVATARS array index. AVATARS layout is
+    //   [PLR00 default, PLR02..PLR20 (19 entries), PLR01 special last].
+    // So PLR00 → 0, PLR01 → 20, PLR02..PLR20 → 1..19.
+    const avatarIdx = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
+    // unlockedCount required for that PLR to be selectable.
+    const plrUnlocksNeeded = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
+    // Natural unlocks for the chapter target. clearing N chapters
+    // grants N bonus avatars; ch.21 (post-true-ending) implies all
+    // 20 cleared. We take the max so the chosen PLR is always
+    // selectable even at low chapters (= tester intent).
+    const naturalUnlocks = chapter <= 20 ? chapter - 1 : 20;
+    const unlocks = Math.min(
+      Math.max(plrUnlocksNeeded, naturalUnlocks),
+      TOTAL_BONUS_AVATARS,
+    );
+    const slotProgress = chapter <= 20 ? chapter - 1 : 20;
+    const isPostTrueEnding = chapter === 21 && plr === 1;
+
+    const patch: Partial<SaveSlot> = {
+      storyProgress: slotProgress,
+      unlockedCount: unlocks,
+      trueEndingAchieved: isPostTrueEnding,
+      voidphiAwakened: isPostTrueEnding,
+      voidphiIntroSeen: false,
+      voidphiEncounterPending: isPostTrueEnding,
+      lives: 3,
+    };
     void storageUpdateSaveSlot(activeSlotId, patch).then(setSlots);
-    if (markAllOverlaysSeen) {
-      const slotKey = String(activeSlotId);
-      for (const key of OVERLAY_ORDER) {
-        markOverlaySeen(slotKey, key);
-      }
+    // Set p1Avatar directly — the activeSlot-sync effect's clamp
+    // would otherwise pull p1Avatar to `unlocks` and override the
+    // explicit PLR choice (e.g. spell `0001` wants PLR00 even
+    // though PLR02 is unlocked = unlocks ≥ 1).
+    setP1Avatar(avatarIdx);
+    // Mark every story overlay as seen so the scene archive shows
+    // every beat — testers casting the spell are exploring state,
+    // not playing through, so a fully-populated archive is what
+    // they want.
+    const slotKey = String(activeSlotId);
+    for (const key of OVERLAY_ORDER) {
+      markOverlaySeen(slotKey, key);
     }
-    logDiag('spell.cast', { mode, slotId: activeSlotId });
+    logDiag('spell.cast', {
+      plr,
+      chapter,
+      avatarIdx,
+      unlocks,
+      slotProgress,
+      isPostTrueEnding,
+      slotId: activeSlotId,
+    });
     return true;
   }
 

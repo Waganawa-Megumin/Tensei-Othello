@@ -796,7 +796,7 @@ export const ja: Messages = {
   spellModalTitle: '🪄 魔法の呪文',
   spellModalSubtitle: '盤上世界の鍵を、ことばで開く。',
   spellModalHint:
-    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n（呪文の後ろに **01〜21** を付けると、その章のセーブポイントへ跳べる）',
+    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n素のままだと **PLR01・第 21 章** (真エンディング直前) の状態に。\n後ろに **PPCC** (4 桁) を付けると、**PLR PP** で **第 CC 章** のセーブポイントへ跳べる。例 `…0302` ＝ **PLR03・第 2 章**。CC=21 は post-true-ending。',
   spellPlaceholder: '呪文をひらがなで入力',
   spellSubmitLabel: '唱える',
   spellCancelLabel: '閉じる',
@@ -1219,7 +1219,7 @@ your journey on the board reaches its close.`,
   spellModalTitle: '🪄 Magic Spell',
   spellModalSubtitle: 'Open the gate of the Board World with a word.',
   spellModalHint:
-    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\n(Append **01–21** to the spell to warp the active save to that chapter's checkpoint.)",
+    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\nBare spell ⇢ **PLR01 · Chapter 21** (post-true-ending state).\nAppend **PPCC** (4 digits) to warp: PLR **PP** at chapter **CC**'s save point. Example `…0302` ⇢ **PLR03 · Chapter 2**. CC=21 is post-true-ending.",
   spellPlaceholder: 'whisper the spell',
   spellSubmitLabel: 'cast',
   spellCancelLabel: 'close',
