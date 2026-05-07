@@ -7,7 +7,7 @@ import { renderEmphasized } from '../i18n/story/render';
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.16 · spell-pp-only-unlocks-and-real-savepoint';
+const BUILD_TAG = 'v0.36.17 · title-mx-auto-column';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -70,7 +70,7 @@ export function TitleScreen({
   }.png`;
 
   return (
-    <div className="stage-bg min-h-screen w-full relative flex flex-col items-center justify-center px-4 py-8 max-lg:landscape:py-3 overflow-hidden">
+    <div className="stage-bg min-h-screen w-full relative py-8 max-lg:landscape:py-3 overflow-hidden flex flex-col justify-center">
       {/* Title-screen background illustration. Loaded from public/ so
           its presence/absence is independent of the JS bundle — if the
           PNG isn't shipped (or 404s) the existing dark stage-bg shows
@@ -127,6 +127,21 @@ export function TitleScreen({
           );
         })}
       </div>
+
+      {/* Centered content column. Replaces the previous
+          `flex items-center` parent, which was visually right-
+          shifted on some Android viewports (v0.36.16 →
+          v0.36.17 「枠全体が少し右寄り」 report). Plain
+          `mx-auto` block centering with explicit horizontal
+          padding inside the column behaves the same on every
+          device. */}
+      <div
+        className="relative w-full max-w-4xl mx-auto box-border"
+        style={{
+          paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+          paddingRight: 'max(1rem, env(safe-area-inset-right))',
+        }}
+      >
 
       {/* Title block */}
       <div className="relative text-center mb-10 max-lg:landscape:mb-3 md:mb-12">
@@ -362,6 +377,8 @@ export function TitleScreen({
           {BUILD_TAG}
         </div>
       </div>
+
+      </div> {/* end centered content column */}
     </div>
   );
 }
