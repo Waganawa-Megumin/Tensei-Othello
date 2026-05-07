@@ -19,9 +19,12 @@ interface SlotPickerProps {
   onClose: () => void;
   /** Called whenever the slots array changes (rename / reset). */
   onSlotsChanged: (slots: SaveSlot[]) => void;
-  /** Opens the magic-spell modal. Surfaced here so a tester can
-   *  warp slot state without first having to enter a match. */
-  onCastSpell?: () => void;
+  /** Opens the magic-spell modal targeted at the given slot — the
+   *  caller is responsible for setting the active slot first so the
+   *  spell modal patches the row the tester clicked. Without a slot
+   *  arg the bottom-of-modal shortcut targets whatever slot is
+   *  already active. */
+  onCastSpell?: (slotId?: number) => void;
   /** Localized PLR avatar names indexed by AVATARS index (= 0 for
    *  PLR00 default, 1..19 for PLR02..PLR20, 20 for PLR01 英霊
    *  ハルキ). Used to show "PLR PP まで unlocked" per slot so the
@@ -222,6 +225,21 @@ export function SlotPicker({
                             <RotateCcw size={14} strokeWidth={1.5} />
                           </button>
                         )}
+                        {/* v0.36.20 — per-slot 🪄 cast button. Lets a
+                            tester target a specific row without first
+                            having to switch the active slot via the
+                            "選ぶ" button. The bottom shortcut still
+                            uses the currently-active slot. */}
+                        {onCastSpell && (
+                          <button
+                            onClick={() => onCastSpell(id)}
+                            className="btn text-xs px-2 py-1.5"
+                            title={t.spellRowButtonTitle(slot.name)}
+                            aria-label={t.spellRowButtonTitle(slot.name)}
+                          >
+                            🪄
+                          </button>
+                        )}
                         <button
                           onClick={() => onSelect(id)}
                           className={`btn text-xs px-3 py-1.5 ${isActive ? 'btn-active' : ''}`}
@@ -240,7 +258,7 @@ export function SlotPicker({
         {onCastSpell && (
           <div className="mt-4 pt-3 border-t border-amber-200/15 flex items-center justify-end">
             <button
-              onClick={onCastSpell}
+              onClick={() => onCastSpell()}
               className="btn jp-display text-xs px-3 py-1.5"
               title={t.spellButtonLabel}
             >

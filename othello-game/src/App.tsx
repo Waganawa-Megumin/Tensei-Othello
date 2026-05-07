@@ -108,6 +108,7 @@ import {
   recordFreeResult,
   updateSlot as storageUpdateSaveSlot,
   TOTAL_BONUS_AVATARS,
+  INITIAL_LIVES,
   type SaveSlot,
 } from './storage/saveSlots';
 import { logDiag, exportDiagLog, clearDiagLog } from './lib/diagLog';
@@ -1631,9 +1632,20 @@ export default function App() {
    *  marked seen so the archive is fully populated. */
   const [spellOpen, setSpellOpen] = useState(false);
   const [spellInput, setSpellInput] = useState('');
-  const [spellResult, setSpellResult] = useState<'success' | 'failure' | null>(
-    null,
-  );
+  /** Discriminated outcome of the most recent cast attempt. v0.36.20:
+   *  failure modes split so the modal can explain WHY the spell didn't
+   *  take (cipher mismatch vs. malformed PPCC vs. no active slot vs.
+   *  ch.21 attempted with PP≠01). Success carries the parsed plr +
+   *  chapter so the success message can echo what was applied. */
+  type SpellResult =
+    | {
+        kind: 'success';
+        plr: number;
+        chapter: number;
+        bareCipher: boolean;
+      }
+    | { kind: 'failure'; reason: 'cipher' | 'format' | 'noSlot' | 'ch21NotPlr01' };
+  const [spellResult, setSpellResult] = useState<SpellResult | null>(null);
   /** Transient "log copied" toast shown next to the diagnostic export
    *  button so the user knows clipboard write succeeded. Auto-clears
    *  after 2.5s. */
@@ -2906,8 +2918,22 @@ export default function App() {
    *    PLR it just stamps storyProgress=20 / unlocks=20 (= "all 20
    *    chapters cleared, but no true ending was earned").
    *
-   *  Returns `true` when the input matched either form. */
-  function castSpell(): boolean {
+   *  Returns a `SpellResult` describing what happened. v0.36.20:
+   *  - failure modes split into 'cipher' / 'format' / 'noSlot' /
+   *    'ch21NotPlr01' so the modal can explain WHY the cast failed.
+   *  - `lives` reset uses INITIAL_LIVES (= 5) rather than a stale
+   *    hardcoded `3`.
+   *  - the per-slot `totalGames` / `wins` / `losses` / `draws` /
+   *    `resigns` / `vsOpponent` stats are wiped too — spell cast is
+   *    a "complete clean-slate warp" semantic, otherwise a tester who
+   *    plays a few matches then warps would see leftover stats from
+   *    the previous run inflate the GameOver modal's tally.
+   *  - bare-cipher cast (no PPCC suffix) prompts the user via a
+   *    `window.confirm`; OK queues the Void-φ cinematic chain
+   *    (20-B → 20-C → 20-D → opp22.intro → OPP22 battle) immediately,
+   *    Cancel just patches the slot to post-true-ending state and
+   *    leaves the user on the current screen. */
+  function castSpell(): SpellResult {
     const norm = (s: string) =>
       s
         .normalize('NFKC')
@@ -2915,29 +2941,56 @@ export default function App() {
         .replace(/[\s、。！!？?「」・]/g, '');
     const cipher = norm(t.spellCipher);
     const inputN = norm(spellInput);
-    if (cipher.length === 0) return false;
+    if (cipher.length === 0) return { kind: 'failure', reason: 'cipher' };
 
     let plr: number;
     let chapter: number;
+    let bareCipher = false;
     if (inputN === cipher) {
       plr = 1;
       chapter = 21;
+      bareCipher = true;
     } else if (inputN.startsWith(cipher)) {
       const suffix = inputN.slice(cipher.length);
-      if (!/^\d{4}$/.test(suffix)) return false;
+      if (!/^\d{4}$/.test(suffix)) {
+        return { kind: 'failure', reason: 'format' };
+      }
       const pp = Number(suffix.slice(0, 2));
       const cc = Number(suffix.slice(2));
-      if (pp < 0 || pp > 20) return false;
-      if (cc < 1 || cc > 21) return false;
+      if (pp < 0 || pp > 20 || cc < 1 || cc > 21) {
+        return { kind: 'failure', reason: 'format' };
+      }
+      // Chapter 21 is the post-true-ending sandbox and only makes
+      // sense with PLR01 英霊ハルキ as the active avatar — the
+      // cinematic chain + OPP22 unlock is keyed to PLR01. Reject
+      // PP≠01 ch.21 with a dedicated reason rather than silently
+      // patching a hybrid state (PLR05 + trueEndingAchieved=true)
+      // that no other code path can produce.
+      if (cc === 21 && pp !== 1) {
+        return { kind: 'failure', reason: 'ch21NotPlr01' };
+      }
       plr = pp;
       chapter = cc;
     } else {
-      return false;
+      return { kind: 'failure', reason: 'cipher' };
     }
 
     if (activeSlotId === null) {
       logDiag('spell.no_active_slot');
-      return false;
+      return { kind: 'failure', reason: 'noSlot' };
+    }
+
+    const isPostTrueEnding = chapter === 21 && plr === 1;
+    const isWarpToChapter = chapter >= 1 && chapter <= 20;
+
+    // Bare-cipher confirmation: "do you want to play the Void-φ
+    // cinematic chain right now?". OK → autoplay flag flips on,
+    // dismissing 20-B will chain through to the OPP22 battle.
+    // Cancel → just rewrite slot state, no cinematic. Non-bare casts
+    // skip the prompt entirely (they don't trigger the chain).
+    let bareCipherAutoPlay = false;
+    if (bareCipher) {
+      bareCipherAutoPlay = window.confirm(t.bareSpellConfirm);
     }
 
     // PLR PP → AVATARS array index. AVATARS layout is
@@ -2949,8 +3002,6 @@ export default function App() {
     // chapter-derived unlocks).)
     const unlocks = plr === 0 ? 0 : plr === 1 ? 20 : plr - 1;
     const slotProgress = chapter <= 20 ? chapter - 1 : 20;
-    const isPostTrueEnding = chapter === 21 && plr === 1;
-    const isWarpToChapter = chapter >= 1 && chapter <= 20;
 
     const now = Date.now();
     const currentSlot = slots.find((s) => s.id === activeSlotId);
@@ -2960,8 +3011,22 @@ export default function App() {
       trueEndingAchieved: isPostTrueEnding,
       voidphiAwakened: isPostTrueEnding,
       voidphiIntroSeen: false,
-      voidphiEncounterPending: isPostTrueEnding,
-      lives: 3,
+      // Bare-cipher autoplay queues the cinematic via setStoryOverlay
+      // below; clearing the pending flag prevents `selectSlot()` from
+      // double-launching the chain on next slot re-entry. Bare cipher
+      // without autoplay (Cancel) leaves the flag true so the user
+      // can resume the chain by re-entering the slot from the title.
+      voidphiEncounterPending: isPostTrueEnding && !bareCipherAutoPlay,
+      lives: INITIAL_LIVES,
+      // Spell cast = clean slate. Wipe stats to match the "fresh
+      // warped slot" semantic so leftover wins/losses from a prior
+      // run don't pollute the GameOver tally.
+      totalGames: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      resigns: 0,
+      vsOpponent: {},
       // Real save point — slot picker shows the spell-warped slot
       // as "in use" rather than "(empty)".
       lastPlayedAt: now,
@@ -3006,10 +3071,11 @@ export default function App() {
 
     // Auto-navigate for warp-to-chapter casts so the user lands
     // on the chapter-CC intro illustration immediately, matching
-    // the request 「10 章の挿絵からスタート」. Bare cipher / 0121
-    // / non-PLR01 chapter-21 casts leave the user where they were
-    // (settings / slot picker / title) so they can verify the new
-    // state via the title-screen footer.
+    // the request 「10 章の挿絵からスタート」. Non-PLR01 chapter-21
+    // is rejected upstream; PLR01 ch.21 (bare cipher or `…0121`)
+    // either auto-plays the cinematic (if the user said OK to the
+    // bare-cipher confirm) or stays on the current screen so they
+    // can verify the new state via the title-screen footer.
     if (isWarpToChapter) {
       setSpellOpen(false);
       setSlotPickerOpen(false);
@@ -3018,6 +3084,19 @@ export default function App() {
       setGameMode('ai');
       setAiMode('story');
       setScreen('intro');
+    } else if (isPostTrueEnding && bareCipherAutoPlay) {
+      // Mirror the post-PLR01-ch.20-victory flow: drop the player
+      // straight onto the game screen with `narrative:trueEnding20B`
+      // queued. Its dismiss chain carries through 20-C → 20-D →
+      // opp22.intro → auto-launched OPP22 battle.
+      setSpellOpen(false);
+      setSlotPickerOpen(false);
+      setSettingsOpen(false);
+      setGameMode('ai');
+      setAiMode('free');
+      reset({ gameMode: 'ai', aiMode: 'free' });
+      setStoryOverlay('narrative:trueEnding20B');
+      setScreen('game');
     }
 
     logDiag('spell.cast', {
@@ -3028,9 +3107,11 @@ export default function App() {
       slotProgress,
       isPostTrueEnding,
       isWarpToChapter,
+      bareCipher,
+      bareCipherAutoPlay,
       slotId: activeSlotId,
     });
-    return true;
+    return { kind: 'success', plr, chapter, bareCipher };
   }
 
   /* ----- Auto-play replay ----- */
@@ -3941,12 +4022,23 @@ export default function App() {
       {/* Story-mode multi-step intro flow. Walks through prologue →
           falling → arrival → chapter card on first run, or just the
           chapter card on every subsequent chapter. `onStart` performs
-          the actual mode switch + board reset and flips to 'game'. */}
+          the actual mode switch + board reset and flips to 'game'.
+
+          v0.36.20 — `firstTime` also gates on `hasSeenOverlay(slot,
+          'prologue')`. A spell warp such as `…XX01` puts the slot at
+          storyProgress=0 AND pre-marks the prologue/intro overlays
+          as seen, so the player should jump straight to the chapter
+          card; without this guard they'd re-watch the full prologue
+          + 5-step intro every time the warped slot starts ch.1. */}
       {screen === 'intro' && (
         <IntroSequence
           t={t}
           locale={locale}
-          firstTime={(activeSlot?.storyProgress ?? 0) === 0}
+          firstTime={
+            (activeSlot?.storyProgress ?? 0) === 0 &&
+            (activeSlotId === null ||
+              !hasSeenOverlay(String(activeSlotId), 'prologue'))
+          }
           chapter={introChapter}
           opponent={
             COMPUTERS.find((c) => c.level === introChapter) ?? COMPUTERS[0]
@@ -6823,7 +6915,14 @@ export default function App() {
         onSelect={selectSlot}
         onClose={() => setSlotPickerOpen(false)}
         onSlotsChanged={setSlots}
-        onCastSpell={() => {
+        onCastSpell={(slotId) => {
+          // Per-row 🪄 → make that row active first so the spell
+          // patches the row the tester clicked. Bottom shortcut
+          // (no slotId) leaves the currently-active slot alone.
+          if (slotId !== undefined && slotId !== activeSlotId) {
+            setActiveSlotIdState(slotId);
+            void setActiveSlotId(slotId);
+          }
           setSlotPickerOpen(false);
           setSpellInput('');
           setSpellResult(null);
@@ -6861,6 +6960,22 @@ export default function App() {
               <p className="jp-display italic text-amber-200/65 text-xs mt-1">
                 {t.spellModalSubtitle}
               </p>
+              {/* v0.36.20 — surface WHICH save the spell will write to.
+                  Without this label a tester opening the spell modal
+                  from the title screen had no visible cue that a slot
+                  was already selected (or wasn't), and would discover
+                  a no-op cast only after submitting. */}
+              <p
+                className={`jp-display text-[11px] mt-2 tracking-wider ${
+                  activeSlot
+                    ? 'text-amber-200/85'
+                    : 'text-red-300/85 italic'
+                }`}
+              >
+                {activeSlot
+                  ? t.spellTargetSlotLabel(activeSlot.name)
+                  : t.spellTargetSlotEmptyLabel}
+              </p>
             </div>
             <div className="px-5 py-5 space-y-3">
               <p className="jp-display italic text-amber-200/75 text-[12px] leading-relaxed whitespace-pre-line">
@@ -6876,20 +6991,30 @@ export default function App() {
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter') return;
                   e.preventDefault();
-                  setSpellResult(castSpell() ? 'success' : 'failure');
+                  if (activeSlot) setSpellResult(castSpell());
                 }}
                 placeholder={t.spellPlaceholder}
                 autoFocus
-                className="w-full px-3 py-2 bg-zinc-900/80 border border-amber-200/25 focus:border-amber-200/70 outline-none rounded-sm jp-display text-amber-100 text-sm tracking-wider"
+                disabled={!activeSlot}
+                className="w-full px-3 py-2 bg-zinc-900/80 border border-amber-200/25 focus:border-amber-200/70 outline-none rounded-sm jp-display text-amber-100 text-sm tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              {spellResult === 'success' && (
-                <p className="jp-display text-amber-200 text-sm leading-relaxed">
-                  {t.spellSuccess}
+              {spellResult?.kind === 'success' && (
+                <p className="jp-display text-amber-200 text-sm leading-relaxed whitespace-pre-line">
+                  {t.spellSuccess(
+                    spellResult.plr,
+                    spellResult.chapter,
+                    spellResult.bareCipher,
+                  )}
                 </p>
               )}
-              {spellResult === 'failure' && (
+              {spellResult?.kind === 'failure' && (
                 <p className="jp-display italic text-amber-200/70 text-xs leading-relaxed">
-                  {t.spellFailure}
+                  {spellResult.reason === 'cipher' && t.spellFailureCipher}
+                  {spellResult.reason === 'format' &&
+                    renderEmphasized(t.spellFailureFormat)}
+                  {spellResult.reason === 'noSlot' && t.spellFailureNoSlot}
+                  {spellResult.reason === 'ch21NotPlr01' &&
+                    renderEmphasized(t.spellFailureCh21NotPlr01)}
                 </p>
               )}
             </div>
@@ -6902,9 +7027,10 @@ export default function App() {
               </button>
               <button
                 onClick={() => {
-                  setSpellResult(castSpell() ? 'success' : 'failure');
+                  if (activeSlot) setSpellResult(castSpell());
                 }}
-                className="px-4 py-1.5 border border-amber-200/70 text-amber-100 bg-amber-200/[0.06] hover:bg-amber-200/[0.12] rounded-sm jp-display text-xs tracking-wider"
+                disabled={!activeSlot}
+                className="px-4 py-1.5 border border-amber-200/70 text-amber-100 bg-amber-200/[0.06] hover:bg-amber-200/[0.12] rounded-sm jp-display text-xs tracking-wider disabled:opacity-40 disabled:cursor-not-allowed disabled:border-amber-200/30"
               >
                 🪄 {t.spellSubmitLabel}
               </button>

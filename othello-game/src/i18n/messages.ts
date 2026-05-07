@@ -364,8 +364,35 @@ export interface Messages {
   spellPlaceholder: string;
   spellSubmitLabel: string;
   spellCancelLabel: string;
-  spellSuccess: string;
-  spellFailure: string;
+  /** Success message after a successful cast. `plr` is the PLR id that
+   *  is now unlocked-up-to (0..20, where 0 = nothing unlocked, 20 =
+   *  PLR20 unlocked). `chapter` is the chapter the slot now starts at
+   *  (1..21). `bareCipher` is true iff the user typed the cipher
+   *  with no PPCC suffix (= bare-cipher post-true-ending shortcut). */
+  spellSuccess: (plr: number, chapter: number, bareCipher: boolean) => string;
+  /** Generic failure ("not the spell"). Shown for cipher mismatch. */
+  spellFailureCipher: string;
+  /** Failure: cipher matched but PPCC suffix is malformed / out of range. */
+  spellFailureFormat: string;
+  /** Failure: spell validates but no slot is currently selected. */
+  spellFailureNoSlot: string;
+  /** Failure: PPCC parsed but CC=21 was given with PP≠01 — chapter 21
+   *  is the post-true-ending sandbox, only valid with PLR01 英霊
+   *  ハルキ as the active avatar. */
+  spellFailureCh21NotPlr01: string;
+  /** Confirm dialog shown when the player types the bare cipher (no
+   *  PPCC suffix). OK → apply post-true-ending state AND auto-play the
+   *  Void-φ cinematic chain (20-B → 20-C → 20-D → opp22.intro). Cancel
+   *  → apply state only, leave the player on the current screen. */
+  bareSpellConfirm: string;
+  /** Header line shown at the top of the spell modal indicating which
+   *  save slot the spell will be cast on. */
+  spellTargetSlotLabel: (slotName: string) => string;
+  /** Header line shown when no slot is selected — the cast button is
+   *  disabled in this state. */
+  spellTargetSlotEmptyLabel: string;
+  /** Per-row spell button title in SlotPicker. */
+  spellRowButtonTitle: (slotName: string) => string;
 
   // Multi-step story intro flow (PrologueScreen / FallingScreen /
   // ArrivalScreen / ChapterIntroScreen). Ja keys mirror the spec in
@@ -771,8 +798,8 @@ export const ja: Messages = {
   slotSwitch: 'セーブを変更',
   slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
     opponentName
-      ? `セーブ：${name}・${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
-      : `セーブ：${name}・${playerName}・全章クリア済・♥${lives}`,
+      ? `セーブ：${name}・現キャラ：${playerName}・第${chapter}章 vs ${opponentName}・♥${lives}`
+      : `セーブ：${name}・現キャラ：${playerName}・全章クリア済・♥${lives}`,
   slotSelect: '選ぶ',
   slotChooseFirst: 'ストーリーを始めるには、まずセーブを選んでください。',
   livesLabel: '残機',
@@ -807,12 +834,32 @@ export const ja: Messages = {
   spellModalTitle: '🪄 魔法の呪文',
   spellModalSubtitle: '盤上世界の鍵を、ことばで開く。',
   spellModalHint:
-    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n素のままだと **PLR01・第 21 章** (真エンディング直前) の状態に。\n後ろに **PPCC** (4 桁) を付けると、**PLR PP までアンロック** + **第 CC 章の挿絵** から開始 (CC ≤ 20 は自動で章イントロへ遷移)。例 `…0717` ＝ **PLR07 までアンロック・第 17 章の挿絵から**。CC=21 は post-true-ending。',
+    'ヒント：石をひっくり返せ、世界もひっくり返せ。──「**盤上**」のすべてを「**全転**」、いま「**解放**」せよ。\n素のままだと **PLR01・第 21 章** (真エンディング直前) の状態に。\n後ろに **PPCC** (4 桁) を付けると、**PLR PP までアンロック** + **第 CC 章の挿絵** から開始 (CC ≤ 20 は自動で章イントロへ遷移)。例 `…0717` ＝ **PLR07 までアンロック・第 17 章の挿絵から**。CC=21 は PLR01 専用 (post-true-ending)。',
   spellPlaceholder: '呪文をひらがなで入力',
   spellSubmitLabel: '唱える',
   spellCancelLabel: '閉じる',
-  spellSuccess: '── 盤上世界、ひらく。すべての打ち手、解き放たれた。',
-  spellFailure: '……ふぅん。神々はその名前で呼ばれていないようだ。',
+  spellSuccess: (plr, chapter, bareCipher) => {
+    if (bareCipher) {
+      return '── 盤上世界、ひらく。すべての打ち手、解き放たれた。\n（真エンディング直前・PLR01 第 21 章 状態）';
+    }
+    const plrLabel = plr === 0 ? 'あなた のみ' : `PLR${String(plr).padStart(2, '0')} まで`;
+    if (chapter === 21) {
+      return `── 盤上世界、ひらく。${plrLabel} アンロック・post-true-ending 状態。`;
+    }
+    return `── 盤上世界、ひらく。${plrLabel} アンロック・第 ${chapter} 章 の挿絵から始まる。`;
+  },
+  spellFailureCipher: '……ふぅん。神々はその名前で呼ばれていないようだ。',
+  spellFailureFormat:
+    '……呪文の末尾は **PPCC** の 4 桁 (PP=00〜20、CC=01〜21) で締めなさい。',
+  spellFailureNoSlot: '……先にセーブを選んでから呪文を唱えなさい。',
+  spellFailureCh21NotPlr01:
+    '……第 21 章 (post-true-ending) は **PLR01 英霊ハルキ** 専用です。PP=01 で唱え直しなさい。',
+  bareSpellConfirm:
+    '真エンディング直前の状態にこのセーブを書き換えます。\nそのままヴォイドφ覚醒シネマ (20-B → 20-C → 20-D → opp22.intro) を再生しますか?\n\n  OK    : 状態を書き換え + シネマを今すぐ再生\n  Cancel: 状態だけ書き換え (タイトルへ戻る)',
+  spellTargetSlotLabel: (slotName) => `対象セーブ：${slotName}`,
+  spellTargetSlotEmptyLabel:
+    '⚠ 対象セーブが選ばれていません。先にセーブを選んでください。',
+  spellRowButtonTitle: (slotName) => `${slotName} に対して呪文を唱える`,
 
   intro: {
     prologueLabel: '序章',
@@ -1196,8 +1243,8 @@ your journey on the board reaches its close.`,
   slotSwitch: 'Switch save',
   slotInUseFooter: (name, lives, chapter, opponentName, playerName) =>
     opponentName
-      ? `Save: ${name} · ${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
-      : `Save: ${name} · ${playerName} · All chapters cleared · ♥${lives}`,
+      ? `Save: ${name} · Avatar: ${playerName} · Ch.${chapter} vs ${opponentName} · ♥${lives}`
+      : `Save: ${name} · Avatar: ${playerName} · All chapters cleared · ♥${lives}`,
   slotSelect: 'Select',
   slotChooseFirst: 'Pick a save before starting the story.',
   livesLabel: 'Lives',
@@ -1234,12 +1281,32 @@ your journey on the board reaches its close.`,
   spellModalTitle: '🪄 Magic Spell',
   spellModalSubtitle: 'Open the gate of the Board World with a word.',
   spellModalHint:
-    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\nBare spell ⇢ **PLR01 · Chapter 21** (post-true-ending state).\nAppend **PPCC** (4 digits) to warp: **roster unlocked up to PLR PP** at the **Chapter CC intro illustration** (CC ≤ 20 auto-jumps to the chapter intro). Example `…0717` ⇢ **roster up to PLR07, starting at Chapter 17**. CC=21 is post-true-ending.",
+    "Hint: the title screen says it. **Flip the stones. Flip... them... all.**\nBare spell ⇢ **PLR01 · Chapter 21** (post-true-ending state).\nAppend **PPCC** (4 digits) to warp: **roster unlocked up to PLR PP** at the **Chapter CC intro illustration** (CC ≤ 20 auto-jumps to the chapter intro). Example `…0717` ⇢ **roster up to PLR07, starting at Chapter 17**. CC=21 is PLR01-only (post-true-ending).",
   spellPlaceholder: 'whisper the spell',
   spellSubmitLabel: 'cast',
   spellCancelLabel: 'close',
-  spellSuccess: '— The Board World opens. Every player has been set free.',
-  spellFailure: "...Hmm. The gods don't seem to know that name.",
+  spellSuccess: (plr, chapter, bareCipher) => {
+    if (bareCipher) {
+      return '— The Board World opens. Every player has been set free.\n(Post-true-ending state · PLR01 · Chapter 21.)';
+    }
+    const plrLabel = plr === 0 ? 'You only' : `up to PLR${String(plr).padStart(2, '0')}`;
+    if (chapter === 21) {
+      return `— The Board World opens. Roster ${plrLabel} unlocked · post-true-ending state.`;
+    }
+    return `— The Board World opens. Roster ${plrLabel} unlocked · starting at the Chapter ${chapter} illustration.`;
+  },
+  spellFailureCipher: "...Hmm. The gods don't seem to know that name.",
+  spellFailureFormat:
+    '...The spell needs a **PPCC** suffix (4 digits — PP 00-20, CC 01-21).',
+  spellFailureNoSlot: '...Pick a save first, then chant the spell.',
+  spellFailureCh21NotPlr01:
+    '...Chapter 21 (post-true-ending) is reserved for **PLR01 Heroic-Spirit Haruki**. Re-chant with PP=01.',
+  bareSpellConfirm:
+    'This will rewrite the slot to the post-true-ending state.\nPlay the Void-φ awakening cinematic (20-B → 20-C → 20-D → opp22.intro) right now?\n\n  OK    : Apply state and play the cinematic immediately\n  Cancel: Apply state only (return to title)',
+  spellTargetSlotLabel: (slotName) => `Target save: ${slotName}`,
+  spellTargetSlotEmptyLabel:
+    '⚠ No save selected. Pick a save first.',
+  spellRowButtonTitle: (slotName) => `Cast the spell on ${slotName}`,
 
   intro: {
     prologueLabel: 'Prologue',
