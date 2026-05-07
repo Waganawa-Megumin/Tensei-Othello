@@ -82,8 +82,25 @@ export interface SaveSlot {
    *  one-time migration that seeds the previously-active slot from
    *  the legacy globals so existing users don't lose progress. */
   /** Number of bonus avatars unlocked on this slot (0..20).
-   *  unlockedCount === 20 means PLR01 英霊ハルキ is also selectable. */
+   *  unlockedCount === 20 means PLR01 英霊ハルキ is also selectable.
+   *  v0.36.26 onward this is a derived view of `avatarsClearedCh20.length`,
+   *  but kept as a persisted scalar for backward compatibility (older
+   *  builds reading the slot still see the right number) and to keep
+   *  the AVATARS picker's `isLocked = i > unlockedCount` gate trivial. */
   unlockedCount?: number;
+  /** v0.36.26 — AVATARS indices (0..19) that have cleared chapter 20
+   *  on this slot at least once. The "ideal-form" unlock chain in
+   *  WORLD_BIBLE: each of PLR02〜PLR20 must defeat ZERO before the
+   *  21st hero (PLR01 英霊ハルキ, AVATARS index 20) is summoned.
+   *  - 0 = PLR00 (default protagonist)
+   *  - 1..19 = PLR02..PLR20 (the 19 bonus avatars)
+   *  - PLR01 (index 20) NEVER appears here — clearing ch.20 with PLR01
+   *    is the true-ending trigger, not a chain step.
+   *  unlockedCount = avatarsClearedCh20.length, so once all 20 indices
+   *  in [0..19] have cleared ch.20 at least once, PLR01 is unlocked.
+   *  Legacy slots (pre-v0.36.26) that only have `unlockedCount` are
+   *  back-derived as `[0..unlockedCount-1]` on read by `migrateSlot`. */
+  avatarsClearedCh20?: number[];
   /** True iff PLR01 has cleared ch.20 on this slot at least once. */
   trueEndingAchieved?: boolean;
   /** True iff the 20-D Void-φ awakening cinematic has played on
@@ -131,6 +148,7 @@ export function defaultSlot(id: number): SaveSlot {
     vsOpponent: {},
     voidphiEncounterPending: false,
     unlockedCount: 0,
+    avatarsClearedCh20: [],
     trueEndingAchieved: false,
     voidphiAwakened: false,
     voidphiIntroSeen: false,
@@ -162,9 +180,50 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
 }
 
+/** v0.36.26 — pure helper for avatarsClearedCh20 / unlockedCount
+ *  reconciliation, used by both `migrateSlot` (read path) and the
+ *  saveSlots unit tests. Rules:
+ *  1. If `avatarsClearedCh20` is a valid array of 0..19 indices, that
+ *     is the source of truth and `unlockedCount` is its dedup'd length.
+ *  2. Else if legacy `unlockedCount` is a valid 0..20 scalar, back-
+ *     derive `avatarsClearedCh20 = [0..unlockedCount-1]` (chain
+ *     assumption: the player necessarily cleared in AVATARS-array
+ *     order because the picker forces it).
+ *  3. Else both default to empty / 0. */
+export function reconcileAvatarsCleared(
+  rawAvatarsCleared: unknown,
+  rawUnlockedCount: unknown,
+): { avatarsClearedCh20: number[]; unlockedCount: number } {
+  if (Array.isArray(rawAvatarsCleared)) {
+    const seen = new Set<number>();
+    for (const v of rawAvatarsCleared) {
+      if (typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 20) {
+        seen.add(v);
+      }
+    }
+    const list = Array.from(seen).sort((a, b) => a - b);
+    return { avatarsClearedCh20: list, unlockedCount: list.length };
+  }
+  if (
+    typeof rawUnlockedCount === 'number' &&
+    rawUnlockedCount >= 0 &&
+    rawUnlockedCount <= 20
+  ) {
+    const n = Math.floor(rawUnlockedCount);
+    const list: number[] = [];
+    for (let i = 0; i < n && i < 20; i++) list.push(i);
+    return { avatarsClearedCh20: list, unlockedCount: list.length };
+  }
+  return { avatarsClearedCh20: [], unlockedCount: 0 };
+}
+
 function migrateSlot(raw: unknown, id: number): SaveSlot {
   const base = defaultSlot(id);
   if (!isObject(raw)) return base;
+  const { avatarsClearedCh20, unlockedCount } = reconcileAvatarsCleared(
+    raw.avatarsClearedCh20,
+    raw.unlockedCount,
+  );
   return {
     ...base,
     name: typeof raw.name === 'string' ? raw.name : base.name,
@@ -193,12 +252,8 @@ function migrateSlot(raw: unknown, id: number): SaveSlot {
       typeof raw.voidphiEncounterPending === 'boolean'
         ? raw.voidphiEncounterPending
         : false,
-    unlockedCount:
-      typeof raw.unlockedCount === 'number' &&
-      raw.unlockedCount >= 0 &&
-      raw.unlockedCount <= 20
-        ? raw.unlockedCount
-        : 0,
+    unlockedCount,
+    avatarsClearedCh20,
     trueEndingAchieved:
       typeof raw.trueEndingAchieved === 'boolean'
         ? raw.trueEndingAchieved
@@ -334,14 +389,28 @@ interface RecordSlotResultInput {
   /** True when the match was a story-chapter attempt (only then does
    * storyProgress advance on win). */
   isStory: boolean;
+  /** AVATARS index of the player avatar that fought this match
+   *  (= live `p1Avatar` state). Used by the v0.36.26 unlock-chain
+   *  logic: a ch.20 win with a PLR (avatar index 0..19) that hasn't
+   *  cleared ch.20 on this slot yet adds that index to
+   *  `slot.avatarsClearedCh20`, which advances `unlockedCount` by 1
+   *  and reveals the next bonus PLR in the AVATARS picker. PLR01
+   *  (index 20) NEVER advances the chain — clearing ch.20 with PLR01
+   *  is the true-ending trigger, handled separately. Optional only so
+   *  pre-v0.36.26 callers compile; new callers should always pass it. */
+  playerAvatarIdx?: number;
 }
 
 export async function recordSlotResult(input: RecordSlotResultInput): Promise<SaveSlot[]> {
-  const { slotId, result, opponentLevel, isStory } = input;
+  const { slotId, result, opponentLevel, isStory, playerAvatarIdx } = input;
   const slots = await getSlots();
   const idx = slots.findIndex((s) => s.id === slotId);
   if (idx === -1) return slots;
-  const slot: SaveSlot = { ...slots[idx], vsOpponent: { ...slots[idx].vsOpponent } };
+  const slot: SaveSlot = {
+    ...slots[idx],
+    vsOpponent: { ...slots[idx].vsOpponent },
+    avatarsClearedCh20: [...(slots[idx].avatarsClearedCh20 ?? [])],
+  };
 
   slot.totalGames += 1;
   slot.lastPlayedAt = Date.now();
@@ -352,6 +421,26 @@ export async function recordSlotResult(input: RecordSlotResultInput): Promise<Sa
     slot.lives = Math.min(MAX_LIVES, slot.lives + 1);
     if (isStory && slot.storyProgress < 20) {
       slot.storyProgress += 1;
+    }
+    // v0.36.26 — chain-unlock: a ch.20 win with a fresh PLR adds that
+    // PLR to avatarsClearedCh20 and bumps unlockedCount. Gate is
+    // intentionally avatar-based (not storyProgress-based) so the
+    // 2nd, 3rd, …, 19th PLRs can each contribute even though the
+    // slot's storyProgress is already capped at 20 after the first
+    // clear. PLR01 (index 20) is excluded because it's the
+    // chain-completion reward, not a chain step.
+    if (
+      opponentLevel === 20 &&
+      typeof playerAvatarIdx === 'number' &&
+      playerAvatarIdx >= 0 &&
+      playerAvatarIdx < 20 &&
+      !(slot.avatarsClearedCh20 ?? []).includes(playerAvatarIdx)
+    ) {
+      const next = [...(slot.avatarsClearedCh20 ?? []), playerAvatarIdx].sort(
+        (a, b) => a - b,
+      );
+      slot.avatarsClearedCh20 = next;
+      slot.unlockedCount = next.length;
     }
   } else if (result === 'loss') {
     slot.losses += 1;
