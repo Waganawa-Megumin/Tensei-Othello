@@ -1861,25 +1861,52 @@ export default function App() {
   // storageUpdateSaveSlot+setSlots) refresh the unlock / story-flag
   // state from that slot. This is what makes save slots truly
   // independent: `unlockedCount` etc. are derived from the active
-  // slot only, not from any global localStorage key. The player
-  // avatar (p1Avatar) is *clamped* to the slot's unlock range
-  // rather than forced to the latest unlock — so an explicit
-  // selection (settings panel, magic-spell PPCC) survives the
-  // sync, while a stale PLR01 carried over from a previous slot
-  // gets pulled back to a valid index.
+  // slot only, not from any global localStorage key.
+  //
+  // For p1Avatar there are two distinct events that can run this
+  // effect — handle them differently:
+  //   1. Slot ID change (= page reload, slot switch, or first
+  //      mount with a slot active). Snap p1Avatar to the slot's
+  //      "chain frontier" (= the PLR currently being played per
+  //      `getSavePointDisplay`). This was the v0.36.41 onward bug
+  //      surface: page reload kept the useState init `p1Avatar=0`
+  //      even though the slot's frontier was PLR02+ already, so
+  //      the title screen advertised "P02 美琴" but the actual
+  //      battle launched as "あなた" (PLR00). Forcing alignment on
+  //      slot mount is the right semantic — Design A's "current
+  //      PLR" lives in `avatarsClearedCh20`, not in stale
+  //      in-memory state.
+  //   2. Same-slot patch (unlockedCount / trueEnd / voidphi flag
+  //      flipped). Preserve the user's current selection so an
+  //      explicit avatar pick from Settings survives a chain-step
+  //      patch — only clamp if it falls out of the unlock range.
+  const lastSyncedSlotIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (!activeSlot) {
       setUnlockedCount(0);
       setTrueEndingAchievedState(false);
       setVoidphiAwakenedState(false);
       setP1Avatar(0);
+      lastSyncedSlotIdRef.current = null;
       return;
     }
     const u = activeSlot.unlockedCount ?? 0;
     setUnlockedCount(u);
     setTrueEndingAchievedState(activeSlot.trueEndingAchieved ?? false);
     setVoidphiAwakenedState(activeSlot.voidphiAwakened ?? false);
+    const slotIdChanged = lastSyncedSlotIdRef.current !== activeSlot.id;
+    lastSyncedSlotIdRef.current = activeSlot.id;
     setP1Avatar((current) => {
+      if (slotIdChanged) {
+        // Snap to chain frontier on slot mount / switch so the
+        // title screen and the in-game player always agree.
+        const display = getSavePointDisplay(
+          activeSlot,
+          AVATARS.map((a) => ({ name: a.name, image: a.image })),
+        );
+        return Math.min(display.plrIdx, AVATARS.length - 1);
+      }
+      // Same slot, in-place patch: preserve explicit selection.
       // PLR01 lives at index 20 (last slot in AVATARS); other
       // bonus avatars at indices 1..19 require unlocks ≥ index.
       if (current > u) return Math.min(u, AVATARS.length - 1);
@@ -1890,6 +1917,8 @@ export default function App() {
     activeSlot?.unlockedCount,
     activeSlot?.trueEndingAchieved,
     activeSlot?.voidphiAwakened,
+    activeSlot?.avatarsClearedCh20,
+    activeSlot?.storyProgress,
   ]);
 
   // Sync opponent character/level to story progress when in story mode.

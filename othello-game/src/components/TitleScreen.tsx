@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.52 · chain-step-ending-text-archive';
+const BUILD_TAG = 'v0.36.53 · archive-row + p1-frontier-sync';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -257,34 +257,44 @@ export function TitleScreen({
                 })()}
               </span>
               <span className="flex items-center gap-2 shrink-0">
-                {/* Archive icon — opens scene archive. Inlined here
-                    (v0.36.23) instead of being its own row so the
-                    Story card matches the vertical density of the
-                    Free / Two-player cards. */}
-                {archiveAvailable && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenArchive();
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onOpenArchive();
-                      }
-                    }}
-                    className="p-1 rounded-sm border border-amber-200/25 text-amber-200/75 hover:text-amber-100 hover:border-amber-200/60 hover:bg-amber-200/[0.06]"
-                    title={t.archiveOpenLabel}
-                    aria-label={t.archiveOpenLabel}
-                  >
-                    <BookOpen size={13} strokeWidth={1.6} />
-                  </button>
-                )}
                 <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap">
                   {t.slotSwitch} ▸
                 </span>
+              </span>
+            </div>
+          )}
+          {/* Scene-archive entry, lifted out of the slot strip so it
+              is actually discoverable. v0.36.52: the inline 13px
+              BookOpen icon was getting missed on mobile. A full-
+              width row inside the Story card is far easier to spot
+              and keeps the click target generous. */}
+          {activeSlot && archiveAvailable && (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenArchive();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenArchive();
+                }
+              }}
+              className="mb-3 px-2.5 py-2 bg-amber-200/[0.05] border border-amber-200/20 rounded-sm flex items-center justify-between gap-2 min-w-0 hover:bg-amber-200/[0.08]"
+            >
+              <span className="flex items-center gap-2 jp-display text-amber-100/90 text-xs min-w-0">
+                <BookOpen
+                  size={14}
+                  strokeWidth={1.6}
+                  className="text-amber-200/75 shrink-0"
+                />
+                <span className="truncate">{t.archiveModalTitle}</span>
+              </span>
+              <span className="latin-display italic text-amber-200/65 text-[10px] tracking-wider whitespace-nowrap shrink-0">
+                {t.archiveOpenLabel}
               </span>
             </div>
           )}
