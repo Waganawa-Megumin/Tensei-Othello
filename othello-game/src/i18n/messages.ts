@@ -306,11 +306,15 @@ export interface Messages {
     nextChapter: number,
     opponentName: string,
   ) => string;
-  /** Per-slot roster summary — single-line "現在 ロスター：${name}".
-   *  v0.36.44 dropped the "まで / のみ / (N/20 アンロック)" wording
-   *  per user feedback — the count was redundant with the picker's
-   *  visible chain progress. */
-  slotRosterLine: (latestName: string) => string;
+  /** Per-slot roster summary — shows what's unlocked on this save
+   *  ("解放: 3/20 (PLR03 リン)"). v0.36.46 adds the count back per
+   *  user feedback ("そのセーブデータ情報解放されているもの") — the
+   *  picker progress line above already shows the currently-selected
+   *  PLR + chapter + opponent, so this line answers "how far has
+   *  this slot's chain progressed". `latestName` is the name of the
+   *  highest-index unlocked PLR (= chain frontier). `unlocks` is the
+   *  count of cleared chain steps (0..20). */
+  slotRosterLine: (unlocks: number, latestName: string) => string;
   slotLives: (n: number) => string;
   slotLastPlayed: string;
   slotDefaultName: (n: number) => string;
@@ -809,7 +813,10 @@ export const ja: Messages = {
   slotPrologueSeenTag: '序章 視聴済',
   slotProgress: (plrSlug, plrName, nextChapter, opponentName) =>
     `${plrSlug} ${plrName}・第${nextChapter}章 vs ${opponentName}`,
-  slotRosterLine: (latestName) => `現在 ロスター：${latestName}`,
+  slotRosterLine: (unlocks, latestName) =>
+    unlocks === 0
+      ? `解放: 0/20`
+      : `解放: ${unlocks}/20（${latestName}）`,
   slotLives: (n) => `残機 ${n}`,
   slotLastPlayed: '最終プレイ',
   slotDefaultName: (n) => `セーブ ${n}`,
@@ -1262,7 +1269,10 @@ your journey on the board reaches its close.`,
   slotPrologueSeenTag: 'Prologue seen',
   slotProgress: (plrSlug, plrName, nextChapter, opponentName) =>
     `${plrSlug} ${plrName} · Ch.${nextChapter} vs ${opponentName}`,
-  slotRosterLine: (latestName) => `Current roster: ${latestName}`,
+  slotRosterLine: (unlocks, latestName) =>
+    unlocks === 0
+      ? `Unlocked: 0/20`
+      : `Unlocked: ${unlocks}/20 (${latestName})`,
   slotLives: (n) => `${n} lives`,
   slotLastPlayed: 'Last played',
   slotDefaultName: (n) => `Save ${n}`,

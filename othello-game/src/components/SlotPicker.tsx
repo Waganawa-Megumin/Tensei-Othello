@@ -229,14 +229,25 @@ export function SlotPicker({
                           </span>
                           <Lives n={slot.lives} />
                         </div>
-                        {/* Per-slot roster line — current PLR. v0.36.44
-                            simplified to "現在 ロスター：${name}",
-                            dropping the cleared-count fraction. */}
+                        {/* Per-slot roster line — shows unlocked
+                            count + latest unlocked PLR name. v0.36.46
+                            puts the count back per user feedback —
+                            the picker's progress line above already
+                            shows the currently-selected PLR; this
+                            line answers "how far is the chain on
+                            this slot". */}
                         {(() => {
-                          const sp = getSavePointDisplay(slot, avatars);
+                          const u = slot.unlockedCount ?? 0;
+                          // Latest unlocked PLR is at AVATARS index
+                          // (u-1) — the last entry pushed to
+                          // avatarsClearedCh20 = 0..19. When u===20
+                          // PLR01 (index 20) is also available.
+                          const latestIdx =
+                            u >= 20 ? 20 : Math.max(0, u - 1);
+                          const latestName = avatars[latestIdx]?.name ?? '';
                           return (
                             <div className="jp-display text-amber-200/65 text-[10px] mt-0.5 tracking-wider">
-                              {t.slotRosterLine(sp.plrName)}
+                              {t.slotRosterLine(u, latestName)}
                             </div>
                           );
                         })()}

@@ -418,16 +418,18 @@ export function getSavePointDisplay(
   return { plrIdx, plrSlug, plrName, chapter, chaptersCleared, chapterMax };
 }
 
-/** v0.36.45 — derives the next match's chapter number and opponent
+/** v0.36.46 — derives the next match's chapter number and opponent
  *  name from a save-point display + the COMPUTERS view. The slot
  *  picker / title footer now show "vs ${opp}" instead of cleared
  *  progress, so callers need both the displayed chapter (= the next
  *  match's chapter number) and the opponent's localized name.
  *
- *  - `nextChapter`: `min(display.chapter + 1, display.chapterMax)`.
- *    For mid-lap states (chapter=2 → ch.3), this is the chapter
- *    about to be played. For end-of-lap states (chapter=chapterMax)
- *    it stays at chapterMax — for PLR01 that means a Void-φ replay.
+ *  - `nextChapter`: `display.chapter` directly. Note that
+ *    `getSavePointDisplay()` already returns `chapter` as the
+ *    next-chapter-to-play (= chaptersCleared+1, capped at chapterMax),
+ *    so no further increment here. v0.36.45 had an off-by-one bug
+ *    where this added another +1 → display said 「第4章」 while the
+ *    actual battle launched 第3章.
  *  - `opponentName`: the OPP at the resolved level. PLR01 chapter
  *    21+ resolves to Lv.22 ヴォイドφ rather than the chapter number
  *    directly, so post-true-ending replay slots still surface
@@ -440,10 +442,7 @@ export function getNextOpponent(
   display: SavePointDisplay,
   opponents: ReadonlyArray<{ level: number; name: string }>,
 ): NextOpponent {
-  const nextChapter =
-    display.chapter < display.chapterMax
-      ? display.chapter + 1
-      : display.chapterMax;
+  const nextChapter = display.chapter;
   const isPLR01 = display.plrIdx === 20;
   // PLR01 ch.21 (= post-true-ending) faces ヴォイドφ (Lv.22), not the
   // hooded ゼロ at Lv.20. Other slots map chapter → level 1:1.

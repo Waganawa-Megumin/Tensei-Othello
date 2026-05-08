@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.45 · vs-opponent-everywhere';
+const BUILD_TAG = 'v0.36.46 · chapter-fix-progress-3state';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -292,7 +292,11 @@ export function TitleScreen({
                   <div
                     key={i}
                     className={`flex-1 h-1 rounded-full ${
-                      i < storyProgress ? 'bg-amber-400/80' : 'bg-zinc-800/60'
+                      i < storyProgress
+                        ? 'bg-amber-400/80'
+                        : i === storyProgress
+                          ? 'bg-emerald-400/85'
+                          : 'bg-zinc-800/60'
                     }`}
                   />
                 ))}
