@@ -11,18 +11,7 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## 🔥 In Progress
 
-- [ ] **PLR 別 挿絵 + ストーリー 完全フォルダ管理 + 必発火 (PLR02 美琴 パイロット, v0.36.55)** —
-      owner: `claude/othello-ui-autosave-bPnmY` — started: 2026-05-08 —
-      `public/illustrations/` を `_shared/` + per-PLR フォルダ (`PLR02_mikoto/` 等) に再編。
-      `NarrativeScene` に `imageBasePath?` を追加して per-PLR 上書き。`NarrativeOverlay` に
-      二段 fallback (PLR-specific → `_shared`) と `isReplay` 用「スキップ ▶」ボタンを実装。
-      GameOver "次の章" の `!hasSeenOverlay` ゲートを撤去して必発火化、`startStoryChapter`
-      に章ブラウザ直行用 mid-route insert chain を追加。`getOrderedArchiveScenesForPlr` の
-      off-by-one (mid-route が milestone+1 でないとアーカイブに載らない) を修正。
-      PLR02 美琴の narrative 4 シーン (solitude / allies / final / chainStepEnding) を
-      ja/en に流し込み、`PLR02_mikoto/spec.md` 作成。
-      `docs/handoff/per_plr_narrative_concept.md` を作成し Claude chat ↔ ChatGPT への
-      画像生成プロンプトハンドオフ文書として整備。Plan: `~/.claude/plans/goofy-purring-neumann.md`。
+なし。
 
 ---
 
@@ -107,6 +96,35 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **PLR 別 挿絵 + ストーリー 完全フォルダ管理 + 必発火 + PLR02 美琴 パイロット (v0.36.55)** —
+      completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY` —
+      `public/illustrations/` を `_shared/` + per-PLR フォルダ
+      (`PLR02_mikoto/` 等) に再編 (`git mv` で 30 枚移動、履歴温存)。
+      `NarrativeScene` に optional `imageBasePath` を追加して per-PLR
+      シーン挿絵を declarative に上書き、`NarrativeOverlay` は primary
+      (override) → fallback (`_shared/`) の二段 fallback で 404 時に
+      自動切替。`isReplay` props で右上「スキップ ▶」を実装、初回は
+      強制視聴 (skip 無し)、2 回目以降は 1 タップで飛ばせる。GameOver
+      「次の章」の `!hasSeenOverlay` ゲートを撤去 (= **必発火**)、
+      `startStoryChapter` (章ブラウザ直行) にも mid-route insert
+      chain (ch.11=solitude, ch.16=allies, ch.20=final → PLR01 のみ
+      chapter20A → transition) を追加。`midRouteFromChapterBrowser`
+      フラグで dismiss handler を分岐。`getOrderedArchiveScenesForPlr`
+      の off-by-one を修正 (mid-route が milestone-1 ベース、sp=10
+      で solitude / sp=15 で allies / sp=19 で final がアーカイブに
+      入る)。PLR02 美琴専用 narrative 4 シーン (solitude:大聖堂図書館
+      の静夜・allies:達人達の定理・final:最終定理の前に・chainStep
+      Ending:〈論理魔導〉定理化) を `narrativeByPlr[1]` /
+      `chainStepEndingByPlr[1]` に ja+en 流し込み、in-game の
+      mid-route も `resolveMidRouteScene(t.story, p1Avatar, key)` 経由
+      で per-PLR テキスト解決に変更。`PLR02_mikoto/spec.md` (4 シーンの
+      ChatGPT プロンプト + キャラ規定 + 納品フォーマット) と
+      `docs/handoff/per_plr_narrative_concept.md` (Claude chat 単独で
+      読める自己完結型ハンドオフ文書、ChatGPT 経由の画像生成リレー
+      手順) を新規。新規テスト: `storyOverlays.test.ts` (10 件、
+      off-by-one + chapter20A pair + intro chain), `resolve.test.ts`
+      (12 件、per-PLR fallback chain)。96 → 118 tests pass、typecheck
+      pass。 (commit: `<hash>`)
 - [x] **GUI 画面サイズ追従 + ヴォイドφ横画像 確認 (v0.36.54)** —
       completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY` —
       コード変更なし、機能確認のみ。ユーザー要望「PC ブラウザの
