@@ -90,8 +90,12 @@ ${HANDOFF_ID}_handoff/
 3. Claude chat が ChatGPT 用プロンプトを 1 シーンずつ提示
 4. 別ウィンドウの ChatGPT で参照画像 (\`character_reference/${HANDOFF_ID}_character_transparent.png\`) と一緒に渡して画像生成
 5. 生成された画像を Claude chat に貼って品質レビュー → 不適合なら修正プロンプト
-6. 全 8 枚 (4 シーン × landscape/portrait) 合格したら ZIP 形式で納品
+6. 全 **18 枚** (9 シーン × landscape/portrait) 合格したら ZIP 形式で納品 (途中段階の納品も可、二段 fallback で対応)
 7. Tensei-Othello の Claude Code セッションに渡して \`public/illustrations/${HANDOFF_ID}/\` に展開・live deploy
+
+シーン構成 (PLR02 mikoto の場合):
+- **intro chain 5** (序章 → 異界到着): prologue / falling / arrival / gatewayClosed / gatewayOpen
+- **mid-route 4** (各章節目): solitude (sp=10) / allies (sp=15) / final (sp=19) / ending (lap finale)
 
 最終更新: $(date -I)
 EOF

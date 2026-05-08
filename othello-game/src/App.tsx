@@ -78,6 +78,7 @@ import {
   resolveChapterStory,
   resolveEndingScene,
   resolveMidRouteScene,
+  resolvePrologueContent,
 } from './i18n/story/resolve';
 import { loadCommentaryEnabled, saveCommentaryEnabled } from './storage/commentary';
 import { fetchCharacterCommentary } from './services/commentary';
@@ -4193,6 +4194,7 @@ export default function App() {
           opponent={
             COMPUTERS.find((c) => c.level === introChapter) ?? COMPUTERS[0]
           }
+          prologue={resolvePrologueContent(t.story, p1Avatar)}
           onPrologueSeen={() => {
             if (activeSlotId !== null) {
               markOverlaySeen(String(activeSlotId), 'prologue');
@@ -4227,7 +4229,7 @@ export default function App() {
             scenario prologue prose + illustration. */}
         {storyOverlay === 'prologue' && (
           <PrologueOverlay
-            prologue={t.story.prologue}
+            prologue={resolvePrologueContent(t.story, p1Avatar)}
             dismissLabel={t.story.prologue.startButton}
             onDismiss={() => {
               if (activeSlotId !== null) {
@@ -7616,19 +7618,26 @@ export default function App() {
                   <PrologueScreen
                     key={review.index}
                     t={t}
+                    prologue={resolvePrologueContent(t.story, scenePlrIdx)}
                     onNext={advance}
                     nextLabel={dismissLabel}
                   />
                 );
               case 'intro:falling':
                 return (
-                  <FallingScreen key={review.index} t={t} onNext={advance} />
+                  <FallingScreen
+                    key={review.index}
+                    t={t}
+                    prologue={resolvePrologueContent(t.story, scenePlrIdx)}
+                    onNext={advance}
+                  />
                 );
               case 'intro:arrival':
                 return (
                   <ArrivalScreen
                     key={review.index}
                     t={t}
+                    prologue={resolvePrologueContent(t.story, scenePlrIdx)}
                     onNext={advance}
                     nextLabel={dismissLabel}
                   />
@@ -7638,6 +7647,7 @@ export default function App() {
                   <GatewayClosedScreen
                     key={review.index}
                     t={t}
+                    prologue={resolvePrologueContent(t.story, scenePlrIdx)}
                     onNext={advance}
                     nextLabel={dismissLabel}
                   />
@@ -7647,6 +7657,7 @@ export default function App() {
                   <GatewayOpenScreen
                     key={review.index}
                     t={t}
+                    prologue={resolvePrologueContent(t.story, scenePlrIdx)}
                     onNext={advance}
                     nextLabel={dismissLabel}
                   />

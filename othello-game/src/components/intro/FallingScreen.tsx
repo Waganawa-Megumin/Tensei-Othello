@@ -16,6 +16,7 @@
  */
 import { useState } from 'react';
 import type { Messages } from '../../i18n/messages';
+import type { PrologueContent } from '../../i18n/story';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useTapToReveal } from '../../hooks/useTapToReveal';
 import { TapHint } from './TapHint';
@@ -23,14 +24,24 @@ import { TapHint } from './TapHint';
 interface Props {
   t: Messages;
   onNext: () => void;
+  /** Per-PLR resolved prologue content for illustration overrides. (v0.36.56) */
+  prologue?: PrologueContent;
 }
 
-export function FallingScreen({ t, onNext }: Props) {
+export function FallingScreen({ t, onNext, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const [imgOk, setImgOk] = useState(true);
-  const imgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/prologue-${
-    isLandscape ? 'landscape' : 'portrait'
-  }.png`;
+  const [imgErrored, setImgErrored] = useState(false);
+  const [usedFallback, setUsedFallback] = useState(false);
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  const resolvedPrologue = prologue ?? t.story.prologue;
+  // Per-PLR `falling` override → shared `_shared/prologue` fallback
+  // (the shared default reuses the prologue art for the falling
+  // beat; per-PLR PLRs author a dedicated falling scene).
+  const primaryStem = resolvedPrologue.imageBasePaths?.falling ?? '_shared/prologue';
+  const fallbackStem = '_shared/prologue';
+  const stem = usedFallback ? fallbackStem : primaryStem;
+  const imgSrc = `${import.meta.env.BASE_URL}illustrations/${stem}-${orientation}.png`;
+  const imgOk = !imgErrored;
   const { revealText, hasRevealed } = useTapToReveal();
 
   return (
@@ -46,10 +57,17 @@ export function FallingScreen({ t, onNext }: Props) {
           aspect ratios so it crops cleanly. */}
       {imgOk ? (
         <img
+          key={imgSrc}
           src={imgSrc}
           alt=""
           aria-hidden
-          onError={() => setImgOk(false)}
+          onError={() => {
+            if (!usedFallback && primaryStem !== fallbackStem) {
+              setUsedFallback(true);
+            } else {
+              setImgErrored(true);
+            }
+          }}
           className="absolute inset-0 w-full h-full object-cover"
           style={{
             animation: hasRevealed

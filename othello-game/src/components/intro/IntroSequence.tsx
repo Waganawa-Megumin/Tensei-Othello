@@ -16,6 +16,7 @@
  */
 import { useState } from 'react';
 import type { Messages, Locale } from '../../i18n/messages';
+import type { PrologueContent } from '../../i18n/story';
 import { PrologueScreen } from './PrologueScreen';
 import { FallingScreen } from './FallingScreen';
 import { ArrivalScreen } from './ArrivalScreen';
@@ -53,6 +54,10 @@ interface Props {
   onPrologueSeen?: () => void;
   /** Player tapped "begin the match →" on the chapter card. */
   onStart: () => void;
+  /** Per-PLR resolved prologue content (text + illustration overrides).
+   *  When present, every intro screen receives it and uses the
+   *  PLR-specific assets/text where authored. (v0.36.56) */
+  prologue?: PrologueContent;
 }
 
 export function IntroSequence({
@@ -63,6 +68,7 @@ export function IntroSequence({
   opponent,
   onPrologueSeen,
   onStart,
+  prologue,
 }: Props) {
   const [step, setStep] = useState<Step>(firstTime ? 'prologue' : 'chapter');
 
@@ -71,6 +77,7 @@ export function IntroSequence({
       return (
         <PrologueScreen
           t={t}
+          prologue={prologue}
           onNext={() => {
             onPrologueSeen?.();
             setStep('falling');
@@ -78,16 +85,16 @@ export function IntroSequence({
         />
       );
     case 'falling':
-      return <FallingScreen t={t} onNext={() => setStep('arrival')} />;
+      return <FallingScreen t={t} prologue={prologue} onNext={() => setStep('arrival')} />;
     case 'arrival':
-      return <ArrivalScreen t={t} onNext={() => setStep('gateway-closed')} />;
+      return <ArrivalScreen t={t} prologue={prologue} onNext={() => setStep('gateway-closed')} />;
     case 'gateway-closed':
       return (
-        <GatewayClosedScreen t={t} onNext={() => setStep('gateway-open')} />
+        <GatewayClosedScreen t={t} prologue={prologue} onNext={() => setStep('gateway-open')} />
       );
     case 'gateway-open':
       return (
-        <GatewayOpenScreen t={t} onNext={() => setStep('chapter')} />
+        <GatewayOpenScreen t={t} prologue={prologue} onNext={() => setStep('chapter')} />
       );
     case 'chapter':
       return (

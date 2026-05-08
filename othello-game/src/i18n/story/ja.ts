@@ -896,4 +896,38 @@ export const STORY_JA: StoryContent = {
       imageBasePath: 'PLR02_mikoto/ending',
     },
   },
+  /* ----------------------------------------------------------------
+   * 美琴 (PLR02) intro chain — opening cinematic per-PLR override
+   * (v0.36.56). prologue = 召喚される瞬間 (現代の大聖堂大学図書館で
+   * 魔法理論を執筆中、本のページから召喚陣が立ち上がる)。続く 4 シーン
+   * (falling / arrival / gatewayClosed / gatewayOpen) は盤上世界へ
+   * 引き寄せられていく道のりを美琴の視点で描く。
+   * ---------------------------------------------------------------- */
+  prologueByPlr: {
+    1: {
+      tagline: '論理は魔法の母。盤面は、ひとつの公理。',
+      subtitle: '〜召喚されたらオセロ世界でした！〜',
+      startButton: '〈論理魔導〉として、はじめる',
+      title: '序章「論文の頁、召喚陣に変わる」',
+      text: `深夜の大聖堂大学図書館。
+卒業論文の最終章を書いていた美琴は、ふと、開いた魔法書のページが**淡く脈打つ**のを見た。
+
+文字が**動いている**。 ── 公理が、自ら**新しい行を引いている**。
+
+（**論理は魔法の母**。 ── これは、**証明の続き**を求める書のサイン。）
+
+ページから**蒼と金の召喚陣**が立ち上がり、美琴の指先・眼鏡のレンズ・髪のリボン蝶結びを順に描き写していく。
+
+**「呼ばれているのね」**
+
+魔導書を胸に抱え、美琴は最後の文を書き終わらせる前に、図書館の床から**消えた**。`,
+      imageBasePaths: {
+        prologue: 'PLR02_mikoto/prologue',
+        falling: 'PLR02_mikoto/falling',
+        arrival: 'PLR02_mikoto/arrival',
+        gatewayClosed: 'PLR02_mikoto/gateway-closed',
+        gatewayOpen: 'PLR02_mikoto/gateway-open',
+      },
+    },
+  },
 };

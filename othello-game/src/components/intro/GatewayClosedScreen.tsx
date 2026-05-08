@@ -9,7 +9,9 @@
  * and totalGames=0); IntroSequence skips it on every later chapter.
  */
 import type { Messages } from '../../i18n/messages';
+import type { PrologueContent } from '../../i18n/story';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResolvedIllustrationStem } from '../../hooks/useResolvedIllustrationStem';
 import { useTapToReveal } from '../../hooks/useTapToReveal';
 import { renderEmphasized } from '../../i18n/story/render';
 import { TapHint } from './TapHint';
@@ -20,13 +22,20 @@ interface Props {
   /** See PrologueScreen — overrides the bottom button label for
    *  archive replay use. */
   nextLabel?: string;
+  /** Per-PLR resolved prologue content for illustration overrides. (v0.36.56) */
+  prologue?: PrologueContent;
 }
 
-export function GatewayClosedScreen({ t, onNext, nextLabel }: Props) {
+export function GatewayClosedScreen({ t, onNext, nextLabel, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/gateway-closed-${
-    isLandscape ? 'landscape' : 'portrait'
-  }.png`;
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  const resolvedPrologue = prologue ?? t.story.prologue;
+  const stem = useResolvedIllustrationStem(
+    resolvedPrologue.imageBasePaths?.gatewayClosed ?? '_shared/gateway-closed',
+    '_shared/gateway-closed',
+    orientation,
+  );
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/${stem}-${orientation}.png`;
   const { revealText, hasRevealed } = useTapToReveal();
 
   return (

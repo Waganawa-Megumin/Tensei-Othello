@@ -96,6 +96,27 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **PLR02 美琴 intro chain per-PLR 化 (5 シーン拡張、計 9 シーン) (v0.36.56)** —
+      completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY` —
+      v0.36.55 のパイロット (mid-route 4 シーン) を「完全逸品型」に拡張。
+      `PrologueContent` に `imageBasePaths.{prologue,falling,arrival,
+      gatewayClosed,gatewayOpen}` を追加、`PrologueOverlay` +
+      `IntroSequence` 配下の 5 component (PrologueScreen / FallingScreen
+      / ArrivalScreen / GatewayClosed/OpenScreen) に二段 fallback を実装。
+      新規 `useResolvedIllustrationStem` フックで CSS background-image
+      系の screens にも `new Image()` プローブによる per-PLR → `_shared/`
+      自動切替を提供。App.tsx の `IntroSequence` + `PrologueOverlay`
+      呼び出しに `prologue={resolvePrologueContent(t.story, p1Avatar)}`
+      を注入、archive 側も `scenePlrIdx` ベースで同様。`prologueByPlr[1]`
+      に美琴版 intro narrative (大聖堂大学図書館で召喚陣が立ち上がる序章)
+      を ja+en 流し込み。`PLR02_mikoto/spec.md` を 4 → 9 シーン版に
+      書き換え (5 つの新規 ChatGPT 英文プロンプト含む)、handoff doc +
+      claude_chat_instructions も 9 シーン仕様に更新。
+      `build_handoff_zip.sh` は中身が 18 枚仕様に変わったので再生成、
+      `public/handoff/PLR02_mikoto_handoff.zip` も最新版に置換。
+      新規テスト: `resolve.test.ts` に prologueByPlr 用 4 ケース追加
+      (PLR02 override hit + imageBasePaths × 5 + PLR00/PLR03 fallback)。
+      118 → 121 tests pass、typecheck pass。 (commit: `<hash>`)
 - [x] **PLR 別 挿絵 + ストーリー 完全フォルダ管理 + 必発火 + PLR02 美琴 パイロット (v0.36.55)** —
       completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY` —
       `public/illustrations/` を `_shared/` + per-PLR フォルダ

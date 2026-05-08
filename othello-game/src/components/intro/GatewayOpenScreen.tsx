@@ -11,7 +11,9 @@
  * payoff rather than a non-sequitur.
  */
 import type { Messages } from '../../i18n/messages';
+import type { PrologueContent } from '../../i18n/story';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResolvedIllustrationStem } from '../../hooks/useResolvedIllustrationStem';
 import { useTapToReveal } from '../../hooks/useTapToReveal';
 import { renderEmphasized } from '../../i18n/story/render';
 import { TapHint } from './TapHint';
@@ -22,13 +24,20 @@ interface Props {
   /** See PrologueScreen — overrides the bottom button label for
    *  archive replay use. */
   nextLabel?: string;
+  /** Per-PLR resolved prologue content for illustration overrides. (v0.36.56) */
+  prologue?: PrologueContent;
 }
 
-export function GatewayOpenScreen({ t, onNext, nextLabel }: Props) {
+export function GatewayOpenScreen({ t, onNext, nextLabel, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/gateway-open-${
-    isLandscape ? 'landscape' : 'portrait'
-  }.png`;
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  const resolvedPrologue = prologue ?? t.story.prologue;
+  const stem = useResolvedIllustrationStem(
+    resolvedPrologue.imageBasePaths?.gatewayOpen ?? '_shared/gateway-open',
+    '_shared/gateway-open',
+    orientation,
+  );
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/${stem}-${orientation}.png`;
   const { revealText, hasRevealed } = useTapToReveal();
 
   return (

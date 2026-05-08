@@ -9,7 +9,9 @@
  *            FallingScreen.
  */
 import type { Messages } from '../../i18n/messages';
+import type { PrologueContent } from '../../i18n/story';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResolvedIllustrationStem } from '../../hooks/useResolvedIllustrationStem';
 import { useTapToReveal } from '../../hooks/useTapToReveal';
 import { renderEmphasized } from '../../i18n/story/render';
 import { TapHint } from './TapHint';
@@ -21,13 +23,26 @@ interface Props {
    *  archive replay so the last scene reads 「閉じる」 instead of
    *  「次のステップへ」. */
   nextLabel?: string;
+  /** Per-PLR resolved prologue content (text + optional illustration
+   *  overrides). Defaults to the world-level `t.story.prologue` when
+   *  not provided so existing callers keep working. (v0.36.56) */
+  prologue?: PrologueContent;
 }
 
-export function PrologueScreen({ t, onNext, nextLabel }: Props) {
+export function PrologueScreen({ t, onNext, nextLabel, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/prologue-bg-${
-    isLandscape ? 'landscape' : 'portrait'
-  }.png`;
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  const resolvedPrologue = prologue ?? t.story.prologue;
+  // PrologueScreen reuses the per-PLR `prologue` art when present
+  // (a single asset covers both the overlay and this intro step's
+  // background). Falls back to the shared `prologue-bg` default
+  // when no override is authored or the override 404s.
+  const stem = useResolvedIllustrationStem(
+    resolvedPrologue.imageBasePaths?.prologue ?? '_shared/prologue-bg',
+    '_shared/prologue-bg',
+    orientation,
+  );
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/${stem}-${orientation}.png`;
   const { revealText, hasRevealed } = useTapToReveal();
 
   return (
@@ -56,10 +71,10 @@ export function PrologueScreen({ t, onNext, nextLabel }: Props) {
             — {t.intro.prologueLabel} —
           </div>
           <h2 className="jp-display text-amber-100 text-xl md:text-2xl tracking-wider mb-5 leading-snug">
-            {renderEmphasized(t.story.prologue.title)}
+            {renderEmphasized(resolvedPrologue.title)}
           </h2>
           <div className="jp-display text-amber-100/90 text-sm md:text-base leading-loose whitespace-pre-line mb-7 max-h-[55vh] overflow-y-auto pr-1">
-            {renderEmphasized(t.story.prologue.text)}
+            {renderEmphasized(resolvedPrologue.text)}
           </div>
           <button
             onClick={(e) => {

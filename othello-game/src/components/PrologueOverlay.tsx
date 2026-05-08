@@ -21,10 +21,17 @@ interface PrologueOverlayProps {
 
 export function PrologueOverlay({ prologue, dismissLabel, onDismiss }: PrologueOverlayProps) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const [imgOk, setImgOk] = useState(true);
-  const imgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/prologue-${
-    isLandscape ? 'landscape' : 'portrait'
-  }.png`;
+  const [imgErrored, setImgErrored] = useState(false);
+  const [usedFallback, setUsedFallback] = useState(false);
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  // Two-stage path resolution: prefer the PLR-specific override,
+  // fall back to the shared default on 404 (so authoring the override
+  // before the asset lands is safe). Same pattern as NarrativeOverlay.
+  const primaryStem = prologue.imageBasePaths?.prologue ?? '_shared/prologue';
+  const fallbackStem = '_shared/prologue';
+  const stem = usedFallback ? fallbackStem : primaryStem;
+  const imgSrc = `${import.meta.env.BASE_URL}illustrations/${stem}-${orientation}.png`;
+  const imgOk = !imgErrored;
 
   return (
     <div
@@ -40,10 +47,17 @@ export function PrologueOverlay({ prologue, dismissLabel, onDismiss }: PrologueO
           prologue's immersion. */}
       {imgOk && (
         <img
+          key={imgSrc}
           src={imgSrc}
           alt=""
           aria-hidden
-          onError={() => setImgOk(false)}
+          onError={() => {
+            if (!usedFallback && primaryStem !== fallbackStem) {
+              setUsedFallback(true);
+            } else {
+              setImgErrored(true);
+            }
+          }}
           className="fixed inset-0 w-full h-full object-cover pointer-events-none select-none"
           style={{ opacity: 0.75 }}
         />

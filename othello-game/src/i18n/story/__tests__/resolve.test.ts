@@ -94,14 +94,38 @@ describe('resolveEndingScene — chain-step PLRs vs PLR01', () => {
   });
 });
 
-describe('resolveChapterStory + resolvePrologueContent — shared fallback', () => {
+describe('resolveChapterStory — shared fallback', () => {
   it('PLR02 chapter 1 falls back to shared chapterStories[0]', () => {
     const ch = resolveChapterStory(story, 1, 1);
     expect(ch).toBe(story.chapterStories[0]);
   });
+});
 
-  it('PLR02 prologue falls back to shared prologue', () => {
-    const prologue = resolvePrologueContent(story, 1);
-    expect(prologue).toBe(story.prologue);
+describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56)', () => {
+  it('PLR02 (idx 1) returns the Mikoto-flavored prologue', () => {
+    const p = resolvePrologueContent(story, 1);
+    expect(p.title).toContain('論文の頁');
+    expect(p.text).toContain('論理は魔法の母');
+    expect(p.startButton).toContain('論理魔導');
+  });
+
+  it('PLR02 carries imageBasePaths for all 5 intro scenes', () => {
+    const p = resolvePrologueContent(story, 1);
+    expect(p.imageBasePaths?.prologue).toBe('PLR02_mikoto/prologue');
+    expect(p.imageBasePaths?.falling).toBe('PLR02_mikoto/falling');
+    expect(p.imageBasePaths?.arrival).toBe('PLR02_mikoto/arrival');
+    expect(p.imageBasePaths?.gatewayClosed).toBe('PLR02_mikoto/gateway-closed');
+    expect(p.imageBasePaths?.gatewayOpen).toBe('PLR02_mikoto/gateway-open');
+  });
+
+  it('PLR00 (idx 0) falls back to shared prologue (= world default)', () => {
+    const p = resolvePrologueContent(story, 0);
+    expect(p).toBe(story.prologue);
+    expect(p.imageBasePaths).toBeUndefined();
+  });
+
+  it('PLR03 (idx 2, unauthored) falls back to shared prologue', () => {
+    const p = resolvePrologueContent(story, 2);
+    expect(p).toBe(story.prologue);
   });
 });

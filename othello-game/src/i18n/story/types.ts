@@ -56,6 +56,29 @@ export interface PrologueContent {
   text: string;
   /** Heading shown above the prologue text. */
   title: string;
+  /** Optional per-PLR illustration overrides for the opening cinematic.
+   *  Each path is a stem under `public/illustrations/` (no extension,
+   *  no orientation suffix). When omitted at any field, the
+   *  consuming component falls back to its shared `_shared/` asset.
+   *  Authored alongside `prologueByPlr[plrIdx]` so each PLR's
+   *  summoning can be visualised distinctly. (v0.36.56) */
+  imageBasePaths?: {
+    /** Full prologue key art. Used by both `PrologueOverlay` (the
+     *  one-shot story-launch overlay) and `PrologueScreen` (the
+     *  intro flow's first step). When set, both components use this
+     *  single asset; if you want PrologueScreen to use a different
+     *  background, leave this unset and instead author `_shared/
+     *  prologue-bg-...` per-PLR via a future `prologueBg` field. */
+    prologue?: string;
+    /** Falling-through-dimensions key art (intro flow step 2). */
+    falling?: string;
+    /** Arrival at Bansho Sekai — first sight of the new world (step 3). */
+    arrival?: string;
+    /** Sealed-gateway encounter (step 4). */
+    gatewayClosed?: string;
+    /** Opened-gateway threshold (step 5). */
+    gatewayOpen?: string;
+  };
 }
 
 /** Full story bundle, one per locale. */

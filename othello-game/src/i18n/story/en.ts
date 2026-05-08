@@ -897,4 +897,32 @@ And the next summoning circle — began to tremble softly with the light of welc
       imageBasePath: 'PLR02_mikoto/ending',
     },
   },
+  /* Mikoto (PLR02) intro chain — opening cinematic override (v0.36.56). */
+  prologueByPlr: {
+    1: {
+      tagline: 'Logic is the mother of magic. The board is one axiom.',
+      subtitle: '~ Summoned as an Othello Player ~',
+      startButton: 'Begin as the 《Logic-Mage》',
+      title: 'Prologue: "The page of a thesis becomes a summoning circle"',
+      text: `Late at night, in the cathedral university library.
+Mikoto, drafting the final chapter of her dissertation, suddenly noticed that the open spellbook's page **pulsed faintly**.
+
+The letters were **moving**. — The axioms were drawing **new lines** of their own.
+
+(*"**Logic is the mother of magic**." — this is the book asking for **the rest of the proof**.*)
+
+A **blue-and-gold summoning circle** rose from the page and traced, in turn, her fingertips, the lenses of her glasses, the ribbon-bow in her hair.
+
+**"I am being called."**
+
+Holding her grimoire to her chest, Mikoto **vanished** from the library floor — before she could finish the final sentence.`,
+      imageBasePaths: {
+        prologue: 'PLR02_mikoto/prologue',
+        falling: 'PLR02_mikoto/falling',
+        arrival: 'PLR02_mikoto/arrival',
+        gatewayClosed: 'PLR02_mikoto/gateway-closed',
+        gatewayOpen: 'PLR02_mikoto/gateway-open',
+      },
+    },
+  },
 };

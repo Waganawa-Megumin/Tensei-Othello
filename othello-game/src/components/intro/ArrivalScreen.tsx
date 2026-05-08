@@ -4,7 +4,9 @@
  * PrologueScreen, with the new arrival-bg illustration.
  */
 import type { Messages } from '../../i18n/messages';
+import type { PrologueContent } from '../../i18n/story';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResolvedIllustrationStem } from '../../hooks/useResolvedIllustrationStem';
 import { useTapToReveal } from '../../hooks/useTapToReveal';
 import { renderEmphasized } from '../../i18n/story/render';
 import { TapHint } from './TapHint';
@@ -15,13 +17,20 @@ interface Props {
   /** See PrologueScreen — overrides the bottom button label for
    *  archive replay use. */
   nextLabel?: string;
+  /** Per-PLR resolved prologue content for illustration overrides. (v0.36.56) */
+  prologue?: PrologueContent;
 }
 
-export function ArrivalScreen({ t, onNext, nextLabel }: Props) {
+export function ArrivalScreen({ t, onNext, nextLabel, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/arrival-bg-${
-    isLandscape ? 'landscape' : 'portrait'
-  }.png`;
+  const orientation = isLandscape ? 'landscape' : 'portrait';
+  const resolvedPrologue = prologue ?? t.story.prologue;
+  const stem = useResolvedIllustrationStem(
+    resolvedPrologue.imageBasePaths?.arrival ?? '_shared/arrival-bg',
+    '_shared/arrival-bg',
+    orientation,
+  );
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/${stem}-${orientation}.png`;
   const { revealText, hasRevealed } = useTapToReveal();
 
   return (
