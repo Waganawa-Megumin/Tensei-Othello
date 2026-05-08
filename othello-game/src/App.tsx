@@ -4089,6 +4089,7 @@ export default function App() {
               String(activeSlotId),
               storyProgress,
               trueEndingAchieved,
+              (activeSlot?.avatarsClearedCh20?.length ?? 0) > 0,
             ).length > 0
           }
           onOpenArchive={() => setArchiveOpen(true)}
@@ -5154,18 +5155,20 @@ export default function App() {
                     ×
                   </button>
                   <div className="latin-display italic ornament text-[10px] md:text-xs uppercase mb-3">
-                    {justCompletedStory
+                    {justCompletedStory || chainStepFinish
                       ? t.storyComplete
                       : isStoryMode
                         ? t.chapterN(playedChapter)
                         : t.finalResult}
                   </div>
                   <BrushDivider
-                    variant={justCompletedStory ? 'flourish' : 'bold'}
+                    variant={
+                      justCompletedStory || chainStepFinish ? 'flourish' : 'bold'
+                    }
                     className="mb-3"
                   />
                   <h2 className="jp-display text-4xl md:text-5xl text-amber-100 font-bold mb-6 tracking-[0.15em]">
-                    {justCompletedStory
+                    {justCompletedStory || chainStepFinish
                       ? t.storyEnding
                       : isStoryMode
                         ? // Story-mode verdict is from the human's
@@ -5191,33 +5194,49 @@ export default function App() {
                   {/* Ending illustration ("PLR が帰還する" scene).
                       v0.36.51 — also renders for chain-step finish so
                       each PLR0M's ch.20 clear surfaces the
-                      return-home image. The long paginated finale
-                      prose stays gated on `justCompletedStory` (=
-                      PLR01 true ending) only. */}
+                      return-home image.
+                      Architecture for future per-PLR override:
+                      `EndingArt` currently uses the shared
+                      `ending-{landscape,portrait}.png`. When per-
+                      character endings ship, parameterize EndingArt
+                      with a `srcBase` prop and pass
+                      `chainStepFinish ? endingArtForPlr(p1Avatar) : 'ending'`
+                      with `endingArtForPlr` falling back to 'ending'
+                      when a per-PLR asset isn't authored yet. */}
                   {(justCompletedStory || chainStepFinish) && <EndingArt />}
-                  {justCompletedStory && (
-                    <>
-                      {/* Paginated reader — endingFull is ~30 lines
-                          so even with the modal scrolling enabled it
-                          reads better one paragraph-page at a time
-                          with explicit prev/next, matching the slow
-                          cinematic pace of the finale. */}
-                      <div className="mb-5">
-                        <PaginatedProse
-                          text={t.story.endingFull.text}
-                          prevLabel={t.proseTurnPrev}
-                          nextLabel={t.proseTurnNext}
-                          pageCounter={t.proseTurnCounter}
-                        />
-                      </div>
-                    </>
+                  {/* Paginated finale prose. Two routes:
+                      - PLR01 true ending → `endingFull` (the
+                        canonical "door of light" finale).
+                      - Chain-step finish (PLR00..PLR20 ch.20 clear)
+                        → shared placeholder `chainStepEnding`. Future
+                        per-PLR variants land via the architecture
+                        documented in story/types.ts (resolve
+                        `chainStepEndingByPlr?.[p1Avatar] ?? chainStepEnding`
+                        at this call site). */}
+                  {(justCompletedStory || chainStepFinish) && (
+                    <div className="mb-5">
+                      <PaginatedProse
+                        text={
+                          justCompletedStory
+                            ? t.story.endingFull.text
+                            : t.story.chainStepEnding.text
+                        }
+                        prevLabel={t.proseTurnPrev}
+                        nextLabel={t.proseTurnNext}
+                        pageCounter={t.proseTurnCounter}
+                      />
+                    </div>
                   )}
                   {/* Chapter-clear scenario beats (master's victory line +
                       Haruki's inner thought + brief narration bridging
                       to the next chapter). Only shown for non-final
-                      chapter wins; the final chapter uses endingFull
-                      above which already covers everything. */}
-                  {justAdvanced && !justCompletedStory && (() => {
+                      chapter wins; the final chapter uses endingFull /
+                      chainStepEnding above which already covers
+                      everything (suppressing here also avoids
+                      "bridging to next chapter" prose surfacing on a
+                      chain-step ch.20 win, which auto-advances to the
+                      next PLR — there is no "next chapter" for it). */}
+                  {justAdvanced && !justCompletedStory && !chainStepFinish && (() => {
                     const story = t.story.chapterStories[playedChapter - 1];
                     if (!story) return null;
                     return (
@@ -7207,6 +7226,14 @@ export default function App() {
           Renders OUTSIDE the screen gate because the entry-point
           sits on the title screen. */}
       {archiveOpen && (() => {
+        // Design A: any slot that has cleared at least one chain
+        // step has effectively witnessed the full ch.1-20 lap +
+        // mid-route inserts + ending, even though `storyProgress`
+        // has been reset to 0 for the next PLR's lap. Pass
+        // `hasClearedFullRoute` so the archive surfaces those
+        // scenes regardless of where the next lap currently sits.
+        const hasClearedFullRoute =
+          (activeSlot?.avatarsClearedCh20?.length ?? 0) > 0;
         const ordered =
           activeSlotId !== null
             ? getOrderedArchiveScenes(
@@ -7214,6 +7241,7 @@ export default function App() {
                 storyProgress,
                 trueEndingAchieved,
                 voidphiAwakened,
+                hasClearedFullRoute,
               )
             : [];
         const sceneLabel = (s: ArchiveScene): string => {

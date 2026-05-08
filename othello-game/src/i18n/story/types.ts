@@ -114,8 +114,25 @@ export interface StoryContent {
      *  own voice. */
     victoryNarration: NarrativeScene;
   };
-  /** Full-route ending text shown after Ch.20 victory. */
+  /** Full-route ending text shown after Ch.20 victory.
+   *  PLR01 英霊ハルキ-only true-ending finale (= "the door of light"
+   *  cinematic closer). For chain-step PLRs (PLR00..PLR20) use
+   *  `chainStepEnding` instead. */
   endingFull: NarrativeScene;
+  /** Shared chain-step ending shown after each PLR0M (M=0,2..20)
+   *  clears its own ch.1-20 lap. Plays alongside the
+   *  shared "homecoming" illustration in the GameOver modal,
+   *  immediately before auto-advance to the next chain step.
+   *
+   *  Architecture for future per-PLR branching: this is the fallback
+   *  text. When per-character ending content ships, add an optional
+   *  `chainStepEndingByPlr?: Partial<Record<number, NarrativeScene>>`
+   *  field keyed on AVATARS index (0=PLR00, 1..19=PLR02..PLR20),
+   *  and resolve at render time as
+   *      `chainStepEndingByPlr?.[plrIdx] ?? chainStepEnding`.
+   *  The illustration follows the same fallback pattern via the
+   *  EndingArt component's `srcBase` prop. */
+  chainStepEnding: NarrativeScene;
   /** Hook teasing New Game+ (PLR02 unlock). Stored for future use,
    *  not surfaced in v0.31.0. */
   epilogueHook: string;

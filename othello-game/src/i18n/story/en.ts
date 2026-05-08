@@ -793,6 +793,40 @@ The classical lit teacher held his answer sheet, wearing a wry smile.
 *(**Reality didn't flip.** — But my heart? **Already flipped.**)*`,
   },
 
+  chainStepEnding: {
+    title: 'The Return — End of One Turn',
+    text: `The final match of **Bansho Sekai**, the eighty-first move against **Zero**.
+
+The instant the last stone clicked into place, the dark around them **drew back like a tide**.
+
+The Zeroth Table crumbled. Yet there was **no fear** — only the **quiet** of one who has finished a long journey.
+
+"...Well done, all the way through."
+
+For the first time, Zero's voice rang soft. The shadow beneath the hood no longer carried hostility.
+
+"**Your board** has truly **flipped the world**. — Go. To the place that is waiting for you."
+
+A door of light opened.
+
+Turning back, **the masters from the chapters before** stood watching, each in their own stance, each with their own smile.
+No words. But **every move traded across the board** had already been **a parting greeting**.
+
+*(**I flipped the world.** — But really, **the world flipped me too**.)*
+
+Through the door.
+
+— Next moment, a **familiar wind** brushed the cheek.
+Everyday sounds, everyday scents, everyday light. — And **the weight of one move, lingering in the chest**.
+
+*(**Reality didn't flip.** — But **my heart already has**.)*
+
+** — One lap, finished.**
+
+But **the story of Bansho Sekai** is not over yet.
+**The next Outer Hand** is **about to be summoned**.`,
+  },
+
   epilogueHook: `— But Haruki did not know.
 
 The seat that opened at the Council of Stones was already calling for **the next Outer Hand**.

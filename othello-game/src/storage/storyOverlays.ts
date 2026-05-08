@@ -98,7 +98,20 @@ export function getArchiveScenes(
   slotId: string,
   storyProgress: number,
   trueEndingAchieved: boolean,
+  hasClearedFullRoute: boolean = false,
 ): OverlayKey[] {
+  // Design A (v0.36.40+): each chain-step PLR runs its own
+  // ch.1-20 lap, and `storyProgress` is reset to 0 after a ch.20
+  // win so the next PLR's lap starts fresh. That means a player
+  // who has just cleared ch.20 with PLR00 (and is now sitting on
+  // PLR02's lap-序章) sees `storyProgress === 0` even though they
+  // actually witnessed every mid-route + ending scene. To keep the
+  // archive populated, treat any slot that has cleared the full
+  // route at least once (avatarsClearedCh20.length > 0) as if its
+  // progress had reached 20 for archive purposes.
+  const effectiveProgress = hasClearedFullRoute
+    ? Math.max(storyProgress, 20)
+    : storyProgress;
   const available = new Set<OverlayKey>();
   // Prologue: seen-based, since it can fire at progress=0 and a
   // numeric threshold can't represent that.
@@ -106,12 +119,12 @@ export function getArchiveScenes(
   // Mid-route narrative inserts. Each fires exactly when its
   // milestone chapter is cleared, so storyProgress >= milestone
   // means the player has had the canonical encounter.
-  if (storyProgress >= 10) available.add('narrative:solitude');
-  if (storyProgress >= 15) available.add('narrative:allies');
-  if (storyProgress >= 19) available.add('narrative:final');
+  if (effectiveProgress >= 10) available.add('narrative:solitude');
+  if (effectiveProgress >= 15) available.add('narrative:allies');
+  if (effectiveProgress >= 19) available.add('narrative:final');
   // Endgame finale: the endingFull text renders in the GameOver
   // modal at storyProgress=20, so progress alone unlocks it.
-  if (storyProgress >= 20) available.add('ending');
+  if (effectiveProgress >= 20) available.add('ending');
   // True-ending pair is PLR01-only, gated by the explicit
   // achievement flag rather than progress. The 20-A confrontation
   // scene precedes the battle, so seeing the true ending implies
@@ -153,7 +166,16 @@ export function getOrderedArchiveScenes(
   storyProgress: number,
   trueEndingAchieved: boolean,
   voidphiAwakened: boolean = false,
+  hasClearedFullRoute: boolean = false,
 ): ArchiveScene[] {
+  // See `getArchiveScenes` for the rationale: Design A resets
+  // `storyProgress` to 0 after each chain-step ch.20 win, so a
+  // player who has cleared the lap with PLR00 is now sitting on
+  // PLR02's 序章 (sp=0) but should still see all 20 chapter
+  // entries + every mid-route insert + ending in the archive.
+  const effectiveProgress = hasClearedFullRoute
+    ? Math.max(storyProgress, 20)
+    : storyProgress;
   const result: ArchiveScene[] = [];
   // The intro sequence runs as a single uninterruptible chain on the
   // first story-mode entry (PrologueScreen → FallingScreen →
@@ -169,7 +191,7 @@ export function getOrderedArchiveScenes(
     result.push({ kind: 'overlay', key: 'intro:gatewayOpen' });
   }
   for (let i = 1; i <= 20; i++) {
-    if (storyProgress < i) break;
+    if (effectiveProgress < i) break;
     // Mid-route interludes fire BEFORE entering the next chapter,
     // so they slot right before the chapter they precede.
     if (i === 11) result.push({ kind: 'overlay', key: 'narrative:solitude' });
@@ -177,7 +199,7 @@ export function getOrderedArchiveScenes(
     if (i === 20) result.push({ kind: 'overlay', key: 'narrative:final' });
     result.push({ kind: 'chapter', chapter: i });
   }
-  if (storyProgress >= 20) {
+  if (effectiveProgress >= 20) {
     result.push({ kind: 'overlay', key: 'ending' });
   }
   if (trueEndingAchieved) {
