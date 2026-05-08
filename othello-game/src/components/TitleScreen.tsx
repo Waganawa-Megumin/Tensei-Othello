@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.46 · chapter-fix-progress-3state';
+const BUILD_TAG = 'v0.36.47 · subtitle-no-pill-tighter';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -167,15 +167,20 @@ export function TitleScreen({
             because the chip itself dims a strip of bg behind the
             text. White fill + tight shadow halo for the final
             edge definition. */}
-        <div className="text-center mb-4 max-lg:landscape:mb-1">
-          <span
-            className="inline-block latin-display italic ornament font-semibold text-white text-base max-lg:landscape:text-[10px] md:text-lg uppercase tracking-[0.4em] px-5 py-1.5 rounded-sm bg-zinc-950/65 backdrop-blur-sm"
-            style={{
-              textShadow: '0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.95)',
-            }}
-          >
-            — Summoned as an Othello Player —
-          </span>
+        {/* Latin subtitle. v0.36.47 — drop the dark pill backdrop and
+            reduce tracking so the line reads like normal English
+            (= "half-width" in user's terms — the v0.36.44 0.4em
+            tracking made the chars look stretched / full-width-ish).
+            White fill + multi-layer shadow halo for legibility on
+            the bg illustration. */}
+        <div
+          className="latin-display italic ornament font-semibold text-white text-sm max-lg:landscape:text-[10px] md:text-base uppercase tracking-[0.12em] mb-4 max-lg:landscape:mb-1 text-center"
+          style={{
+            textShadow:
+              '0 0 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 0 24px rgba(10,8,5,0.7), 0 2px 4px rgba(0,0,0,0.95)',
+          }}
+        >
+          — Summoned as an Othello Player —
         </div>
         <h1
           className="jp-display text-amber-100 text-3xl max-lg:landscape:text-xl md:text-5xl font-bold tracking-[0.15em] mb-3 max-lg:landscape:mb-1 leading-tight"
@@ -279,12 +284,9 @@ export function TitleScreen({
           )}
           {hasProgress && (
             <div className="mt-auto pt-3 border-t border-amber-200/15">
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="mb-1.5">
                 <span className="latin-display italic text-amber-200/50 text-[10px] tracking-[0.25em] uppercase">
                   Progress
-                </span>
-                <span className="latin-display text-amber-100 text-sm tabular-nums">
-                  {storyProgress} / 20
                 </span>
               </div>
               <div className="flex gap-0.5">
