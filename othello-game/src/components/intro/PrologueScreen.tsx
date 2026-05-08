@@ -25,7 +25,7 @@ interface Props {
 
 export function PrologueScreen({ t, onNext, nextLabel }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/prologue-bg-${
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/prologue-bg-${
     isLandscape ? 'landscape' : 'portrait'
   }.png`;
   const { revealText, hasRevealed } = useTapToReveal();

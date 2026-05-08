@@ -28,7 +28,7 @@ interface Props {
 export function FallingScreen({ t, onNext }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const [imgOk, setImgOk] = useState(true);
-  const imgSrc = `${import.meta.env.BASE_URL}illustrations/prologue-${
+  const imgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/prologue-${
     isLandscape ? 'landscape' : 'portrait'
   }.png`;
   const { revealText, hasRevealed } = useTapToReveal();

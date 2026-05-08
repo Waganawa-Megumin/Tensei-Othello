@@ -26,7 +26,7 @@ interface Props {
 
 export function GatewayOpenScreen({ t, onNext, nextLabel }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/gateway-open-${
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/gateway-open-${
     isLandscape ? 'landscape' : 'portrait'
   }.png`;
   const { revealText, hasRevealed } = useTapToReveal();

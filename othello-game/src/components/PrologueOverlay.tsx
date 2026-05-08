@@ -22,7 +22,7 @@ interface PrologueOverlayProps {
 export function PrologueOverlay({ prologue, dismissLabel, onDismiss }: PrologueOverlayProps) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const [imgOk, setImgOk] = useState(true);
-  const imgSrc = `${import.meta.env.BASE_URL}illustrations/prologue-${
+  const imgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/prologue-${
     isLandscape ? 'landscape' : 'portrait'
   }.png`;
 

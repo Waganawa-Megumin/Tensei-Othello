@@ -19,7 +19,7 @@ interface Props {
 
 export function ArrivalScreen({ t, onNext, nextLabel }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/arrival-bg-${
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/arrival-bg-${
     isLandscape ? 'landscape' : 'portrait'
   }.png`;
   const { revealText, hasRevealed } = useTapToReveal();

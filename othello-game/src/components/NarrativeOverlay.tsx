@@ -45,7 +45,7 @@ export function NarrativeOverlay({
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const [imgOk, setImgOk] = useState(true);
   const { revealText, hasRevealed } = useTapToReveal();
-  const imgSrc = `${import.meta.env.BASE_URL}illustrations/${imageBaseName}-${
+  const imgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/${imageBaseName}-${
     isLandscape ? 'landscape' : 'portrait'
   }.png`;
 

@@ -24,7 +24,7 @@ interface Props {
 
 export function GatewayClosedScreen({ t, onNext, nextLabel }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
-  const bgSrc = `${import.meta.env.BASE_URL}illustrations/gateway-closed-${
+  const bgSrc = `${import.meta.env.BASE_URL}illustrations/_shared/gateway-closed-${
     isLandscape ? 'landscape' : 'portrait'
   }.png`;
   const { revealText, hasRevealed } = useTapToReveal();
