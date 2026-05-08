@@ -65,13 +65,20 @@ import {
   hasSeenOverlay,
   markOverlaySeen,
   getArchiveScenes,
-  getOrderedArchiveScenes,
+  getArchiveTabs,
+  getOrderedArchiveScenesForPlr,
   OVERLAY_ORDER,
   type ArchiveScene,
+  type ArchiveTab,
   resetOverlaysSeen,
   type OverlayKey,
 } from './storage/storyOverlays';
 import { renderEmphasized } from './i18n/story/render';
+import {
+  resolveChapterStory,
+  resolveEndingScene,
+  resolveMidRouteScene,
+} from './i18n/story/resolve';
 import { loadCommentaryEnabled, saveCommentaryEnabled } from './storage/commentary';
 import { fetchCharacterCommentary } from './services/commentary';
 import type { CommentaryResult } from './prompts/commentary';
@@ -109,6 +116,7 @@ import {
   recordSlotResult,
   recordFreeResult,
   updateSlot as storageUpdateSaveSlot,
+  slugFromAvatarImage,
   TOTAL_BONUS_AVATARS,
   INITIAL_LIVES,
   type SaveSlot,
@@ -1627,6 +1635,11 @@ export default function App() {
   } | null>(null);
   /** Title-screen "scene archive" modal toggle. */
   const [archiveOpen, setArchiveOpen] = useState(false);
+  /** Active tab in the per-PLR scene archive. `null` defers to the
+   *  default (= chain frontier) computed at render time. Cleared
+   *  when the modal closes so re-opens always re-default to the
+   *  current frontier rather than a stale selection. */
+  const [archiveTabPlrIdx, setArchiveTabPlrIdx] = useState<number | null>(null);
   /** Spell-cast modal — types-the-magic-words → unlock-all path.
    *  v0.36.11: spell can carry a 2-digit suffix (01..21) so the
    *  developer can warp a save slot to that chapter; bare spell
@@ -7245,34 +7258,56 @@ export default function App() {
         </div>
       )}
 
-      {/* Scene archive modal — lists every story beat the slot has
-          cleared past (per-chapter narrative + interludes + ending +
-          true-ending epilogue). Tap any entry → starts sequential
-          playback FROM that scene; each overlay's "次のシーンへ →"
-          button chains to the next, until the final scene shows
-          「閉じる」 and exits.
+      {/* Scene archive modal — per-PLR tabs, one tab per unlocked
+          PLR (v0.36.54+). Each tab lists that PLR's lap scenes:
+          intro chain → ch.1-20 → mid-route inserts → ending. PLR01
+          additionally surfaces the true-ending cinematic.
+
+          Tap any entry → starts sequential playback FROM that
+          scene within the active tab. Per-PLR scene content is
+          resolved through `src/i18n/story/resolve.ts`, which falls
+          back to shared content when no per-PLR override is
+          authored — so today every chain-step PLR's tab shows the
+          same canonical chapters, but adding e.g. a 美琴-specific
+          chapter 7 in the future is a single i18n entry away.
 
           Renders OUTSIDE the screen gate because the entry-point
           sits on the title screen. */}
       {archiveOpen && (() => {
-        // Design A: any slot that has cleared at least one chain
-        // step has effectively witnessed the full ch.1-20 lap +
-        // mid-route inserts + ending, even though `storyProgress`
-        // has been reset to 0 for the next PLR's lap. Pass
-        // `hasClearedFullRoute` so the archive surfaces those
-        // scenes regardless of where the next lap currently sits.
-        const hasClearedFullRoute =
-          (activeSlot?.avatarsClearedCh20?.length ?? 0) > 0;
-        const ordered =
-          activeSlotId !== null
-            ? getOrderedArchiveScenes(
-                String(activeSlotId),
-                storyProgress,
-                trueEndingAchieved,
-                voidphiAwakened,
-                hasClearedFullRoute,
-              )
-            : [];
+        const slotKey = activeSlotId !== null ? String(activeSlotId) : null;
+        const tabs: ArchiveTab[] = activeSlot
+          ? getArchiveTabs({
+              unlockedCount: activeSlot.unlockedCount ?? 0,
+              avatarsClearedCh20: activeSlot.avatarsClearedCh20 ?? [],
+              storyProgress,
+              trueEndingAchieved,
+            })
+          : [];
+        // Default to whichever tab currently has the player's
+        // attention: the chain frontier (= last tab in the list)
+        // when nothing else is selected. The user may pick a
+        // different tab via the strip; selection is component-local.
+        const defaultPlrIdx =
+          archiveTabPlrIdx ?? tabs[tabs.length - 1]?.plrIdx ?? 0;
+        const activeTab =
+          tabs.find((tab) => tab.plrIdx === defaultPlrIdx) ?? tabs[0];
+        const activePlrIdx = activeTab?.plrIdx ?? 0;
+        // Effective lap progress for the active tab. Cleared PLRs
+        // see their full lap; the chain frontier sees up to its
+        // current storyProgress; PLR01 + trueEnd is also "fully
+        // cleared" since its lap caps at ch.20.
+        let effectiveProgress = 0;
+        if (activeTab?.fullyCleared) effectiveProgress = 20;
+        else if (activeTab?.played) effectiveProgress = storyProgress;
+        const ordered: ArchiveScene[] = slotKey
+          ? getOrderedArchiveScenesForPlr({
+              slotId: slotKey,
+              plrIdx: activePlrIdx,
+              effectiveProgress,
+              trueEndingAchieved,
+              voidphiAwakened,
+            })
+          : [];
         const sceneLabel = (s: ArchiveScene): string => {
           if (s.kind === 'overlay') return t.archiveSceneLabels[s.key];
           const opp = COMPUTERS.find((c) => c.level === s.chapter);
@@ -7306,6 +7341,49 @@ export default function App() {
                   {t.archiveModalSubtitle}
                 </p>
               </div>
+              {tabs.length > 1 && (
+                <div
+                  role="tablist"
+                  aria-label={t.archiveModalTitle}
+                  className="px-3 pt-3 flex flex-wrap gap-1.5"
+                >
+                  {tabs.map((tab) => {
+                    const av = AVATARS[tab.plrIdx];
+                    const slug = av
+                      ? slugFromAvatarImage(av.image)
+                      : `P${String(tab.plrIdx).padStart(2, '0')}`;
+                    const name = av
+                      ? locale === 'ja'
+                        ? av.name
+                        : av.name_en
+                      : '';
+                    const isActive = tab.plrIdx === activePlrIdx;
+                    const baseCls =
+                      'px-2.5 py-1.5 rounded-sm border text-xs jp-display tracking-wider whitespace-nowrap';
+                    const cls = isActive
+                      ? `${baseCls} border-amber-200/70 bg-amber-200/[0.10] text-amber-100`
+                      : tab.played
+                        ? `${baseCls} border-amber-200/25 text-amber-200/70 hover:border-amber-200/55 hover:text-amber-100 hover:bg-amber-200/[0.04]`
+                        : `${baseCls} border-amber-200/15 text-amber-200/40 hover:border-amber-200/30`;
+                    return (
+                      <button
+                        key={tab.plrIdx}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => setArchiveTabPlrIdx(tab.plrIdx)}
+                        className={cls}
+                        title={`${slug} ${name}`}
+                      >
+                        <span className="latin-display italic mr-1 text-amber-200/65">
+                          {slug}
+                        </span>
+                        {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               {ordered.length === 0 ? (
                 <p className="jp-display italic text-amber-200/65 text-sm leading-relaxed text-center px-5 py-10">
                   {t.archiveEmpty}
@@ -7328,8 +7406,8 @@ export default function App() {
                     {ordered.map((scene, i) => {
                       const key =
                         scene.kind === 'overlay'
-                          ? `o:${scene.key}`
-                          : `c:${scene.chapter}`;
+                          ? `o:${scene.plrIdx}:${scene.key}`
+                          : `c:${scene.plrIdx}:${scene.chapter}`;
                       return (
                         <li key={key}>
                           <button
@@ -7351,7 +7429,10 @@ export default function App() {
               )}
               <div className="px-5 py-3 border-t border-amber-200/15 flex justify-end">
                 <button
-                  onClick={() => setArchiveOpen(false)}
+                  onClick={() => {
+                    setArchiveOpen(false);
+                    setArchiveTabPlrIdx(null);
+                  }}
                   className="px-4 py-1.5 border border-amber-200/40 hover:border-amber-200 text-amber-100 hover:bg-amber-200/[0.06] rounded-sm jp-display text-xs tracking-wider"
                 >
                   {t.archiveCloseLabel}
@@ -7389,6 +7470,14 @@ export default function App() {
             setReview({ scenes: review.scenes, index: review.index + 1 });
           }
         };
+        // Per-PLR scene resolution. v0.36.54+ each archive scene
+        // carries a `plrIdx`; the resolver layer falls back to
+        // shared content when no per-PLR override is authored, so
+        // today every chain-step PLR's tab plays the same canonical
+        // chapters / interludes / chainStepEnding. PLR01 (idx 20)
+        // resolves to endingFull instead of chainStepEnding via
+        // resolveEndingScene.
+        const scenePlrIdx = scene.plrIdx ?? 0;
         const renderScene = (): React.ReactNode => {
           if (scene.kind === 'overlay') {
             switch (scene.key) {
@@ -7440,7 +7529,7 @@ export default function App() {
                 return (
                   <NarrativeOverlay
                     key={review.index}
-                    scene={t.story.narrative.solitude}
+                    scene={resolveMidRouteScene(t.story, scenePlrIdx, 'solitude')}
                     imageBaseName="solitude"
                     tone={locale === 'ja' ? '幕間' : 'Interlude'}
                     dismissLabel={dismissLabel}
@@ -7452,7 +7541,7 @@ export default function App() {
                 return (
                   <NarrativeOverlay
                     key={review.index}
-                    scene={t.story.narrative.allies}
+                    scene={resolveMidRouteScene(t.story, scenePlrIdx, 'allies')}
                     imageBaseName="allies"
                     tone={locale === 'ja' ? '幕間' : 'Interlude'}
                     dismissLabel={dismissLabel}
@@ -7464,7 +7553,7 @@ export default function App() {
                 return (
                   <NarrativeOverlay
                     key={review.index}
-                    scene={t.story.narrative.final}
+                    scene={resolveMidRouteScene(t.story, scenePlrIdx, 'final')}
                     imageBaseName="final"
                     tone={locale === 'ja' ? '幕間' : 'Interlude'}
                     dismissLabel={dismissLabel}
@@ -7536,7 +7625,7 @@ export default function App() {
                 return (
                   <NarrativeOverlay
                     key={review.index}
-                    scene={t.story.endingFull}
+                    scene={resolveEndingScene(t.story, scenePlrIdx)}
                     imageBaseName="ending"
                     tone={locale === 'ja' ? '終章' : 'Finale'}
                     dismissLabel={dismissLabel}
@@ -7550,7 +7639,7 @@ export default function App() {
           }
           // Per-chapter narrative scene. Pull the chapter's localized
           // story content + opponent metadata for header + art.
-          const story = t.story.chapterStories[scene.chapter - 1];
+          const story = resolveChapterStory(t.story, scenePlrIdx, scene.chapter);
           const opp = COMPUTERS.find((c) => c.level === scene.chapter);
           if (!story || !opp) return null;
           return (

@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.53 · archive-row + p1-frontier-sync';
+const BUILD_TAG = 'v0.36.54 · per-plr-archive-tabs';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

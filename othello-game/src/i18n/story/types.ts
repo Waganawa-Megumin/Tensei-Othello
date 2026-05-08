@@ -51,7 +51,8 @@ export interface PrologueContent {
 /** Full story bundle, one per locale. */
 export interface StoryContent {
   prologue: PrologueContent;
-  /** Chapters 1..20. Length must equal 20. */
+  /** Default chapters 1..20 — shared by every chain-step PLR until
+   *  per-PLR overrides ship. Length must equal 20. */
   chapterStories: ReadonlyArray<ChapterStory>;
   /** Mid-route narrative inserts (full-screen overlays). */
   narrative: {
@@ -122,17 +123,49 @@ export interface StoryContent {
   /** Shared chain-step ending shown after each PLR0M (M=0,2..20)
    *  clears its own ch.1-20 lap. Plays alongside the
    *  shared "homecoming" illustration in the GameOver modal,
-   *  immediately before auto-advance to the next chain step.
-   *
-   *  Architecture for future per-PLR branching: this is the fallback
-   *  text. When per-character ending content ships, add an optional
-   *  `chainStepEndingByPlr?: Partial<Record<number, NarrativeScene>>`
-   *  field keyed on AVATARS index (0=PLR00, 1..19=PLR02..PLR20),
-   *  and resolve at render time as
-   *      `chainStepEndingByPlr?.[plrIdx] ?? chainStepEnding`.
-   *  The illustration follows the same fallback pattern via the
-   *  EndingArt component's `srcBase` prop. */
+   *  immediately before auto-advance to the next chain step. */
   chainStepEnding: NarrativeScene;
+  /* ----------------------------------------------------------------
+   * Per-PLR override hooks (v0.36.54+) — the scene archive is split
+   * by tab, one tab per unlocked PLR. By default every chain-step
+   * PLR shares the canonical content above. To author a PLR-specific
+   * variant, add an entry to the relevant `*ByPlr` map keyed on the
+   * AVATARS index (0=PLR00, 1=PLR02, …, 19=PLR20, 20=PLR01).
+   *
+   * The resolver layer (`src/i18n/story/resolve.ts`) walks the chain
+   * `byPlr[plrIdx] ?? shared` so a partial override can replace just
+   * one chapter or one mid-route insert without copying the whole
+   * lap. PLR-exclusive scenes that have no shared default
+   * (chapter20A / trueEnding20B-D / opp22.*) live at top level above
+   * because they only fire for PLR01 — leave them there.
+   * --------------------------------------------------------------- */
+  /** Per-PLR chapter overrides. `chapterStoriesByPlr[plrIdx][i]`
+   *  replaces `chapterStories[i]` for that single PLR's lap. The
+   *  array length must still equal 20 when present.
+   *  Future: per-PLR ch.20 master variants (e.g., 美琴 fights ゼロ
+   *  with magic-academy framing, not Haruki's hacker framing). */
+  chapterStoriesByPlr?: Partial<Record<number, ReadonlyArray<ChapterStory>>>;
+  /** Per-PLR mid-route narrative overrides. Only the keys provided
+   *  override; the rest fall back to `narrative.{solitude,allies,final}`. */
+  narrativeByPlr?: Partial<
+    Record<
+      number,
+      Partial<{
+        solitude: NarrativeScene;
+        allies: NarrativeScene;
+        final: NarrativeScene;
+      }>
+    >
+  >;
+  /** Per-PLR chain-step ending override. Replaces the shared
+   *  `chainStepEnding` for that single PLR. */
+  chainStepEndingByPlr?: Partial<Record<number, NarrativeScene>>;
+  /** Per-PLR prologue + intro overrides. Default tab content for
+   *  every PLR uses the world-level `prologue`. When a PLR's
+   *  summoning is authored as its own opening cinematic (each PLR
+   *  has a unique reason to be called to 盤上世界), drop a
+   *  PrologueContent here. */
+  prologueByPlr?: Partial<Record<number, PrologueContent>>;
   /** Hook teasing New Game+ (PLR02 unlock). Stored for future use,
    *  not surfaced in v0.31.0. */
   epilogueHook: string;
