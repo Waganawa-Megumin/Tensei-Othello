@@ -8,9 +8,3 @@ dist/
 .wrangler/
 android/app/build/
 android/.gradle/
-
-# Local-only handoff ZIP packages (not pushed to GitHub; user receives
-# the file directly from the Claude Code session and forwards it to a
-# separate Claude chat / ChatGPT session). Rebuild with
-# tools/build_handoff_zip.sh.
-PLR*_handoff.zip

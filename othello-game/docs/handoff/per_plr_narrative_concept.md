@@ -9,13 +9,13 @@
 
 ---
 
-## 📦 ハンドオフ ZIP パッケージ
+## 📦 ダウンロード可能な ZIP パッケージ
 
-ユーザーが別セッションの Claude chat / ChatGPT に渡すための自己完結
-ZIP パッケージは、**Claude Code セッション側で生成され、ユーザーが
-直接受け取る**運用です (= GitHub には上げない)。
+**↓ GitHub Pages から直接ダウンロード可能 ↓**
 
-ZIP の中身 (約 4.5MB):
+**URL**: https://waganawa-megumin.github.io/Tensei-Othello/handoff/PLR02_mikoto_handoff.zip
+
+中身 (約 4.6MB / 10 ファイル):
 ```
 PLR02_mikoto_handoff/
 ├── README.md                                       ← 最初に読む使い方ガイド
@@ -24,7 +24,7 @@ PLR02_mikoto_handoff/
 ├── 02_SCENE_spec_4_scenes.md                       ← 4 シーンの ChatGPT プロンプト詳細
 └── character_reference/
     ├── PLR02_mikoto_character_transparent.png      (1024×1024 RGBA, 背景透過)
-    ├── PLR02_mikoto_cathedral_library_background.png (1024×1024 RGB)
+    ├── PLR02_mikoto_background.png                 (1024×1024 RGB, 大聖堂図書館)
     ├── PLR02_mikoto_icon.png                       (1024×1024 RGBA)
     └── PLR02_mikoto_canonical_spec.md              (キャラ正規定書)
 ```
@@ -32,8 +32,9 @@ PLR02_mikoto_handoff/
 **透過 character.png** が同梱されているので、ChatGPT に毎シーン参照
 画像として渡せばキャラブレを最小化できます。
 
-ZIP を再生成したい場合は Code セッションでビルドスクリプトを叩く運用
-にする予定 (今は手動: `tools/build_handoff_zip.sh` を作成予定)。
+ZIP を再生成する場合: `bash othello-game/tools/build_handoff_zip.sh PLR02 mikoto`
+で `public/handoff/PLR02_mikoto_handoff.zip` を上書き再生成し、commit
+すれば次の deploy で更新版が配信されます。
 
 
 

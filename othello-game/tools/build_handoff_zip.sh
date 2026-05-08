@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 # Rebuild the per-PLR narrative handoff ZIP.
 #
-# The ZIP is intentionally NOT committed to the repo (large binary +
-# only useful as a one-shot handoff to a separate Claude chat / ChatGPT
-# session). It lives at the workspace root and is gitignored.
+# Output lives under `othello-game/public/handoff/` so GitHub Pages
+# serves it at:
+#   https://waganawa-megumin.github.io/Tensei-Othello/handoff/<PLR>_<slug>_handoff.zip
+# The ZIP is committed to the repo (small enough at ~4.6MB and the
+# user explicitly opted for GitHub-Pages download over local file
+# transfer; the workspace file pane does not surface workspace-root
+# downloads cleanly in Claude Code on the web).
 #
 # Usage:
 #   tools/build_handoff_zip.sh           # default: PLR02 mikoto
 #   tools/build_handoff_zip.sh PLR03 rin # future: per-PLR build (when more PLRs are authored)
 #
 # Output:
-#   ../<PLR>_<slug>_handoff.zip   (workspace root, e.g. /home/user/Tensei-Othello/PLR02_mikoto_handoff.zip)
+#   public/handoff/<PLR>_<slug>_handoff.zip
 set -euo pipefail
 
 PLR="${1:-PLR02}"
@@ -20,14 +24,16 @@ HANDOFF_ID="${PLR}_${SLUG}"
 # Resolve repo paths regardless of cwd.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GAME_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"           # othello-game/
-REPO_ROOT="$(cd "${GAME_DIR}/.." && pwd)"            # /home/user/Tensei-Othello/
 
 AVATAR_DIR="${GAME_DIR}/public/avatars/players/${HANDOFF_ID}"
 SCENE_SPEC="${GAME_DIR}/public/illustrations/${HANDOFF_ID}/spec.md"
 HANDOFF_DOC="${GAME_DIR}/docs/handoff/per_plr_narrative_concept.md"
 INSTRUCTIONS="${GAME_DIR}/docs/handoff/claude_chat_instructions.md"
 
-OUT_ZIP="${REPO_ROOT}/${HANDOFF_ID}_handoff.zip"
+OUT_DIR="${GAME_DIR}/public/handoff"
+OUT_ZIP="${OUT_DIR}/${HANDOFF_ID}_handoff.zip"
+mkdir -p "${OUT_DIR}"
+
 STAGE_PARENT="$(mktemp -d)"
 STAGE="${STAGE_PARENT}/${HANDOFF_ID}_handoff"
 mkdir -p "${STAGE}/character_reference"
