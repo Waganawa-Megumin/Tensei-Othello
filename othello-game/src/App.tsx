@@ -5188,13 +5188,15 @@ export default function App() {
                             : t.resultWhiteWin}
                   </h2>
 
+                  {/* Ending illustration ("PLR が帰還する" scene).
+                      v0.36.51 — also renders for chain-step finish so
+                      each PLR0M's ch.20 clear surfaces the
+                      return-home image. The long paginated finale
+                      prose stays gated on `justCompletedStory` (=
+                      PLR01 true ending) only. */}
+                  {(justCompletedStory || chainStepFinish) && <EndingArt />}
                   {justCompletedStory && (
                     <>
-                      {/* Ending illustration — pairs with the finale
-                          prose. Falls back silently if the asset isn't
-                          present (image variant decided by viewport
-                          orientation, like ChapterArt). */}
-                      <EndingArt />
                       {/* Paginated reader — endingFull is ~30 lines
                           so even with the modal scrolling enabled it
                           reads better one paragraph-page at a time
