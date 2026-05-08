@@ -9,6 +9,31 @@
 
 ---
 
+## 📦 ダウンロード可能な ZIP パッケージ
+
+**↓ ここから ZIP を取得して別セッションの Claude chat / ChatGPT に渡せます ↓**
+
+**URL**: `https://waganawa-megumin.github.io/Tensei-Othello/handoff/PLR02_mikoto_handoff.zip`
+
+中身 (約 4.5MB):
+```
+PLR02_mikoto_handoff/
+├── README.md                                  ← 最初に読む使い方ガイド
+├── 00_CLAUDE_CHAT_INSTRUCTIONS.md             ← Claude chat への role 説明
+├── 01_HANDOFF_per_plr_narrative_concept.md    ← 全体ハンドオフ (このファイル)
+├── 02_SCENE_spec_4_scenes.md                  ← 4 シーンの ChatGPT プロンプト詳細
+└── character_reference/
+    ├── PLR02_mikoto_character_transparent.png      (1024×1024 RGBA, 背景透過)
+    ├── PLR02_mikoto_cathedral_library_background.png (1024×1024 RGB)
+    ├── PLR02_mikoto_icon.png                       (1024×1024 RGBA)
+    └── PLR02_mikoto_canonical_spec.md              (キャラ正規定書)
+```
+
+**透過 character.png** が同梱されているので、ChatGPT に毎シーン参照画像として渡せばキャラブレを最小化できます。Claude chat 側で品質レビュー → ZIP パッケージング → Code 側へ受け渡し、までの一連の流れが標準化されます。
+
+
+---
+
 ## 1. 背景・ゴール
 
 このゲームは 21 体のプレイヤーキャラクター (PLR00 ハルキ + PLR02..PLR20 の 19 体 + PLR01 英霊ハルキ) で章 1-20 のストーリーモードを周回するアドベンチャー。これまで PLR00 (デフォルト主人公) のみが固有挿絵 + ストーリーを持ち、他 PLR は共通挿絵を共有していました。
