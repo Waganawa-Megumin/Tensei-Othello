@@ -4213,10 +4213,15 @@ export default function App() {
             the user proceeds to the next chapter setup. */}
         {storyOverlay === 'narrative:solitude' && (
           <NarrativeOverlay
-            scene={t.story.narrative.solitude}
+            scene={resolveMidRouteScene(t.story, p1Avatar, 'solitude')}
             imageBaseName="solitude"
             tone={locale === 'ja' ? '幕間' : 'Interlude'}
             dismissLabel={t.nextChapter}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:solitude')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(String(activeSlotId), 'narrative:solitude');
@@ -4229,10 +4234,15 @@ export default function App() {
         )}
         {storyOverlay === 'narrative:allies' && (
           <NarrativeOverlay
-            scene={t.story.narrative.allies}
+            scene={resolveMidRouteScene(t.story, p1Avatar, 'allies')}
             imageBaseName="allies"
             tone={locale === 'ja' ? '幕間' : 'Interlude'}
             dismissLabel={t.nextChapter}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:allies')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(String(activeSlotId), 'narrative:allies');
@@ -4245,10 +4255,15 @@ export default function App() {
         )}
         {storyOverlay === 'narrative:final' && (
           <NarrativeOverlay
-            scene={t.story.narrative.final}
+            scene={resolveMidRouteScene(t.story, p1Avatar, 'final')}
             imageBaseName="final"
             tone={locale === 'ja' ? '幕間' : 'Interlude'}
             dismissLabel={t.nextChapter}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:final')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(String(activeSlotId), 'narrative:final');
@@ -4273,6 +4288,11 @@ export default function App() {
             imageBaseName="chapter_20a_confrontation"
             tone={locale === 'ja' ? '章 20-A' : 'Chapter 20-A'}
             dismissLabel={t.nextChapter}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:chapter20A')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -4297,6 +4317,14 @@ export default function App() {
             imageBaseName="chapter_20a_transition"
             tone={locale === 'ja' ? '章 20-A' : 'Chapter 20-A'}
             dismissLabel={t.close}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(
+                String(activeSlotId),
+                'narrative:chapter20Atransition',
+              )
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -4322,6 +4350,11 @@ export default function App() {
             imageBaseName="trueEnding20B"
             tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
             dismissLabel={t.nextChapter}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:trueEnding20B')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -4339,6 +4372,11 @@ export default function App() {
             imageBaseName="trueEnding20C"
             tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
             dismissLabel={t.close}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:trueEnding20C')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -4371,6 +4409,11 @@ export default function App() {
             imageBaseName="chapter_20d_voidphi"
             tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
             dismissLabel={t.nextChapter}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:trueEnding20D')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -4410,6 +4453,11 @@ export default function App() {
             imageBaseName="chapter_20d_voidphi"
             tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
             dismissLabel={t.opp22IntroStartLabel}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(String(activeSlotId), 'narrative:opp22.intro')
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -4450,6 +4498,14 @@ export default function App() {
             imageBaseName="chapter_20d_voidphi"
             tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
             dismissLabel={t.close}
+            isReplay={
+              activeSlotId !== null &&
+              hasSeenOverlay(
+                String(activeSlotId),
+                'narrative:opp22.victoryNarration',
+              )
+            }
+            skipLabel={t.skipNarrative}
             onDismiss={() => {
               if (activeSlotId !== null) {
                 markOverlaySeen(
@@ -5524,17 +5580,20 @@ export default function App() {
                           // intro flow takes over for the next
                           // chapter card. Without an interlude we
                           // jump straight to the intro flow.
+                          // v0.36.55: always fire mid-route inserts.
+                          // Pre-fix the !hasSeenOverlay gate skipped
+                          // the overlay for returning players —
+                          // user request was that the beat must
+                          // surface every time, with a "skip ▶"
+                          // button on the overlay for replays
+                          // (rendered when isReplay=true). markSeen
+                          // still fires on dismiss so subsequent
+                          // visits know this is a replay.
                           let pending: OverlayKey | null = null;
                           if (storyProgress === 10) pending = 'narrative:solitude';
                           else if (storyProgress === 15) pending = 'narrative:allies';
                           else if (storyProgress === 19) pending = 'narrative:final';
-                          const slotKey =
-                            activeSlotId !== null ? String(activeSlotId) : null;
-                          if (
-                            pending &&
-                            slotKey &&
-                            !hasSeenOverlay(slotKey, pending)
-                          ) {
+                          if (pending) {
                             setStoryOverlay(pending);
                           } else {
                             setIntroChapter(
@@ -7534,6 +7593,8 @@ export default function App() {
                     tone={locale === 'ja' ? '幕間' : 'Interlude'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7546,6 +7607,8 @@ export default function App() {
                     tone={locale === 'ja' ? '幕間' : 'Interlude'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7558,6 +7621,8 @@ export default function App() {
                     tone={locale === 'ja' ? '幕間' : 'Interlude'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7570,6 +7635,8 @@ export default function App() {
                     tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7582,6 +7649,8 @@ export default function App() {
                     tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7594,6 +7663,8 @@ export default function App() {
                     tone={locale === 'ja' ? '真エンディング' : 'True Ending'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7606,6 +7677,8 @@ export default function App() {
                     tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7618,6 +7691,8 @@ export default function App() {
                     tone={locale === 'ja' ? 'OPP22 章' : 'OPP22 Chapter'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );
@@ -7630,6 +7705,8 @@ export default function App() {
                     tone={locale === 'ja' ? '終章' : 'Finale'}
                     dismissLabel={dismissLabel}
                     tapHintLabel={tapHintLabel}
+                    isReplay
+                    skipLabel={t.skipNarrative}
                     onDismiss={advance}
                   />
                 );

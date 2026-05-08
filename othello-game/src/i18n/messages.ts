@@ -187,6 +187,8 @@ export interface Messages {
   // Common
   close: string;
   delete: string;
+  /** Skip-button label on replayable narrative overlays (v0.36.55). */
+  skipNarrative: string;
 
   // Level labels
   levelEntry: string;
@@ -691,6 +693,7 @@ export const ja: Messages = {
 
   close: '閉じる',
   delete: '削除',
+  skipNarrative: 'スキップ ▶',
 
   levelEntry: '入門',
   levelBeginner: '初級',
@@ -1147,6 +1150,7 @@ export const en: Messages = {
 
   close: 'Close',
   delete: 'Delete',
+  skipNarrative: 'Skip ▶',
 
   levelEntry: 'Entry',
   levelBeginner: 'Beginner',
