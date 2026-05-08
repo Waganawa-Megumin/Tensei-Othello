@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.47 · subtitle-no-pill-tighter';
+const BUILD_TAG = 'v0.36.48 · subtitle-sans-no-ornament';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
@@ -167,14 +167,20 @@ export function TitleScreen({
             because the chip itself dims a strip of bg behind the
             text. White fill + tight shadow halo for the final
             edge definition. */}
-        {/* Latin subtitle. v0.36.47 — drop the dark pill backdrop and
-            reduce tracking so the line reads like normal English
-            (= "half-width" in user's terms — the v0.36.44 0.4em
-            tracking made the chars look stretched / full-width-ish).
-            White fill + multi-layer shadow halo for legibility on
-            the bg illustration. */}
+        {/* Latin subtitle. v0.36.48 — drops:
+            - `.latin-display` (= Cormorant Garamond italic, served
+              as wide warm serif) → uses system sans-serif via
+              Tailwind `font-sans` for a clean, compact look.
+            - `.ornament` class — it was overriding `text-white` with
+              `rgba(201, 169, 97, 0.45)` (45% amber), forcing the
+              "amber-on-amber" blend the user kept reporting.
+            - `italic` — sans-italic looks generic web; upright reads
+              cleaner.
+            User asked for 「白系で明るく」「半角で」. Sans-serif at
+            text-sm/md:text-base + no extra letter-spacing renders
+            the Latin chars at native half-width. */}
         <div
-          className="latin-display italic ornament font-semibold text-white text-sm max-lg:landscape:text-[10px] md:text-base uppercase tracking-[0.12em] mb-4 max-lg:landscape:mb-1 text-center"
+          className="font-sans font-semibold text-white text-sm max-lg:landscape:text-[10px] md:text-base uppercase tracking-wider mb-4 max-lg:landscape:mb-1 text-center"
           style={{
             textShadow:
               '0 0 4px rgba(0,0,0,0.95), 0 0 12px rgba(0,0,0,0.85), 0 0 24px rgba(10,8,5,0.7), 0 2px 4px rgba(0,0,0,0.95)',
