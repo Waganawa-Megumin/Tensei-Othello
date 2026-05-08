@@ -842,4 +842,59 @@ And when **all their journeys end** — the gods will perform one final **specia
 — That will be **the 21st hero**. — **The Second Haruki**.
 
 *(**New Game+** — was about to begin.)*`,
+
+  /* ----------------------------------------------------------------
+   * Mikoto (PLR02 / AVATARS index 1) per-PLR overrides — v0.36.55
+   * pilot. Mirrors the ja.ts narrativeByPlr/chainStepEndingByPlr
+   * entries. English text is a working draft; refine in a follow-up.
+   * ---------------------------------------------------------------- */
+  narrativeByPlr: {
+    1: {
+      solitude: {
+        title: 'Interlude — A Quiet Night in the Cathedral Library',
+        text: `Late at night, deep inside the cathedral library, Mikoto sat alone, an old grimoire open beside a folded sheaf of game records.
+Moonlight through stained glass, the blue flame of a candelabra. On the desk, a coded branching table — every match against every master, distilled.
+
+(*"**Logic and magic are the same**." — then game-theory, too, is **a kind of arcane art**.*)
+
+Her fingers paused on the page.
+**Mikoto heard a single theorem rising into form within her**.`,
+        imageBasePath: 'PLR02_mikoto/solitude',
+      },
+      allies: {
+        title: "Interlude — The Masters' Theorem",
+        text: `Around the library table — Ichika, Aoi, Asahi, Nadeshiko, Hibiki — the masters peered at Mikoto's board.
+
+"Mikoto-chan's reading is like sheet music ♪"  "Heehee, you're **weaving** a theorem~"
+"Now then — show us the swordsman's-cut of **Logic**."  "Don't push too hard, all right?"  "A fine **dissertation**."
+
+(*From people who **used to be enemies** — I receive **the rest of the proof**. — This other world is **excellent as a school**, too.*)`,
+        imageBasePath: 'PLR02_mikoto/allies',
+      },
+      final: {
+        title: 'Interlude — Before the Final Theorem',
+        text: `Confrontation with Zero.
+Into Mikoto's grimoire, **the souls of the masters wrote themselves in silver script**.
+
+Ichika's prosody, Aoi's line of fire, Asahi's swordstroke, Nadeshiko's healing meter, Hibiki's main melody, Tsumugi's beast-logic, Akane's mechanism, Mel's refinement, Satoru's stillness, Shiki's omen, Shion's constellation, Luna's dream, Yukino's tactical theorem, Akira's deduction, Ciel's probability, Aria's manners, Leon's chivalry, Sojiro's single stroke, Arashi's lightning principle.
+
+Every chapter — became **Mikoto's final theorem**.
+
+(*"**Logic and magic are the same**." — the moment those words were inscribed, **the whole board collapsed into a single proof diagram**.*)`,
+        imageBasePath: 'PLR02_mikoto/final',
+      },
+    },
+  },
+  chainStepEndingByPlr: {
+    1: {
+      title: "Mikoto's Chapter — 《Logic-Magic》, Theorematized",
+      text: `Returned from the board world to her cathedral library, Mikoto wrote on the final page:
+
+*"**Every move in this world departs from a single axiom.**"*
+
+The name *《Logic-Magic》* would survive into later ages.
+And the next summoning circle — began to tremble softly with the light of welcoming a different hero.`,
+      imageBasePath: 'PLR02_mikoto/ending',
+    },
+  },
 };
