@@ -96,6 +96,28 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **GUI 画面サイズ追従 + ヴォイドφ横画像 確認 (v0.36.54)** —
+      completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY` —
+      コード変更なし、機能確認のみ。ユーザー要望「PC ブラウザの
+      ウィンドウサイズに合わせてシーンが出力されるか / 全画面強制では
+      ないか / ヴォイドφに横画像はあるか」への回答として実装を点検:
+      (1) `src/hooks/useMediaQuery.ts:11-29` が
+      `MediaQueryList.change` を listen するためリサイズ即時に
+      orientation を再評価、`NarrativeOverlay` / `PrologueScreen` /
+      `FallingScreen` / `ArrivalScreen` / `GatewayClosed/OpenScreen` /
+      `ChapterIntroScreen` / `ChapterStoryOverlay` / `TitleScreen` /
+      `App.tsx ChapterArt` の全 narrative・intro・banner で共通利用、
+      stale state なし。(2) `fixed inset-0` でブラウザ viewport を
+      埋めるのみで OS fullscreen 強制なし (`requestFullscreen()` 呼出
+      0 件)、PWA manifest も `display:'standalone'` /
+      `orientation:'any'`。(3) 挿絵 30 枚すべてに landscape /
+      portrait pair 完備、ヴォイドφの横画像も
+      `chapter_20d_voidphi-landscape.png` (1920x1080 / 3.8MB) 存在
+      確認。標準デスクトップ 16:9 環境では landscape 画像
+      (1920x1080) と viewport がほぼ一致するため `object-cover`
+      クロップは最小。極端なアスペクト比 (21:9 / 4:3) でのクロップ感や
+      極小ウィンドウでのテキスト過大は次タスク候補としてプラン B/C/D
+      に記録。
 - [x] **セーブポイント全面整理 (Design A: 各 PLR が章 1-20 を replay) (v0.36.41)** —
       completed: 2026-05-07 — by: `claude/game-overview-docs-DjBxK` —
       commit: `9aef36b` (feature) + `b2d395c` (merge) —
