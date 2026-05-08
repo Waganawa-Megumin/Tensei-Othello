@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.49 · victory-encouragement-fix';
+const BUILD_TAG = 'v0.36.50 · ch20-chain-step-modal-fix';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

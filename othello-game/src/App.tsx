@@ -4944,12 +4944,45 @@ export default function App() {
           {gameOver && !gameOverDismissed && !settingsOpen && !loadedKifuView && (() => {
             const isStoryMode = aiMode === 'story' && gameMode === 'ai';
             const justAdvanced = isStoryMode && lastResult === 'win';
-            const justCompletedStory = justAdvanced && storyProgress >= 20;
-            const showNextChapter = justAdvanced && storyProgress < 20;
+            // v0.36.50 — Use opponentLevel (= COMPUTERS Lv. of the
+            // match just played) instead of `storyProgress` to label
+            // the chapter on the modal. Under Design A,
+            // `recordSlotResult` resets `slot.storyProgress` to 0 on
+            // ch.20 chain-step wins, so by the time this modal
+            // renders the value 0 doesn't represent the chapter that
+            // was just played. opponentLevel is invariant of slot
+            // mutations.
+            const opponentLevel =
+              opponentSnapshot?.level ?? COMPUTERS[computerChar]?.level ?? 0;
+            const playerIsPLR01 =
+              p1Avatar >= 0 &&
+              p1Avatar < AVATARS.length &&
+              AVATARS[p1Avatar].image.includes('PLR01_haruki_heroic');
+            // Chain-step finish: a chain-step PLR (PLR00..PLR20, NOT
+            // PLR01) just won ch.20 and `recordSlotResult` appended a
+            // new index to `avatarsClearedCh20`. The gameOver effect
+            // that sets `unlockedThisRun` only fires on that diff, so
+            // it's a clean signal for "this match was a chain advance".
+            const chainStepFinish = justAdvanced && unlockedThisRun !== null;
+            // True ending: PLR01 won ch.20 (= the canonical route
+            // finale, separate cinematic chain handles 20-B → 20-D →
+            // opp22.intro elsewhere).
+            const justCompletedStory =
+              justAdvanced && playerIsPLR01 && opponentLevel === 20;
+            // Mid-lap progression: any other story win below ch.20.
+            // Chain-step finish + true-ending finish both suppress
+            // the "next chapter" CTA — for chain-step finish the user
+            // explicitly requested 「クリアしたら一旦ホーム」 (return to
+            // title rather than auto-proceed to PLR0(M+1)'s ch.1).
+            const showNextChapter =
+              justAdvanced &&
+              !chainStepFinish &&
+              !justCompletedStory &&
+              opponentLevel < 20;
             const nextOpp = showNextChapter
               ? COMPUTERS.find((c) => c.level === storyProgress + 1)
               : null;
-            const playedChapter = justAdvanced ? storyProgress : storyProgress + 1;
+            const playedChapter = justAdvanced ? opponentLevel : storyProgress + 1;
             const isGameOverScreen =
               isStoryMode &&
               activeSlot !== null &&
@@ -5409,6 +5442,14 @@ export default function App() {
                       <button onClick={resetStoryProgress} className="btn">
                         {t.retryStory}
                       </button>
+                    ) : chainStepFinish ? (
+                      // v0.36.50 — chain-step PLR just cleared ch.20.
+                      // Per user request 「クリアしたら一旦ホーム」, no
+                      // "next chapter" auto-progress — the title-back
+                      // button below is the sole CTA. Re-entry to the
+                      // slot from the title starts PLR0(M+1)'s ch.1
+                      // through the regular intro flow.
+                      null
                     ) : showNextChapter ? (
                       <button
                         onClick={() => {
@@ -5456,7 +5497,9 @@ export default function App() {
                         reset();
                         setScreen('title');
                       }}
-                      className="btn"
+                      className={
+                        chainStepFinish ? 'btn btn-active' : 'btn'
+                      }
                     >
                       {t.gameOverBackToTitle}
                     </button>
