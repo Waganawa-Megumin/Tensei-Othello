@@ -1620,6 +1620,15 @@ export default function App() {
   // Story overlay (prologue / narrative inserts / ending). Active key is
   // the OverlayKey we're currently displaying; null when none.
   const [storyOverlay, setStoryOverlay] = useState<OverlayKey | null>(null);
+  /** True when a mid-route overlay was queued from the chapter
+   *  browser (= screen is already 'game' and the board is loaded).
+   *  Flips the solitude/allies/final dismiss behavior: instead of
+   *  running the intro chain (`setScreen('intro')`), the overlay
+   *  closes and the player drops onto the live board. PLR01 ch.20
+   *  additionally chains into chapter20A → transition. Reset to
+   *  false when the chain finishes. (v0.36.55) */
+  const [midRouteFromChapterBrowser, setMidRouteFromChapterBrowser] =
+    useState(false);
   /** Re-watch a previously-seen story scene from the title-screen
    *  archive. Holds an ORDERED list of scenes (chapters + overlays)
    *  so the player can chain "次のシーンへ →" through them
@@ -3321,17 +3330,38 @@ export default function App() {
     setSettingsOpen(false);
     reset({ gameMode: 'ai', aiMode: nextAiMode });
     setScreen('game');
-    // 章 20-A 対峙シーン: when PLR01 英霊ハルキ enters chapter 20
-    // (frontier OR replay), drop the full-screen confrontation
-    // overlay over the freshly-reset board so the player reads the
-    // pre-battle dialogue ("君は人間なんだろ?") before making the
-    // first move. Mirrors the trueEnding cinematic philosophy of
-    // firing every time, not gated on overlay-seen flags — the
-    // beat is short and the user explicitly asked for the bridge.
     const playerIsPLR01 =
       p1Avatar >= 0 &&
       p1Avatar < AVATARS.length &&
       AVATARS[p1Avatar].image.includes('PLR01_haruki_heroic');
+    // v0.36.55: chapter-browser direct entry must also surface the
+    // mid-route narrative inserts (solitude / allies / final). The
+    // existing GameOver "次の章" path already fires these; without
+    // the same wiring here, a returning player who jumps to ch.11
+    // via the chapter browser silently skips solitude. Per user
+    // request, every entry path always-fires the beat (skip ▶ button
+    // available to dismiss replays). The mid-route overlay's dismiss
+    // handler reads `midRouteFromChapterBrowser` to decide whether
+    // to drop onto the live board (this path) or run the intro chain
+    // (the GameOver path). For PLR01 ch.20, final → chapter20A →
+    // transition still chains automatically.
+    let preChapterOverlay: OverlayKey | null = null;
+    if (level === 11) preChapterOverlay = 'narrative:solitude';
+    else if (level === 16) preChapterOverlay = 'narrative:allies';
+    else if (level === 20) preChapterOverlay = 'narrative:final';
+
+    if (preChapterOverlay) {
+      setMidRouteFromChapterBrowser(true);
+      setStoryOverlay(preChapterOverlay);
+      return;
+    }
+
+    // 章 20-A 対峙シーン (PLR01-only legacy path) — only relevant when
+    // level !== 20 above didn't already fire `narrative:final`. With
+    // the new wiring, level === 20 always fires final first (which
+    // for PLR01 chains into chapter20A on dismiss; see the dismiss
+    // handler in the JSX). Kept here as a defensive fall-through in
+    // case the level-20 branch is bypassed by future code paths.
     if (level === 20 && playerIsPLR01) {
       setStoryOverlay('narrative:chapter20A');
     }
@@ -4227,8 +4257,14 @@ export default function App() {
                 markOverlaySeen(String(activeSlotId), 'narrative:solitude');
               }
               setStoryOverlay(null);
-              setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
-              setScreen('intro');
+              if (midRouteFromChapterBrowser) {
+                // chapter-browser direct entry: board already loaded,
+                // drop onto live game.
+                setMidRouteFromChapterBrowser(false);
+              } else {
+                setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
+                setScreen('intro');
+              }
             }}
           />
         )}
@@ -4248,8 +4284,12 @@ export default function App() {
                 markOverlaySeen(String(activeSlotId), 'narrative:allies');
               }
               setStoryOverlay(null);
-              setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
-              setScreen('intro');
+              if (midRouteFromChapterBrowser) {
+                setMidRouteFromChapterBrowser(false);
+              } else {
+                setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
+                setScreen('intro');
+              }
             }}
           />
         )}
@@ -4268,9 +4308,29 @@ export default function App() {
               if (activeSlotId !== null) {
                 markOverlaySeen(String(activeSlotId), 'narrative:final');
               }
-              setStoryOverlay(null);
-              setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
-              setScreen('intro');
+              const playerIsPLR01 =
+                p1Avatar >= 0 &&
+                p1Avatar < AVATARS.length &&
+                AVATARS[p1Avatar].image.includes('PLR01_haruki_heroic');
+              if (midRouteFromChapterBrowser) {
+                // chapter-browser direct entry into ch.20. For PLR01,
+                // chain the confrontation pair (chapter20A → transition)
+                // before the live board surfaces. For PLR00..20, drop
+                // straight onto the board.
+                if (playerIsPLR01) {
+                  setStoryOverlay('narrative:chapter20A');
+                  // Keep midRouteFromChapterBrowser set so the
+                  // transition's dismiss knows to clear it without
+                  // running the intro chain.
+                } else {
+                  setStoryOverlay(null);
+                  setMidRouteFromChapterBrowser(false);
+                }
+              } else {
+                setStoryOverlay(null);
+                setIntroChapter(Math.min(Math.max(storyProgress + 1, 1), 20));
+                setScreen('intro');
+              }
             }}
           />
         )}
@@ -4333,6 +4393,13 @@ export default function App() {
                 );
               }
               setStoryOverlay(null);
+              // End of the chapter-browser ch.20 PLR01 chain:
+              // narrative:final → chapter20A → transition. Clear the
+              // flag so subsequent overlays use default (= GameOver)
+              // dismiss behavior.
+              if (midRouteFromChapterBrowser) {
+                setMidRouteFromChapterBrowser(false);
+              }
             }}
           />
         )}
