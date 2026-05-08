@@ -9,19 +9,19 @@
 
 ---
 
-## 📦 ダウンロード可能な ZIP パッケージ
+## 📦 ハンドオフ ZIP パッケージ
 
-**↓ ここから ZIP を取得して別セッションの Claude chat / ChatGPT に渡せます ↓**
+ユーザーが別セッションの Claude chat / ChatGPT に渡すための自己完結
+ZIP パッケージは、**Claude Code セッション側で生成され、ユーザーが
+直接受け取る**運用です (= GitHub には上げない)。
 
-**URL**: `https://waganawa-megumin.github.io/Tensei-Othello/handoff/PLR02_mikoto_handoff.zip`
-
-中身 (約 4.5MB):
+ZIP の中身 (約 4.5MB):
 ```
 PLR02_mikoto_handoff/
-├── README.md                                  ← 最初に読む使い方ガイド
-├── 00_CLAUDE_CHAT_INSTRUCTIONS.md             ← Claude chat への role 説明
-├── 01_HANDOFF_per_plr_narrative_concept.md    ← 全体ハンドオフ (このファイル)
-├── 02_SCENE_spec_4_scenes.md                  ← 4 シーンの ChatGPT プロンプト詳細
+├── README.md                                       ← 最初に読む使い方ガイド
+├── 00_CLAUDE_CHAT_INSTRUCTIONS.md                  ← Claude chat への role 説明
+├── 01_HANDOFF_per_plr_narrative_concept.md         ← 全体ハンドオフ (このファイル)
+├── 02_SCENE_spec_4_scenes.md                       ← 4 シーンの ChatGPT プロンプト詳細
 └── character_reference/
     ├── PLR02_mikoto_character_transparent.png      (1024×1024 RGBA, 背景透過)
     ├── PLR02_mikoto_cathedral_library_background.png (1024×1024 RGB)
@@ -29,7 +29,12 @@ PLR02_mikoto_handoff/
     └── PLR02_mikoto_canonical_spec.md              (キャラ正規定書)
 ```
 
-**透過 character.png** が同梱されているので、ChatGPT に毎シーン参照画像として渡せばキャラブレを最小化できます。Claude chat 側で品質レビュー → ZIP パッケージング → Code 側へ受け渡し、までの一連の流れが標準化されます。
+**透過 character.png** が同梱されているので、ChatGPT に毎シーン参照
+画像として渡せばキャラブレを最小化できます。
+
+ZIP を再生成したい場合は Code セッションでビルドスクリプトを叩く運用
+にする予定 (今は手動: `tools/build_handoff_zip.sh` を作成予定)。
+
 
 
 ---
