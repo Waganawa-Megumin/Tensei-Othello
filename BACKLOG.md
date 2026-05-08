@@ -11,7 +11,18 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## 🔥 In Progress
 
-なし。
+- [ ] **PLR 別 挿絵 + ストーリー 完全フォルダ管理 + 必発火 (PLR02 美琴 パイロット, v0.36.55)** —
+      owner: `claude/othello-ui-autosave-bPnmY` — started: 2026-05-08 —
+      `public/illustrations/` を `_shared/` + per-PLR フォルダ (`PLR02_mikoto/` 等) に再編。
+      `NarrativeScene` に `imageBasePath?` を追加して per-PLR 上書き。`NarrativeOverlay` に
+      二段 fallback (PLR-specific → `_shared`) と `isReplay` 用「スキップ ▶」ボタンを実装。
+      GameOver "次の章" の `!hasSeenOverlay` ゲートを撤去して必発火化、`startStoryChapter`
+      に章ブラウザ直行用 mid-route insert chain を追加。`getOrderedArchiveScenesForPlr` の
+      off-by-one (mid-route が milestone+1 でないとアーカイブに載らない) を修正。
+      PLR02 美琴の narrative 4 シーン (solitude / allies / final / chainStepEnding) を
+      ja/en に流し込み、`PLR02_mikoto/spec.md` 作成。
+      `docs/handoff/per_plr_narrative_concept.md` を作成し Claude chat ↔ ChatGPT への
+      画像生成プロンプトハンドオフ文書として整備。Plan: `~/.claude/plans/goofy-purring-neumann.md`。
 
 ---
 
