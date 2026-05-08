@@ -32,6 +32,16 @@ export interface ChapterStory {
 export interface NarrativeScene {
   title: string;
   text: string;
+  /** Optional per-scene illustration override. Path stem under
+   *  `public/illustrations/` (no extension, no orientation suffix).
+   *  Example: `'PLR02_mikoto/solitude'` resolves at runtime to
+   *  `/illustrations/PLR02_mikoto/solitude-{landscape,portrait}.png`.
+   *  When omitted, the overlay falls back to the caller's
+   *  `imageBaseName` resolved against `_shared/`. The two-stage
+   *  fallback in NarrativeOverlay also re-resolves to `_shared/`
+   *  on 404, so authoring an override before the asset lands is
+   *  safe. */
+  imageBasePath?: string;
 }
 
 /** Title screen + opening narration. */

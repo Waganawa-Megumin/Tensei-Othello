@@ -278,15 +278,31 @@ export function getOrderedArchiveScenesForPlr(input: {
   // Chapters with mid-route inserts slotted before the relevant
   // chapter. PLR01 additionally gets the chapter20A/transition
   // confrontation pair before its ch.20 battle.
+  //
+  // Mid-route inserts gate on the **previous** chapter being cleared
+  // (live trigger fires at sp=10/15/19, immediately after the
+  // milestone chapter wins), not on the next chapter being cleared.
+  // Without this, sp=19 would omit `narrative:final` from the archive
+  // even though the player crossed the milestone — it would surface
+  // only once ch.20 itself is also cleared. Same off-by-one applied
+  // to solitude (eff>=10 → before ch.11) and allies (eff>=15 → before
+  // ch.16). The chapter-entry push below still gates on `< i` so
+  // unclear chapters never appear.
   for (let i = 1; i <= 20; i++) {
-    if (effectiveProgress < i) break;
-    if (i === 11) result.push({ kind: 'overlay', key: 'narrative:solitude', plrIdx });
-    if (i === 16) result.push({ kind: 'overlay', key: 'narrative:allies', plrIdx });
-    if (i === 20) result.push({ kind: 'overlay', key: 'narrative:final', plrIdx });
+    if (i === 11 && effectiveProgress >= 10) {
+      result.push({ kind: 'overlay', key: 'narrative:solitude', plrIdx });
+    }
+    if (i === 16 && effectiveProgress >= 15) {
+      result.push({ kind: 'overlay', key: 'narrative:allies', plrIdx });
+    }
+    if (i === 20 && effectiveProgress >= 19) {
+      result.push({ kind: 'overlay', key: 'narrative:final', plrIdx });
+    }
     if (i === 20 && isPlr01 && trueEndingAchieved) {
       result.push({ kind: 'overlay', key: 'narrative:chapter20A', plrIdx });
       result.push({ kind: 'overlay', key: 'narrative:chapter20Atransition', plrIdx });
     }
+    if (effectiveProgress < i) break;
     result.push({ kind: 'chapter', chapter: i, plrIdx });
   }
 
