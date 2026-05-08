@@ -5224,7 +5224,17 @@ export default function App() {
                       </div>
                     </div>
                   )}
-                  {isStoryMode && winner !== BLACK && (
+                  {/* Encouragement only on non-win — same coin-toss
+                      rationale as the title header above (L5141-5146).
+                      Pre-v0.36.49 this was `winner !== BLACK`, which
+                      misfired on player-WHITE victories: the human
+                      had won (winner=WHITE, storyProgress advanced)
+                      but the modal still rendered the defeat-style
+                      encouragement underneath the victory dialogue.
+                      `winner !== playerColor` is symmetric: hides on
+                      every win, shows on every loss/draw, regardless
+                      of which color the toss handed the human. */}
+                  {isStoryMode && winner !== playerColor && (
                     <p className="jp-display text-amber-200/60 text-sm italic mb-3">
                       {t.storyEncouragement}
                     </p>
