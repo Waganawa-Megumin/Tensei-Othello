@@ -94,18 +94,42 @@ describe('resolveEndingScene — chain-step PLRs vs PLR01', () => {
   });
 });
 
-describe('resolveChapterStory — shared fallback', () => {
-  it('PLR02 chapter 1 falls back to shared chapterStories[0]', () => {
+describe('resolveChapterStory — PLR02 chapter override (v0.36.57)', () => {
+  it('PLR02 (idx 1) chapter 1 returns the Mikoto-specific intro', () => {
     const ch = resolveChapterStory(story, 1, 1);
+    // Mikoto's ch.1 narrative places her on a stage with
+    // 「ステージの真ん中」 phrasing — distinct from PLR00 Haruki's.
+    expect(ch).not.toBe(story.chapterStories[0]);
+    expect(ch?.intro).toContain('美琴');
+  });
+
+  it('PLR02 has all 20 chapters authored', () => {
+    for (let chapter = 1; chapter <= 20; chapter++) {
+      const ch = resolveChapterStory(story, 1, chapter);
+      expect(ch).not.toBeNull();
+      expect(ch).not.toBe(story.chapterStories[chapter - 1]);
+    }
+  });
+
+  it('PLR00 (idx 0) chapter 1 falls back to shared chapterStories[0]', () => {
+    const ch = resolveChapterStory(story, 0, 1);
+    expect(ch).toBe(story.chapterStories[0]);
+  });
+
+  it('PLR03 (idx 2, unauthored) chapter 1 falls back to shared default', () => {
+    const ch = resolveChapterStory(story, 2, 1);
     expect(ch).toBe(story.chapterStories[0]);
   });
 });
 
-describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56)', () => {
+describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56-57)', () => {
   it('PLR02 (idx 1) returns the Mikoto-flavored prologue', () => {
     const p = resolvePrologueContent(story, 1);
-    expect(p.title).toContain('論文の頁');
-    expect(p.text).toContain('論理は魔法の母');
+    // v0.36.57 で本文を Seitoshoin Academy / 禁書区画 ロアに刷新。
+    expect(p.title).toContain('学府の夜');
+    expect(p.tagline).toContain('論理は世界を写す');
+    expect(p.text).toContain('聖図書院学園');
+    expect(p.text).toContain('Bansho Sekai');
     expect(p.startButton).toContain('論理魔導');
   });
 
