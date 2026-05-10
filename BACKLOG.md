@@ -96,6 +96,25 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **シーン回想ラベルを per-PLR 化 (v0.36.59)** —
+      completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー報告「シーン回想を見ると変わっていません」(美琴タブで
+      序章ラベルが PLR00「放課後、世界が転換する」のまま) に対する
+      修正。`App.tsx` の `sceneLabel(s: ArchiveScene)` が固定
+      `t.archiveSceneLabels[s.key]` のみ参照していたため、PLR-specific
+      タイトルが反映されなかった。PLR override が authored されている
+      4 系統 (prologue / narrative:solitude / narrative:allies /
+      narrative:final / ending) は `resolvePrologueContent` /
+      `resolveMidRouteScene` / `resolveEndingScene` 経由で per-PLR
+      タイトルを取得し、override がある場合は scene.title を直接ラベル
+      として使用。intro chain 4 ステップ (intro:falling/arrival/
+      gatewayClosed/gatewayOpen) と PLR01 専用シーン
+      (chapter20A/trueEnding20B-D/opp22.*) は固定ラベル維持 (per-PLR
+      title データなし)。これで美琴タブは「序章「学府の夜、定理が呼ぶ」」
+      「幕間 ── 大聖堂図書館の静夜」等、リンタブは「序章「LOST FRONTIER、
+      レイド最終局面」」「幕間 ── HUD フロート空間、リプレイログ参照」等
+      PLR 固有タイトルが表示される。typecheck pass、132 tests pass、
+      build OK。 (commit: `<hash>`)
 - [x] **PLR03 リン完全実装 (テキスト 4 種 + 画像 18 枚) (v0.36.58)** —
       completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザー受領パッケージ `PLR03_rin_implementation_part{1,2,3}.zip`
