@@ -1080,6 +1080,7 @@ And the next summoning circle — began to tremble softly with the light of welc
   (**This time, it\'s my turn**.)
 
   ── 〈**Data Tactics**〉, **Booted Up**.`,
+      imageBasePath: 'PLR03_rin/ending',
     },
   },
   /* Mikoto (PLR02) intro chain — opening cinematic override (v0.36.56,
@@ -1211,6 +1212,13 @@ Twenty masters waited for her.
   (**I\'m not logging out until I\'ve cleared everything.**)
 
   (In the corner of her memory, the **shadow of Rei White** quietly stirred.)`,
+      imageBasePaths: {
+        prologue: 'PLR03_rin/prologue',
+        falling: 'PLR03_rin/falling',
+        arrival: 'PLR03_rin/arrival',
+        gatewayClosed: 'PLR03_rin/gateway-closed',
+        gatewayOpen: 'PLR03_rin/gateway-open',
+      },
     },
   },
   /* ----------------------------------------------------------------

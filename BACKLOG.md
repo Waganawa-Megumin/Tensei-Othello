@@ -96,6 +96,23 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **PLR03 リン intro chain + ending の imageBasePath 抜け修正 (v0.36.60)** —
+      completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー報告「URL 直で行っても 03 も挿絵が 00 用のまま」への根本
+      修正。ユーザー受領 PLR03 i18n パッチ (
+      `ja_prologueByPlr.ts.txt` / `ja_chainStepEndingByPlr.ts.txt` 等) に
+      `imageBasePaths` (intro chain 5 シーン用) と `imageBasePath`
+      (ending 用) が**含まれていなかった**ため、PLR03 narrativeByPlr
+      (solitude/allies/final) は per-PLR 画像にリゾルブされていたが、
+      prologue/falling/arrival/gateway-closed/gateway-open/ending の
+      6 シーンが `_shared/` にフォールバックしていた。
+      ja/en 両方の `prologueByPlr[2]` に
+      `imageBasePaths: { prologue, falling, arrival, gatewayClosed,
+      gatewayOpen }` 全 5 路を `'PLR03_rin/...'` で追加、
+      `chainStepEndingByPlr[2]` に `imageBasePath: 'PLR03_rin/ending'`
+      を追加。これで PLR03 の全 9 シーンが PLR03 専用画像を表示する。
+      PNG は v0.36.58 で main に展開済 (18 ファイル / 43MB)。
+      typecheck pass、132 tests pass、build OK。 (commit: `<hash>`)
 - [x] **シーン回想ラベルを per-PLR 化 (v0.36.59)** —
       completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザー報告「シーン回想を見ると変わっていません」(美琴タブで
