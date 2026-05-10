@@ -96,6 +96,38 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **PLR02 美琴 挿絵 18 枚配置 (v0.36.61)** —
+      completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー受領パッケージ `PLR02_mikoto_imp_part{1,2a,2b}.zip` (3 分割
+      = 部品 4: docs/i18n + intro 10 PNG + mid-route+ending 8 PNG) を
+      統合。`public/illustrations/PLR02_mikoto/` に 18 PNG (LS=1672×941 /
+      PT=941×1672 全枚 dimension 検証済、合計 47MB) を配置。
+      i18n 側は v0.36.57 時点で既に prologueByPlr[1] (imageBasePaths 5 路)
+      + chapterStoriesByPlr[1] (全 20 章) + narrativeByPlr[1] (3 シーン
+      imageBasePath) + chainStepEndingByPlr[1] (imageBasePath) すべて
+      authored 済だったため、今回新パッチも適用不要 (内容同等)。
+      これで PLR02 の全 9 シーン (intro 5 + mid-route 3 + ending 1) が
+      PLR02 専用画像で表示される。typecheck pass、132 tests pass、build
+      OK (precache 306 → 324 件)。
+      これで PLR02 + PLR03 ともに完全実装 (画像 + テキスト) が揃った。
+      (commit: `<hash>`)
+- [x] **PLR03 リン intro chain + ending の imageBasePath 抜け修正 (v0.36.60)** —
+      completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー報告「URL 直で行っても 03 も挿絵が 00 用のまま」への根本
+      修正。ユーザー受領 PLR03 i18n パッチ (
+      `ja_prologueByPlr.ts.txt` / `ja_chainStepEndingByPlr.ts.txt` 等) に
+      `imageBasePaths` (intro chain 5 シーン用) と `imageBasePath`
+      (ending 用) が**含まれていなかった**ため、PLR03 narrativeByPlr
+      (solitude/allies/final) は per-PLR 画像にリゾルブされていたが、
+      prologue/falling/arrival/gateway-closed/gateway-open/ending の
+      6 シーンが `_shared/` にフォールバックしていた。
+      ja/en 両方の `prologueByPlr[2]` に
+      `imageBasePaths: { prologue, falling, arrival, gatewayClosed,
+      gatewayOpen }` 全 5 路を `'PLR03_rin/...'` で追加、
+      `chainStepEndingByPlr[2]` に `imageBasePath: 'PLR03_rin/ending'`
+      を追加。これで PLR03 の全 9 シーンが PLR03 専用画像を表示する。
+      PNG は v0.36.58 で main に展開済 (18 ファイル / 43MB)。
+      typecheck pass、132 tests pass、build OK。 (commit: `<hash>`)
 - [x] **シーン回想ラベルを per-PLR 化 (v0.36.59)** —
       completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザー報告「シーン回想を見ると変わっていません」(美琴タブで

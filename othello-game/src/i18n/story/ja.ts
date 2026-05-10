@@ -1079,6 +1079,7 @@ export const STORY_JA: StoryContent = {
   (**今度は、私の番だ**)
 
   ── 〈**データ・タクティクス**〉、**起動**`,
+      imageBasePath: 'PLR03_rin/ending',
     },
   },
   /* ----------------------------------------------------------------
@@ -1217,6 +1218,13 @@ export const STORY_JA: StoryContent = {
   (**全クリアまで、ログアウトしない**)
 
   (**レイ・ホワイトの影**が、リンの記憶の隅で、**かすかに揺れた**。)`,
+      imageBasePaths: {
+        prologue: 'PLR03_rin/prologue',
+        falling: 'PLR03_rin/falling',
+        arrival: 'PLR03_rin/arrival',
+        gatewayClosed: 'PLR03_rin/gateway-closed',
+        gatewayOpen: 'PLR03_rin/gateway-open',
+      },
     },
   },
   /* ----------------------------------------------------------------
