@@ -56,6 +56,34 @@ describe('resolveMidRouteScene — PLR02 Mikoto override (v0.36.55)', () => {
   });
 });
 
+describe('resolveMidRouteScene — PLR03 Rin override (v0.36.58)', () => {
+  it('PLR03 (idx 2) gets Rin solitude with HUD-floating-space text', () => {
+    const scene = resolveMidRouteScene(story, 2, 'solitude');
+    expect(scene.title).toContain('HUD');
+    expect(scene.text).toContain('レイ');
+  });
+
+  it('PLR03 allies references HUD 会議室 + 同志', () => {
+    const scene = resolveMidRouteScene(story, 2, 'allies');
+    expect(scene.title).toContain('HUD');
+    expect(scene.title).toContain('同志');
+  });
+
+  it('PLR03 final references 最終ステージ前', () => {
+    const scene = resolveMidRouteScene(story, 2, 'final');
+    expect(scene.title).toContain('最終ステージ前');
+  });
+
+  it('PLR03 scenes carry imageBasePath pointing at PLR03_rin/', () => {
+    expect(resolveMidRouteScene(story, 2, 'solitude').imageBasePath)
+      .toBe('PLR03_rin/solitude');
+    expect(resolveMidRouteScene(story, 2, 'allies').imageBasePath)
+      .toBe('PLR03_rin/allies');
+    expect(resolveMidRouteScene(story, 2, 'final').imageBasePath)
+      .toBe('PLR03_rin/final');
+  });
+});
+
 describe('resolveMidRouteScene — fallback to shared default', () => {
   it('PLR00 (idx 0) falls back to shared narrative.solitude', () => {
     const scene = resolveMidRouteScene(story, 0, 'solitude');
@@ -65,8 +93,8 @@ describe('resolveMidRouteScene — fallback to shared default', () => {
     expect(scene.imageBasePath).toBeUndefined();
   });
 
-  it('PLR03 (idx 2, unauthored) falls back to shared default', () => {
-    const scene = resolveMidRouteScene(story, 2, 'solitude');
+  it('PLR04 (idx 3, unauthored) falls back to shared default', () => {
+    const scene = resolveMidRouteScene(story, 3, 'solitude');
     expect(scene).toEqual(story.narrative.solitude);
   });
 
@@ -83,6 +111,13 @@ describe('resolveEndingScene — chain-step PLRs vs PLR01', () => {
     expect(scene.imageBasePath).toBe('PLR02_mikoto/ending');
   });
 
+  it('PLR03 gets the Rin chainStepEnding (Data Tactics 起動)', () => {
+    const scene = resolveEndingScene(story, 2);
+    expect(scene.title).toContain('データ・タクティクス');
+    // imageBasePath may or may not be present depending on patch shape
+    // (PLR03 patch did not set imageBasePath on chainStepEnding entry).
+  });
+
   it('PLR00 falls back to shared chainStepEnding', () => {
     const scene = resolveEndingScene(story, 0);
     expect(scene).toEqual(story.chainStepEnding);
@@ -94,18 +129,56 @@ describe('resolveEndingScene — chain-step PLRs vs PLR01', () => {
   });
 });
 
-describe('resolveChapterStory — shared fallback', () => {
-  it('PLR02 chapter 1 falls back to shared chapterStories[0]', () => {
+describe('resolveChapterStory — PLR02 chapter override (v0.36.57)', () => {
+  it('PLR02 (idx 1) chapter 1 returns the Mikoto-specific intro', () => {
     const ch = resolveChapterStory(story, 1, 1);
+    // Mikoto's ch.1 narrative places her on a stage with
+    // 「ステージの真ん中」 phrasing — distinct from PLR00 Haruki's.
+    expect(ch).not.toBe(story.chapterStories[0]);
+    expect(ch?.intro).toContain('美琴');
+  });
+
+  it('PLR02 has all 20 chapters authored', () => {
+    for (let chapter = 1; chapter <= 20; chapter++) {
+      const ch = resolveChapterStory(story, 1, chapter);
+      expect(ch).not.toBeNull();
+      expect(ch).not.toBe(story.chapterStories[chapter - 1]);
+    }
+  });
+
+  it('PLR00 (idx 0) chapter 1 falls back to shared chapterStories[0]', () => {
+    const ch = resolveChapterStory(story, 0, 1);
+    expect(ch).toBe(story.chapterStories[0]);
+  });
+
+  it('PLR03 (idx 2) chapter 1 returns the Rin-specific intro', () => {
+    const ch = resolveChapterStory(story, 2, 1);
+    expect(ch).not.toBe(story.chapterStories[0]);
+    expect(ch?.intro).toContain('リン');
+  });
+
+  it('PLR03 has all 20 chapters authored', () => {
+    for (let chapter = 1; chapter <= 20; chapter++) {
+      const ch = resolveChapterStory(story, 2, chapter);
+      expect(ch).not.toBeNull();
+      expect(ch).not.toBe(story.chapterStories[chapter - 1]);
+    }
+  });
+
+  it('PLR04 (idx 3, unauthored) chapter 1 falls back to shared default', () => {
+    const ch = resolveChapterStory(story, 3, 1);
     expect(ch).toBe(story.chapterStories[0]);
   });
 });
 
-describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56)', () => {
+describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56-57)', () => {
   it('PLR02 (idx 1) returns the Mikoto-flavored prologue', () => {
     const p = resolvePrologueContent(story, 1);
-    expect(p.title).toContain('論文の頁');
-    expect(p.text).toContain('論理は魔法の母');
+    // v0.36.57 で本文を Seitoshoin Academy / 禁書区画 ロアに刷新。
+    expect(p.title).toContain('学府の夜');
+    expect(p.tagline).toContain('論理は世界を写す');
+    expect(p.text).toContain('聖図書院学園');
+    expect(p.text).toContain('Bansho Sekai');
     expect(p.startButton).toContain('論理魔導');
   });
 
@@ -124,8 +197,15 @@ describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56)', () 
     expect(p.imageBasePaths).toBeUndefined();
   });
 
-  it('PLR03 (idx 2, unauthored) falls back to shared prologue', () => {
+  it('PLR03 (idx 2) returns the Rin-flavored prologue', () => {
     const p = resolvePrologueContent(story, 2);
+    expect(p.title).toContain('LOST FRONTIER');
+    expect(p.startButton).toContain('データ・タクティクス');
+    expect(p.text).toContain('リン');
+  });
+
+  it('PLR04 (idx 3, unauthored) falls back to shared prologue', () => {
+    const p = resolvePrologueContent(story, 3);
     expect(p).toBe(story.prologue);
   });
 });

@@ -7436,8 +7436,45 @@ export default function App() {
               voidphiAwakened,
             })
           : [];
+        // Per-PLR aware scene label. Static labels (PLR00 wording for
+        // prologue / mid-route / ending) are replaced with the resolved
+        // per-PLR scene's `title` when an override is authored — that
+        // way the 美琴 tab shows 「学府の夜、定理が呼ぶ」 instead of
+        // 「放課後、世界が転換する」 (PLR00) for the prologue entry,
+        // 美琴 mid-routes show 「大聖堂図書館の静夜」 etc., and the
+        // chain-step ending picks up the PLR-specific lap-finale title.
+        // Intro chain (intro:falling/arrival/gatewayClosed/gatewayOpen)
+        // and PLR01-exclusive scenes (chapter20A/trueEnding20*/opp22.*)
+        // keep their static labels because their titles aren't in the
+        // per-PLR override surface today.
         const sceneLabel = (s: ArchiveScene): string => {
-          if (s.kind === 'overlay') return t.archiveSceneLabels[s.key];
+          if (s.kind === 'overlay') {
+            const plrIdx = s.plrIdx ?? 0;
+            switch (s.key) {
+              case 'prologue': {
+                const p = resolvePrologueContent(t.story, plrIdx);
+                if (p !== t.story.prologue) return p.title;
+                return t.archiveSceneLabels[s.key];
+              }
+              case 'narrative:solitude':
+              case 'narrative:allies':
+              case 'narrative:final': {
+                const sub = s.key.split(':')[1] as 'solitude' | 'allies' | 'final';
+                const sc = resolveMidRouteScene(t.story, plrIdx, sub);
+                if (sc !== t.story.narrative[sub]) return sc.title;
+                return t.archiveSceneLabels[s.key];
+              }
+              case 'ending': {
+                const sc = resolveEndingScene(t.story, plrIdx);
+                if (sc !== t.story.chainStepEnding && sc !== t.story.endingFull) {
+                  return sc.title;
+                }
+                return t.archiveSceneLabels[s.key];
+              }
+              default:
+                return t.archiveSceneLabels[s.key];
+            }
+          }
           const opp = COMPUTERS.find((c) => c.level === s.chapter);
           return t.archiveChapterLabel(s.chapter, opp?.name ?? '');
         };

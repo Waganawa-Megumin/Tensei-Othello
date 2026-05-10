@@ -96,6 +96,70 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **シーン回想ラベルを per-PLR 化 (v0.36.59)** —
+      completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー報告「シーン回想を見ると変わっていません」(美琴タブで
+      序章ラベルが PLR00「放課後、世界が転換する」のまま) に対する
+      修正。`App.tsx` の `sceneLabel(s: ArchiveScene)` が固定
+      `t.archiveSceneLabels[s.key]` のみ参照していたため、PLR-specific
+      タイトルが反映されなかった。PLR override が authored されている
+      4 系統 (prologue / narrative:solitude / narrative:allies /
+      narrative:final / ending) は `resolvePrologueContent` /
+      `resolveMidRouteScene` / `resolveEndingScene` 経由で per-PLR
+      タイトルを取得し、override がある場合は scene.title を直接ラベル
+      として使用。intro chain 4 ステップ (intro:falling/arrival/
+      gatewayClosed/gatewayOpen) と PLR01 専用シーン
+      (chapter20A/trueEnding20B-D/opp22.*) は固定ラベル維持 (per-PLR
+      title データなし)。これで美琴タブは「序章「学府の夜、定理が呼ぶ」」
+      「幕間 ── 大聖堂図書館の静夜」等、リンタブは「序章「LOST FRONTIER、
+      レイド最終局面」」「幕間 ── HUD フロート空間、リプレイログ参照」等
+      PLR 固有タイトルが表示される。typecheck pass、132 tests pass、
+      build OK。 (commit: `<hash>`)
+- [x] **PLR03 リン完全実装 (テキスト 4 種 + 画像 18 枚) (v0.36.58)** —
+      completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー受領パッケージ `PLR03_rin_implementation_part{1,2,3}.zip`
+      (3 分割) を統合適用。VRMMO ゲーマー流派〈データ・タクティクス〉、
+      AVATARS index 2、伏線「Rei White (元伝説の前期チャンピオン) =
+      Zero (Ch.20 ボス)」が ch.10/15/19 幕間と最終戦に分散して伏線回収
+      されるストーリーアーク。
+      `public/illustrations/PLR03_rin/` に 18 PNG (LS=1672×941 / PT=941×1672
+      検証済、合計 43MB) を配置。`src/i18n/story/{ja,en}.ts` の 4 つの
+      byPlr マップに index `2` エントリを Python で splicing:
+      `prologueByPlr[2]` (LOST FRONTIER レイド最終局面 → 鯖落ち → 召喚) /
+      `chapterStoriesByPlr[2]` 全 20 章 (各章 intro/bossPre/bossPost/
+      victoryDialogue/victoryNarration の 5 ブロック × 2 ロケール) /
+      `narrativeByPlr[2]` (HUD フロート空間幕間 3 シーン) /
+      `chainStepEndingByPlr[2]` (現実帰還、未読の Rei White メッセージ通知、
+      〈データ・タクティクス〉起動)。
+      パッチが `ch({intro: ..., bossPre: ..., ...})` 名前付き引数形式を
+      使うため、`ch()` ヘルパーを overload 拡張して positional/object
+      両形式を受け入れるように (PLR02 既存実装は positional 維持)。
+      真ED フロー (ch.20-A / trueEnding20B-D / OPP22) は PLR01 専用のため
+      不発動 — Rin は通常 chain step として完結。
+      resolver test を更新: PLR03 専用検証 4 件追加 (HUD/最終ステージ前/
+      imageBasePath × 3 / 全 20 章 authored)、PLR03 fallback 検証は PLR04
+      (idx 3) に変更。124 → 132 tests pass、typecheck pass、build OK
+      (precache 288 → 306 件)。 (commit: `<hash>`)
+- [x] **PLR02 美琴 テキスト完全実装 (prologueByPlr 刷新 + chapterStoriesByPlr 全 20 章) (v0.36.57)** —
+      completed: 2026-05-09 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザーから受領した実装パッケージ (`PLR02_mikoto_implementation.zip`,
+      4 つの i18n パッチ + QA/ROLLBACK ドキュメント) を統合。`prologueByPlr[1]`
+      の本文を v0.36.56 暫定版 (大聖堂大学図書館・召喚陣がページから立つ) から
+      確定版 (聖図書院学園・禁書区画・蒼い古書・ステンドグラスの門・銀の数式の
+      落下) に刷新。tagline / subtitle / startButton / title も差し替え、
+      `imageBasePaths` の 5 シーン挿絵バインドは v0.36.56 のまま温存。
+      `chapterStoriesByPlr[1]` を ja+en 全 20 章で**新規認定実装** (各章
+      intro / bossPre / bossPost / victoryDialogue / victoryNarration の
+      5 ブロック × 20 章 × 2 ロケール = 約 400 セル)。美琴の心理アークは
+      4 phase (仮説形成 ch.1-9 → 確信 ch.10-15 → 統合 ch.16-19 → 論証 ch.20)。
+      章末 victoryNarration には次章遷移と獲得概念を埋め込み済。真ED フロー
+      (ch.20-A / trueEnding20B-D / OPP22) は PLR01 専用なので発動しない仕様。
+      Python スクリプトでパッチを ja.ts/en.ts の prologueByPlr 直後に splicing。
+      resolver test を新コンテンツ向けに更新 (PLR02 ch.1 が override hit、
+      全 20 章 authored、PLR00/PLR03 fallback 確認 + tagline assertion 修正)。
+      121 → 124 tests pass、typecheck pass、build OK (PWA precache 288 件、
+      ZIP は対象外)。画像 18 枚は別途投入予定。
+      (commit: `<hash>`)
 - [x] **PLR02 美琴 intro chain per-PLR 化 (5 シーン拡張、計 9 シーン) (v0.36.56)** —
       completed: 2026-05-08 — by: `claude/othello-ui-autosave-bPnmY` —
       v0.36.55 のパイロット (mid-route 4 シーン) を「完全逸品型」に拡張。
