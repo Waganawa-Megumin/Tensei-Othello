@@ -96,6 +96,31 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **PLR03 リン完全実装 (テキスト 4 種 + 画像 18 枚) (v0.36.58)** —
+      completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー受領パッケージ `PLR03_rin_implementation_part{1,2,3}.zip`
+      (3 分割) を統合適用。VRMMO ゲーマー流派〈データ・タクティクス〉、
+      AVATARS index 2、伏線「Rei White (元伝説の前期チャンピオン) =
+      Zero (Ch.20 ボス)」が ch.10/15/19 幕間と最終戦に分散して伏線回収
+      されるストーリーアーク。
+      `public/illustrations/PLR03_rin/` に 18 PNG (LS=1672×941 / PT=941×1672
+      検証済、合計 43MB) を配置。`src/i18n/story/{ja,en}.ts` の 4 つの
+      byPlr マップに index `2` エントリを Python で splicing:
+      `prologueByPlr[2]` (LOST FRONTIER レイド最終局面 → 鯖落ち → 召喚) /
+      `chapterStoriesByPlr[2]` 全 20 章 (各章 intro/bossPre/bossPost/
+      victoryDialogue/victoryNarration の 5 ブロック × 2 ロケール) /
+      `narrativeByPlr[2]` (HUD フロート空間幕間 3 シーン) /
+      `chainStepEndingByPlr[2]` (現実帰還、未読の Rei White メッセージ通知、
+      〈データ・タクティクス〉起動)。
+      パッチが `ch({intro: ..., bossPre: ..., ...})` 名前付き引数形式を
+      使うため、`ch()` ヘルパーを overload 拡張して positional/object
+      両形式を受け入れるように (PLR02 既存実装は positional 維持)。
+      真ED フロー (ch.20-A / trueEnding20B-D / OPP22) は PLR01 専用のため
+      不発動 — Rin は通常 chain step として完結。
+      resolver test を更新: PLR03 専用検証 4 件追加 (HUD/最終ステージ前/
+      imageBasePath × 3 / 全 20 章 authored)、PLR03 fallback 検証は PLR04
+      (idx 3) に変更。124 → 132 tests pass、typecheck pass、build OK
+      (precache 288 → 306 件)。 (commit: `<hash>`)
 - [x] **PLR02 美琴 テキスト完全実装 (prologueByPlr 刷新 + chapterStoriesByPlr 全 20 章) (v0.36.57)** —
       completed: 2026-05-09 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザーから受領した実装パッケージ (`PLR02_mikoto_implementation.zip`,
