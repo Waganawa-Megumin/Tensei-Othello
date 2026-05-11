@@ -9,6 +9,24 @@ html, body, #root {
   color: #faf2dc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* v0.36.63 — disable text selection app-wide so tapping in-game text
+     no longer triggers the mobile selection handles + copy/translate
+     popup. Areas that genuinely need copy-paste (kifu review body, the
+     move-list grid, the kifu library list) opt back in with the
+     `select-text` utility class. Form controls are exempted below. */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable text selection inside form controls regardless of the
+   global `user-select: none` above (browsers usually preserve this,
+   but Safari has historically dropped it — be explicit). */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 body {

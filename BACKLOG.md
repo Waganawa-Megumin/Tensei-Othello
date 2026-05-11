@@ -96,6 +96,26 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **ゲーム内テキストの誤タップ選択 / 翻訳ポップアップ抑止 (v0.36.63)** —
+      completed: 2026-05-11 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー報告「ゲーム内の文字でタップコピーが反応するエリアが多く、
+      自動的に翻訳などのポップアップが出てきてしまい困る」への対応。
+      `src/index.css` の `html, body, #root` ブロックにグローバル
+      `-webkit-user-select: none; user-select: none;` を追加 (アプリ全体で
+      テキスト選択をデフォルト無効化 = 長押し/タップで選択ハンドル + コピー/
+      翻訳ポップアップが出なくなる)。`-webkit-touch-callout: none` は意図的に
+      設定しない (in-game リンク無し + select-text 領域で iOS のコピーメニュー
+      を残すため)。`input, textarea, select, [contenteditable]` には
+      `user-select: text` のオプトアウトルールを追加 (呪文入力・棋譜保存名
+      入力が従来通り動く保険)。コピペ可能を残す 3 領域 (ユーザー指定) に
+      Tailwind `select-text` を付与: 棋譜レビュー本文 (`App.tsx:6099` の
+      スクロール領域) / 対局情報の手順グリッド (`App.tsx:5835`) / 棋譜
+      ライブラリの保存棋譜リスト (`App.tsx:5891`)。`user-select` 継承で
+      配下テキスト全体が選択可能、コンテナ外 (ヘッダ/ボタン/「Powered by
+      Claude」フッタ) は body 継承の `none` のまま。既存の `select-none`
+      クラス (intro screens / NarrativeOverlay / ChapterStoryOverlay) は
+      冗長になるが害なしで温存。typecheck pass、132 tests pass、build OK
+      (precache 324 件不変)。 (commit: `<hash>`)
 - [x] **レビューモーダルに「対戦棋譜を読み込む」ボタン追加 (v0.36.62)** —
       completed: 2026-05-11 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザー報告「棋譜レビューをして、Claude のテキストが出てきて、下の方に
