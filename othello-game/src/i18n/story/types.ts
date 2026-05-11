@@ -70,8 +70,11 @@ export interface PrologueContent {
      *  background, leave this unset and instead author `_shared/
      *  prologue-bg-...` per-PLR via a future `prologueBg` field. */
     prologue?: string;
-    /** Falling-through-dimensions key art (intro flow step 2). */
-    falling?: string;
+    /** "Encounter" key art (intro flow step 2) — the moment the story
+     *  starts moving in the other world. Per-PLR free framing: a fall,
+     *  an awakening, a face-to-face meeting, etc. (renamed from
+     *  `falling` v0.36.64). */
+    encount?: string;
     /** Arrival at Bansho Sekai — first sight of the new world (step 3). */
     arrival?: string;
     /** Sealed-gateway encounter (step 4). */

@@ -69,7 +69,7 @@ export function resolveEndingScene(
 /** Resolve the prologue/intro content for a specific PLR. Defaults
  *  to the world-level prologue (= the canonical "你 are summoned to
  *  Bansho Sekai" opening). When a per-PLR override is authored the
- *  archive's first-tab entries (prologue + falling/arrival/gateway)
+ *  archive's first-tab entries (prologue + encount/arrival/gateway)
  *  re-bind to that variant. */
 export function resolvePrologueContent(
   content: StoryContent,

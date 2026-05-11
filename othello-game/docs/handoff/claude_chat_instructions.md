@@ -37,7 +37,7 @@ ChatGPT に毎回**参照画像** (`character_reference/PLR02_mikoto_character_t
 | # | シーン | ストーリー位置 | landscape | portrait |
 |---|---|---|---|---|
 | 1 | prologue (論文の頁、召喚陣に変わる) | 序章: 美琴が現代から召喚される | 1672×941 | 941×1672 |
-| 2 | falling (次元の谷の落下) | 落下シーン: 銀の方程式が周囲を流れる | 1672×941 | 941×1672 |
+| 2 | encount (次元の谷の落下) | 落下シーン: 銀の方程式が周囲を流れる | 1672×941 | 941×1672 |
 | 3 | arrival (盤上世界の盤面草原に着地) | 異界到着: 緑の盤面草原・二重月 | 1672×941 | 941×1672 |
 | 4 | gatewayClosed (封印された魔法陣ゲート) | 入口前の謎解き | 1672×941 | 941×1672 |
 | 5 | gatewayOpen (解錠された魔法陣ゲート) | 入口開放、章 1 へ | 1672×941 | 941×1672 |
@@ -55,8 +55,8 @@ PLR02_mikoto.zip
 └── PLR02_mikoto/
     ├── prologue-landscape.png
     ├── prologue-portrait.png
-    ├── falling-landscape.png
-    ├── falling-portrait.png
+    ├── encount-landscape.png
+    ├── encount-portrait.png
     ├── arrival-landscape.png
     ├── arrival-portrait.png
     ├── gateway-closed-landscape.png
@@ -81,7 +81,7 @@ PLR02_mikoto.zip
 
 ### 初回挨拶
 
-> このパッケージを受け取りました。PLR02 美琴専用の挿絵を 9 シーン × 2 オリエンテーション = **18 枚**生成するハンドオフですね。intro chain 5 (prologue → falling → arrival → gatewayClosed → gatewayOpen) + mid-route 4 (solitude → allies → final → ending) の構成です。
+> このパッケージを受け取りました。PLR02 美琴専用の挿絵を 9 シーン × 2 オリエンテーション = **18 枚**生成するハンドオフですね。intro chain 5 (prologue → encount → arrival → gatewayClosed → gatewayOpen) + mid-route 4 (solitude → allies → final → ending) の構成です。
 > 添付資料を読み込みました:
 > - 全体ハンドオフ: 01_HANDOFF_per_plr_narrative_concept.md
 > - シーン仕様: 02_SCENE_spec_4_scenes.md
@@ -89,7 +89,7 @@ PLR02_mikoto.zip
 >
 > ワークフロー:
 > 1. シーン 1 (prologue) のプロンプトを提示 → ユーザーが ChatGPT で生成 → 戻ってきたら私が品質チェック
-> 2. シーン 1 が landscape + portrait 両方 OK になったら シーン 2 (falling) へ
+> 2. シーン 1 が landscape + portrait 両方 OK になったら シーン 2 (encount) へ
 > 3. 9 シーン全部 OK になったら ZIP 構造で納品 (途中段階の納品も可)
 >
 > ユーザー側で必要な準備:

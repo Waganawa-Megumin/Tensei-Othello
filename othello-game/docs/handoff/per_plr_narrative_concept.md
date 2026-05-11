@@ -46,7 +46,7 @@ ZIP を再生成する場合: `bash othello-game/tools/build_handoff_zip.sh PLR0
 
 v0.36.55 以降、各 PLR が**自分専用のシーン挿絵 + ナラティブ**を持てる仕組みを実装。**第 1 弾パイロットが PLR02 美琴**です。これを足がかりに PLR03..PLR20 へ展開していく予定。
 
-ゴール: 美琴専用 **9 シーン** (intro chain 5 + mid-route 4) の挿絵 (各 landscape + portrait = 計 18 枚) を生成して、ゲームが「美琴で周回している人」に対してテキストも絵も**美琴の世界観で**提示できるようにする。v0.36.56 で intro chain (prologue/falling/arrival/gatewayClosed/gatewayOpen) も per-PLR 化。
+ゴール: 美琴専用 **9 シーン** (intro chain 5 + mid-route 4) の挿絵 (各 landscape + portrait = 計 18 枚) を生成して、ゲームが「美琴で周回している人」に対してテキストも絵も**美琴の世界観で**提示できるようにする。v0.36.56 で intro chain (prologue/encount/arrival/gatewayClosed/gatewayOpen) も per-PLR 化。
 
 ---
 
@@ -91,7 +91,7 @@ v0.36.55 以降、各 PLR が**自分専用のシーン挿絵 + ナラティブ*
 | # | シーン | 場面 |
 |---|---|---|
 | 1/9 | prologue | 大聖堂大学図書館で召喚陣が美琴に呼びかける、消える直前 |
-| 2/9 | falling | 次元の谷を魔導書を抱えて落下、銀の方程式が周囲を流れる |
+| 2/9 | encount | 次元の谷を魔導書を抱えて落下、銀の方程式が周囲を流れる |
 | 3/9 | arrival | 盤上世界の盤面草原に着地、ゴシック建築の遠景・二重月 |
 | 4/9 | gatewayClosed | 封印された魔法陣ゲート前、赤光と蒼光の対比 |
 | 5/9 | gatewayOpen | 解錠された魔法陣ゲート、金+蒼の二重渦が美琴を内部へ誘う |
@@ -319,7 +319,7 @@ PLR02_mikoto/
 
 ### 方式 B: 個別 PNG 18 枚
 
-ファイル名は上記そのまま (`prologue-landscape.png`, `falling-landscape.png`, ... `ending-portrait.png` の 18 枚)。Code 側で `public/illustrations/PLR02_mikoto/` に展開します。
+ファイル名は上記そのまま (`prologue-landscape.png`, `encount-landscape.png`, ... `ending-portrait.png` の 18 枚)。Code 側で `public/illustrations/PLR02_mikoto/` に展開します。
 
 ### 方式 C: 段階的着地
 

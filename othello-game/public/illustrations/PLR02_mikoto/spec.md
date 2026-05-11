@@ -14,8 +14,8 @@
 |---|---|---|
 | `prologue-landscape.png` | 1672×941 | PrologueOverlay + PrologueScreen (序章: 大聖堂大学図書館で召喚陣が立ち上がる) |
 | `prologue-portrait.png` | 941×1672 | 同上、縦画面 |
-| `falling-landscape.png` | 1672×941 | FallingScreen (次元の谷を魔導書を抱えて落下) |
-| `falling-portrait.png` | 941×1672 | 同上、縦画面 |
+| `encount-landscape.png` | 1672×941 | FallingScreen (次元の谷を魔導書を抱えて落下) |
+| `encount-portrait.png` | 941×1672 | 同上、縦画面 |
 | `arrival-landscape.png` | 1672×941 | ArrivalScreen (盤上世界の盤面草原に着地) |
 | `arrival-portrait.png` | 941×1672 | 同上、縦画面 |
 | `gateway-closed-landscape.png` | 1672×941 | GatewayClosedScreen (封印された魔法陣ゲート) |
@@ -109,7 +109,7 @@ Aspect: 16:9 landscape (1672x941) AND 9:16 portrait (941x1672).
 
 ---
 
-## シーン 2/9: falling — 次元の谷の落下
+## シーン 2/9: encount — 次元の谷の落下
 
 **コンテクスト**: 序章と到着の中間。美琴が次元の谷を魔導書を抱えたまま落下、周囲を**銀の方程式**が流れる。重力感と速度感のあるダイナミックな構図。
 
@@ -141,7 +141,7 @@ NEGATIVE: no text overlay, no watermark, no other characters, no UI, no chibi.
 Aspect: 16:9 landscape (1672x941) + 9:16 portrait (941x1672).
 ```
 
-**出力ファイル**: `falling-landscape.png`, `falling-portrait.png`
+**出力ファイル**: `encount-landscape.png`, `encount-portrait.png`
 
 ---
 

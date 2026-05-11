@@ -1132,7 +1132,7 @@ Twenty masters waited for her.
 (**Then ── let me solve them.**)`,
       imageBasePaths: {
         prologue: 'PLR02_mikoto/prologue',
-        falling: 'PLR02_mikoto/falling',
+        encount: 'PLR02_mikoto/encount',
         arrival: 'PLR02_mikoto/arrival',
         gatewayClosed: 'PLR02_mikoto/gateway-closed',
         gatewayOpen: 'PLR02_mikoto/gateway-open',
@@ -1214,7 +1214,7 @@ Twenty masters waited for her.
   (In the corner of her memory, the **shadow of Rei White** quietly stirred.)`,
       imageBasePaths: {
         prologue: 'PLR03_rin/prologue',
-        falling: 'PLR03_rin/falling',
+        encount: 'PLR03_rin/encount',
         arrival: 'PLR03_rin/arrival',
         gatewayClosed: 'PLR03_rin/gateway-closed',
         gatewayOpen: 'PLR03_rin/gateway-open',
