@@ -96,6 +96,23 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **レビューモーダルに「対戦棋譜を読み込む」ボタン追加 (v0.36.62)** —
+      completed: 2026-05-11 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー報告「棋譜レビューをして、Claude のテキストが出てきて、下の方に
+      再生成ボタンしかないため、棋譜読み込みまでの動線として難しくなってます」
+      に対する UX 改善。受領パッケージ `review_modal_kifu_load_button.zip`
+      の指示通り、`App.tsx:6225` のレビューフッターに既存の
+      `loadCurrentMatchKifu()` を呼ぶボタンを「再生成」の左側 (= flex-wrap
+      折り返し時の上行) に追加。フッター container に `flex-wrap
+      justify-end` を追加してモバイル幅でもキレイに折り返す。表示条件は
+      `!reviewLoading && !loadedKifuView && (reviewError || annotations ||
+      text)`、reviewReadOnly でも表示 (library saved review でも棋譜は
+      `currentSlotKeyRef` 経由で見つかる)。クリック時に
+      `setReviewOpen(false)` + `void loadCurrentMatchKifu()` で
+      モーダルを閉じてから盤面リプレイへ。新規 state/関数/i18n キー
+      なし、既存 `t.gameOverViewKifu` を再利用。typecheck pass、
+      132 tests pass、build OK (precache 324 件不変)。
+       (commit: `<hash>`)
 - [x] **PLR02 美琴 挿絵 18 枚配置 (v0.36.61)** —
       completed: 2026-05-10 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザー受領パッケージ `PLR02_mikoto_imp_part{1,2a,2b}.zip` (3 分割

@@ -6222,7 +6222,7 @@ export default function App() {
                         )
                       : t.reviewByClaude}
                   </span>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-2 items-center flex-wrap justify-end">
                     {reviewSavedFlash && (
                       <span className="jp-display text-amber-200/85 text-[11px] tracking-wider">
                         ✓ {t.reviewSaved}
@@ -6233,6 +6233,25 @@ export default function App() {
                         {t.reviewCancel}
                       </button>
                     )}
+                    {/* レビュー完了後の動線: 「対戦棋譜を読み込む」を「再生成」の
+                        左側 (= flex-wrap で折り返した時に上行) に置く。レビューを
+                        読み終わって盤面リプレイで実手を追いたいユーザーの動線を
+                        ワンタップで通す。reviewReadOnly でも表示する (library 経由
+                        の saved review でも、currentSlotKeyRef が指す slot の棋譜
+                        を loadCurrentMatchKifu が探しに行く)。 */}
+                    {!reviewLoading &&
+                      !loadedKifuView &&
+                      (reviewError || reviewAnnotations !== null || reviewText.length > 0) && (
+                        <button
+                          onClick={() => {
+                            setReviewOpen(false);
+                            void loadCurrentMatchKifu();
+                          }}
+                          className="btn text-xs px-3 py-1.5"
+                        >
+                          {t.gameOverViewKifu}
+                        </button>
+                      )}
                     {!reviewReadOnly &&
                       !reviewLoading &&
                       (reviewError || reviewAnnotations !== null || reviewText.length > 0) && (
