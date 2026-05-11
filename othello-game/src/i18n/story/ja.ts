@@ -1138,7 +1138,7 @@ export const STORY_JA: StoryContent = {
 (**ならば ── 解いてみせる**。)`,
       imageBasePaths: {
         prologue: 'PLR02_mikoto/prologue',
-        falling: 'PLR02_mikoto/falling',
+        encount: 'PLR02_mikoto/encount',
         arrival: 'PLR02_mikoto/arrival',
         gatewayClosed: 'PLR02_mikoto/gateway-closed',
         gatewayOpen: 'PLR02_mikoto/gateway-open',
@@ -1220,7 +1220,7 @@ export const STORY_JA: StoryContent = {
   (**レイ・ホワイトの影**が、リンの記憶の隅で、**かすかに揺れた**。)`,
       imageBasePaths: {
         prologue: 'PLR03_rin/prologue',
-        falling: 'PLR03_rin/falling',
+        encount: 'PLR03_rin/encount',
         arrival: 'PLR03_rin/arrival',
         gatewayClosed: 'PLR03_rin/gateway-closed',
         gatewayOpen: 'PLR03_rin/gateway-open',

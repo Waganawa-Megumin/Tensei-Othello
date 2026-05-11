@@ -96,6 +96,29 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **intro chain シーン名 `falling` → `encount` リネーム (v0.36.64)** —
+      completed: 2026-05-11 — by: `claude/othello-ui-autosave-bPnmY` —
+      ユーザー受領指示書 `claude_code_rename_falling_to_encount.md` に従い、
+      intro chain の 2 番目のシーン名を `falling` (硬すぎる「落下」前提) から
+      `encount` (Encounter 略 = 「異世界で物語が動き出す瞬間」という柔軟な枠) に
+      統一。PLR04 蓮のように arrival で着地済みのキャラでもその後の演出 (邂逅・
+      覚醒・対面など) を自由に設計できるようにするため。変更:
+      `src/i18n/story/types.ts` の `PrologueContent.imageBasePaths.falling?`
+      → `encount?` (+ JSDoc 更新)、`ja.ts`/`en.ts` の `prologueByPlr` の
+      `falling: 'PLRxx/falling'` → `encount: 'PLRxx/encount'` (PLR02・PLR03)、
+      `FallingScreen.tsx` の `imageBasePaths?.falling` 読み取りを `?.encount` に
+      (+ コメント更新)、`resolve.ts` の JSDoc コメント、`resolve.test.ts` の
+      アサーション、画像ファイル `PLR02_mikoto/falling-{landscape,portrait}.png`
+      → `encount-*.png`、`PLR03_rin/falling-*.png` → `encount-*.png` を git mv、
+      spec.md / handoff doc 内のファイル名・シーン名識別子を更新。
+      意図的に**触らなかった**もの: ナラティブ本文の「落下/falling」表現
+      (PLR02 の encount は実際に落下シーンなので)、`IntroSequence` の `'falling'`
+      ステップ名、`'intro:falling'` overlay-seen-flag キー (localStorage 互換性)、
+      `FallingScreen.tsx` のファイル名 (内部実装名、指示書スコープ外)、
+      `t.intro.fallingLabel/fallingVoice` (messages.ts、指示書スコープ外)。
+      `_shared/falling-*.png` は元から存在せず (FallingScreen は `_shared/prologue`
+      にフォールバック)、リネーム対象なし。typecheck pass、132 tests pass、
+      build OK (precache 324 件不変)。 (commit: `<hash>`)
 - [x] **ゲーム内テキストの誤タップ選択 / 翻訳ポップアップ抑止 (v0.36.63)** —
       completed: 2026-05-11 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザー報告「ゲーム内の文字でタップコピーが反応するエリアが多く、

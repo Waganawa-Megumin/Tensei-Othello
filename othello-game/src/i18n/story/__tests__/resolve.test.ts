@@ -185,7 +185,7 @@ describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56-57)', 
   it('PLR02 carries imageBasePaths for all 5 intro scenes', () => {
     const p = resolvePrologueContent(story, 1);
     expect(p.imageBasePaths?.prologue).toBe('PLR02_mikoto/prologue');
-    expect(p.imageBasePaths?.falling).toBe('PLR02_mikoto/falling');
+    expect(p.imageBasePaths?.encount).toBe('PLR02_mikoto/encount');
     expect(p.imageBasePaths?.arrival).toBe('PLR02_mikoto/arrival');
     expect(p.imageBasePaths?.gatewayClosed).toBe('PLR02_mikoto/gateway-closed');
     expect(p.imageBasePaths?.gatewayOpen).toBe('PLR02_mikoto/gateway-open');

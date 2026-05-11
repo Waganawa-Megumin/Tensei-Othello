@@ -34,10 +34,11 @@ export function FallingScreen({ t, onNext, prologue }: Props) {
   const [usedFallback, setUsedFallback] = useState(false);
   const orientation = isLandscape ? 'landscape' : 'portrait';
   const resolvedPrologue = prologue ?? t.story.prologue;
-  // Per-PLR `falling` override → shared `_shared/prologue` fallback
-  // (the shared default reuses the prologue art for the falling
-  // beat; per-PLR PLRs author a dedicated falling scene).
-  const primaryStem = resolvedPrologue.imageBasePaths?.falling ?? '_shared/prologue';
+  // Per-PLR `encount` override → shared `_shared/prologue` fallback
+  // (the shared default reuses the prologue art for this beat; per-PLR
+  // PLRs author a dedicated `encount-*.png` — the "story starts moving
+  // in the other world" scene, framed freely per character).
+  const primaryStem = resolvedPrologue.imageBasePaths?.encount ?? '_shared/prologue';
   const fallbackStem = '_shared/prologue';
   const stem = usedFallback ? fallbackStem : primaryStem;
   const imgSrc = `${import.meta.env.BASE_URL}illustrations/${stem}-${orientation}.png`;
