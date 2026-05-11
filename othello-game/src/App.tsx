@@ -5832,7 +5832,7 @@ export default function App() {
                       {t.noMovesYet}
                     </p>
                   ) : (
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 max-h-48 scroll-y overflow-y-auto pr-1 border border-amber-200/10 rounded-sm p-2 bg-zinc-950/50">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 max-h-48 scroll-y overflow-y-auto pr-1 border border-amber-200/10 rounded-sm p-2 bg-zinc-950/50 select-text">
                       {Array.from({ length: Math.ceil(kifu.length / 2) }, (_, i) => {
                         const black = kifu[i * 2];
                         const white = kifu[i * 2 + 1];
@@ -5888,7 +5888,7 @@ export default function App() {
                       {t.noSavedGames}
                     </p>
                   ) : (
-                    <div className="space-y-2 max-h-72 scroll-y overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-72 scroll-y overflow-y-auto pr-1 select-text">
                       {savedSlots.map((slot) => {
                         const date = new Date(slot.timestamp ?? 0);
                         const dateStr = `${date.getFullYear()}/${(date.getMonth() + 1)
@@ -6096,7 +6096,7 @@ export default function App() {
                   </button>
                 </div>
 
-                <div className="flex-1 scroll-y overflow-y-auto pr-1 mb-3">
+                <div className="flex-1 scroll-y overflow-y-auto pr-1 mb-3 select-text">
                   {reviewError ? (
                     <p className="jp-display text-red-300/90 text-sm leading-relaxed mb-3">
                       {t.reviewError(reviewError)}
