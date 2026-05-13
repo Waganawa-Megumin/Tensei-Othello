@@ -477,16 +477,16 @@
     {
       "id": "OPP15",
       "level": 15,
-      "kanji": "銀",
-      "name_ja": "シエル",
-      "name_en": "Ciel",
-      "slug": "ciel",
-      "archetype_ja": "サイバー斥候",
-      "archetype_en": "Cyberpunk Scout",
-      "quote": "全データ把握、戦況優位",
-      "base_image": "opponents/OPP15_ciel.png",
-      "original_source": "10_cyberpunk_scout.png",
-      "chapter_art": "opponents/chapters/OPP15_ciel_chapter.png"
+      "kanji": "双",
+      "name_ja": "風牙&雷牙",
+      "name_en": "Fuga & Raiga",
+      "slug": "fuga_raiga",
+      "archetype_ja": "神話の双子 DJ デュオ",
+      "archetype_en": "Twin-Deity Stage DJ Duo",
+      "quote": "全周波数、把握済み / ビート、優位",
+      "base_image": "opponents/OPP15_fuga_raiga.png",
+      "original_source": "(Rev.2 redesign 2026-05-13, twin-deity DJ duo replacement of old Ciel)",
+      "chapter_art": "opponents/chapters/OPP15_fuga_raiga_chapter.png"
     },
     {
       "id": "OPP16",
