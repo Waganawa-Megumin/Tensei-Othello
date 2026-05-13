@@ -84,6 +84,34 @@ describe('resolveMidRouteScene — PLR03 Rin override (v0.36.58)', () => {
   });
 });
 
+describe('resolveMidRouteScene — PLR04 Ren override (v0.36.71)', () => {
+  it('PLR04 (idx 3) gets Ren solitude with 朽ちた異世界の道場跡 text', () => {
+    const scene = resolveMidRouteScene(story, 3, 'solitude');
+    expect(scene.title).toContain('朽ちた異世界の道場跡');
+    expect(scene.text).toContain('蓮');
+  });
+
+  it('PLR04 allies references 桜林の頂 + 共鳴の輪', () => {
+    const scene = resolveMidRouteScene(story, 3, 'allies');
+    expect(scene.title).toContain('桜林');
+    expect(scene.title).toContain('共鳴の輪');
+  });
+
+  it('PLR04 final references 19 達人の集結', () => {
+    const scene = resolveMidRouteScene(story, 3, 'final');
+    expect(scene.title).toContain('19 達人の集結');
+  });
+
+  it('PLR04 scenes carry imageBasePath pointing at PLR04_ren/', () => {
+    expect(resolveMidRouteScene(story, 3, 'solitude').imageBasePath)
+      .toBe('PLR04_ren/solitude');
+    expect(resolveMidRouteScene(story, 3, 'allies').imageBasePath)
+      .toBe('PLR04_ren/allies');
+    expect(resolveMidRouteScene(story, 3, 'final').imageBasePath)
+      .toBe('PLR04_ren/final');
+  });
+});
+
 describe('resolveMidRouteScene — fallback to shared default', () => {
   it('PLR00 (idx 0) falls back to shared narrative.solitude', () => {
     const scene = resolveMidRouteScene(story, 0, 'solitude');
@@ -93,8 +121,8 @@ describe('resolveMidRouteScene — fallback to shared default', () => {
     expect(scene.imageBasePath).toBeUndefined();
   });
 
-  it('PLR04 (idx 3, unauthored) falls back to shared default', () => {
-    const scene = resolveMidRouteScene(story, 3, 'solitude');
+  it('PLR05 (idx 4, unauthored) falls back to shared default', () => {
+    const scene = resolveMidRouteScene(story, 4, 'solitude');
     expect(scene).toEqual(story.narrative.solitude);
   });
 
@@ -165,8 +193,22 @@ describe('resolveChapterStory — PLR02 chapter override (v0.36.57)', () => {
     }
   });
 
-  it('PLR04 (idx 3, unauthored) chapter 1 falls back to shared default', () => {
+  it('PLR04 (idx 3) chapter 1 returns the Ren-specific intro', () => {
     const ch = resolveChapterStory(story, 3, 1);
+    expect(ch).not.toBe(story.chapterStories[0]);
+    expect(ch?.intro).toContain('蓮');
+  });
+
+  it('PLR04 has all 20 chapters authored', () => {
+    for (let chapter = 1; chapter <= 20; chapter++) {
+      const ch = resolveChapterStory(story, 3, chapter);
+      expect(ch).not.toBeNull();
+      expect(ch).not.toBe(story.chapterStories[chapter - 1]);
+    }
+  });
+
+  it('PLR05 (idx 4, unauthored) chapter 1 falls back to shared default', () => {
+    const ch = resolveChapterStory(story, 4, 1);
     expect(ch).toBe(story.chapterStories[0]);
   });
 });
@@ -204,8 +246,24 @@ describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56-57)', 
     expect(p.text).toContain('リン');
   });
 
-  it('PLR04 (idx 3, unauthored) falls back to shared prologue', () => {
+  it('PLR04 (idx 3) returns the Ren-flavored prologue', () => {
     const p = resolvePrologueContent(story, 3);
+    expect(p.title).toContain('無刀館');
+    expect(p.startButton).toContain('白井一刀流');
+    expect(p.text).toContain('蓮');
+  });
+
+  it('PLR04 carries imageBasePaths for all 5 intro scenes', () => {
+    const p = resolvePrologueContent(story, 3);
+    expect(p.imageBasePaths?.prologue).toBe('PLR04_ren/prologue');
+    expect(p.imageBasePaths?.encount).toBe('PLR04_ren/encount');
+    expect(p.imageBasePaths?.arrival).toBe('PLR04_ren/arrival');
+    expect(p.imageBasePaths?.gatewayClosed).toBe('PLR04_ren/gateway-closed');
+    expect(p.imageBasePaths?.gatewayOpen).toBe('PLR04_ren/gateway-open');
+  });
+
+  it('PLR05 (idx 4, unauthored) falls back to shared prologue', () => {
+    const p = resolvePrologueContent(story, 4);
     expect(p).toBe(story.prologue);
   });
 });
