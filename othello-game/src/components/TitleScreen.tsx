@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.70 · archive-avatars-old-trim-30mb';
+const BUILD_TAG = 'v0.36.71 · PLR04 ren complete (18 illust + 4 scenarios)';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
