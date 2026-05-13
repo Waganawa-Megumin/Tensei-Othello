@@ -4175,12 +4175,21 @@ export default function App() {
           chapter card on every subsequent chapter. `onStart` performs
           the actual mode switch + board reset and flips to 'game'.
 
-          v0.36.20 — `firstTime` also gates on `hasSeenOverlay(slot,
-          'prologue')`. A spell warp such as `…XX01` puts the slot at
-          storyProgress=0 AND pre-marks the prologue/intro overlays
-          as seen, so the player should jump straight to the chapter
-          card; without this guard they'd re-watch the full prologue
-          + 5-step intro every time the warped slot starts ch.1. */}
+          v0.36.20 — `firstTime` also gates on a spell-warp signal so
+          a slot warped via `…XX01` skips the intro chain (the warp
+          handler pre-marks every intro step as seen).
+
+          v0.36.72 — gate switched from `'prologue'` to
+          `'intro:gatewayOpen'`. Natural viewers only set the
+          `'prologue'` flag (after tapping past step 1), so the old
+          gate locked them out of the chain on the SECOND entry even
+          if they had failed/quit Ch.1. The spell-warp path
+          (App.tsx L3207-3211) pre-marks all five `intro:*` flags
+          including `intro:gatewayOpen`, so using that as the gate
+          robustly distinguishes "spell-skipped" from "tapped through
+          but lost Ch.1". As a side effect, the intro chain replays
+          on every entry until Ch.1 is won (storyProgress flips to
+          1, which short-circuits the gate via the first clause). */}
       {screen === 'intro' && (
         <IntroSequence
           t={t}
@@ -4188,7 +4197,7 @@ export default function App() {
           firstTime={
             (activeSlot?.storyProgress ?? 0) === 0 &&
             (activeSlotId === null ||
-              !hasSeenOverlay(String(activeSlotId), 'prologue'))
+              !hasSeenOverlay(String(activeSlotId), 'intro:gatewayOpen'))
           }
           chapter={introChapter}
           opponent={

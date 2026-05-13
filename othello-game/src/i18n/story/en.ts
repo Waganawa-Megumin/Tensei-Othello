@@ -1878,6 +1878,11 @@ Twenty masters waited for her.
         gatewayClosed: 'PLR04_ren/gateway-closed',
         gatewayOpen: 'PLR04_ren/gateway-open',
       },
+      // Ren's prologue text already lands him in Bansho Sekai, so
+      // the rest of the intro chain follows: arrival → ruined dojo
+      // → gate bursts → Ch.1 stage. `encount-*.png` becomes the
+      // final intro beat, depicting the Ichika circular-hall meet.
+      introStepOrder: 'arrival-first',
     },
 
   },

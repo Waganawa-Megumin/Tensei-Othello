@@ -70,18 +70,33 @@ export interface PrologueContent {
      *  background, leave this unset and instead author `_shared/
      *  prologue-bg-...` per-PLR via a future `prologueBg` field. */
     prologue?: string;
-    /** "Encounter" key art (intro flow step 2) — the moment the story
-     *  starts moving in the other world. Per-PLR free framing: a fall,
-     *  an awakening, a face-to-face meeting, etc. (renamed from
-     *  `falling` v0.36.64). */
+    /** "Encounter" key art. Per-PLR free framing: a fall, an
+     *  awakening, a face-to-face meeting, etc. Position in the step
+     *  sequence is controlled by `introStepOrder` — `'legacy'` puts
+     *  it at step 2 (between prologue and arrival, i.e., the
+     *  "falling toward Bansho Sekai" beat), `'arrival-first'` puts
+     *  it at step 5 (between gateway-open and chapter 1, i.e., the
+     *  "meeting the first opponent" beat). (renamed from `falling`
+     *  v0.36.64; per-PLR ordering added v0.36.72). */
     encount?: string;
-    /** Arrival at Bansho Sekai — first sight of the new world (step 3). */
+    /** Arrival at Bansho Sekai — first sight of the new world. */
     arrival?: string;
-    /** Sealed-gateway encounter (step 4). */
+    /** Sealed-gateway encounter. */
     gatewayClosed?: string;
-    /** Opened-gateway threshold (step 5). */
+    /** Opened-gateway threshold. */
     gatewayOpen?: string;
   };
+  /** Per-PLR intro step ordering (v0.36.72).
+   *  - `'legacy'` (default): prologue → encount → arrival →
+   *    gatewayClosed → gatewayOpen → chapter. Encount sits at step 2
+   *    as a falling/transition beat, matching PLR00 / PLR02 / PLR03
+   *    whose prologue text ends WITH the fall still in progress.
+   *  - `'arrival-first'`: prologue → arrival → gatewayClosed →
+   *    gatewayOpen → encount → chapter. Encount becomes the last
+   *    intro beat, matching PLR04 whose prologue text already shows
+   *    the player landing in Bansho Sekai and whose `encount-*.png`
+   *    depicts the first-opponent encounter rather than mid-air. */
+  introStepOrder?: 'legacy' | 'arrival-first';
 }
 
 /** Full story bundle, one per locale. */
