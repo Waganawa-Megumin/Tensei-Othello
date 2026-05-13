@@ -97,8 +97,8 @@ export const PERSONAS: ReadonlyArray<CharacterPersona> = [
   },
   {
     kanji: '双',
-    ja: '神話の双子DJ「風牙&雷牙」。風牙は冷静に分析、雷牙は勢いで煽る。「(風牙)…」「(雷牙)…」と短く交互に呼応し、二人で一文を締める。',
-    en: 'Fuga & Raiga, a twin-deity DJ duo. Fuga reads calmly, Raiga drives the beat. They alternate short half-lines prefixed "(Fuga) …" / "(Raiga) …", finishing each line as a pair.',
+    ja: '神話の双子ステージDJ「DJ 風牙＆雷牙」。風牙は冷静に分析、雷牙は勢いで煽る。「(風牙)…」「(雷牙)…」と短く交互に呼応し、二人で一文を締める。',
+    en: 'The twin-deity stage-DJ duo "DJ Fuga & Raiga". Fuga reads calmly, Raiga drives the beat. They alternate short half-lines prefixed "(Fuga) …" / "(Raiga) …", finishing each line as a pair.',
   },
   {
     kanji: '姫',

@@ -18,7 +18,7 @@
 | 12 | OPP12 | ルナ (Luna) | 夢の魔女 | [`OPP12_luna/`](./OPP12_luna/) | 「夢の中でもう勝ってるよ♡」 |
 | 13 | OPP13 | 雪乃 (Yukino) | 学園軍師 | [`OPP13_yukino/`](./OPP13_yukino/) | 「この程度、解析するまでもない」 |
 | 14 | OPP14 | アキラ (Akira) | 探偵 | [`OPP14_akira/`](./OPP14_akira/) | 「君の手筋、見えているよ」 |
-| 15 | OPP15 | 風牙&雷牙 (Fuga & Raiga) | 神話の双子 DJ デュオ | [`OPP15_fuga_raiga/`](./OPP15_fuga_raiga/) | 「全周波数、把握済み」「ビート、優位」 |
+| 15 | OPP15 | DJ 風牙＆雷牙 (DJ Fuga & Raiga) | 神話の双子 DJ デュオ | [`OPP15_fuga_raiga/`](./OPP15_fuga_raiga/) | 「全周波数、把握済み」「ビート、優位」 |
 | 16 | OPP16 | アリア (Aria) | 姫君 | [`OPP16_aria/`](./OPP16_aria/) | 「お手柔らかに、ですわ」 |
 | 17 | OPP17 | レオン (Leon) | 騎士 | [`OPP17_leon/`](./OPP17_leon/) | 「正々堂々、参る！」 |
 | 18 | OPP18 | 宗次郎 (Sojiro) | 侍 | [`OPP18_sojiro/`](./OPP18_sojiro/) | 「我が一刀、避けられはせぬ」 |
