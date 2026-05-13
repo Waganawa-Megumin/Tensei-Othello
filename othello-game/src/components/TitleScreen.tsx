@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.67 · opp15-fuga-raiga-phase2-story';
+const BUILD_TAG = 'v0.36.68 · opp15-ch15-drop-meta-ch20-zero-prefix';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

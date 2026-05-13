@@ -349,7 +349,7 @@ With black-gloved fingers, he plucked a **floating game-record card** out of the
       intro: `**A mythological circular stage**. **The left half-sky swirls with green-wind lasers**, **the right half-sky races with violet-lightning strobes**. **Across the central turntables** ── **the twin-deity DJ duo** ── **Fuga and Raiga**.
 
 (...**Not human**.)
-(...**Same air as Ch.20\'s Zero**.)
+(...**Same air as Zero**.)
 (...**Both** ── **embody invisible laws**.)
 (...**However, Fuga & Raiga** ── **are the ones who make people dance**.)
 
@@ -381,7 +381,7 @@ I took my stance with **the holo-board** before me.
 
 The twins **placed hands on each other\'s shoulders**. **Side by side**, they **vanished into the depths** of the **stage light show**. **The green-wind lasers and violet-lightning strobes** ── **fell silent**. **The speakers** ── **suddenly stopped**.
 
-(...**Is Ch.20\'s Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
+(...**Is Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
 (...**Fuga & Raiga** ── **as a duo, make people dance** ── **retain humanity**.)
 (...**Zero** ── **alone, calculates people** ── **discarded it**.)
 (...**I, in this otherworld**, ── **stand on the side of humanity**.)
@@ -1572,7 +1572,7 @@ Mikoto **opened her grimoire**. **The pages of the grimoire** **resonate with th
 
 The twins **placed hands on each other\'s shoulders**. **Side by side**, they **vanished into the depths** of the **stage light show**. **The green-wind lasers and violet-lightning strobes** ── **fell silent**. **The speakers** ── **suddenly stopped**.
 
-(...**Is Ch.20\'s Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
+(...**Is Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
 (...**But Zero, alone**, ── **builds a closed system**.)
 (...**Fuga & Raiga, as a duo**, ── **play an open system**.)
 (...**My magical theory** ── **affirms open systems**.)
@@ -2100,7 +2100,7 @@ Rin **deployed his VRMMO-trained combat HUD**. On the **status screen**, **HP ba
 
 The twins **placed hands on each other\'s shoulders**. **Side by side**, they **vanished into the depths** of the **stage light show**. **The green-wind lasers and violet-lightning strobes** ── **fell silent**. **The speakers** ── **suddenly stopped**.
 
-(...**Is Ch.20\'s Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
+(...**Is Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
 (...**But Zero is a solo player** ── **forming no party with anyone**.)
 (...**Fuga & Raiga are a duo PT** ── **making opponents dance through coordination**.)
 (...**I was a solo player**, **but in this otherworld** ── **something is starting to change**.)
