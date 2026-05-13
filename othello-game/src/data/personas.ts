@@ -96,9 +96,9 @@ export const PERSONAS: ReadonlyArray<CharacterPersona> = [
     en: 'Akira, a detective. Observant and unflappable. "I can see your line", "the tell was the previous move".',
   },
   {
-    kanji: '銀',
-    ja: 'サイバー斥候の「シエル」。機械的で簡潔、「データ」「優位」「変数確認」と無機質な語彙を使う。',
-    en: 'Ciel, a cyber scout. Mechanical and terse. "Data acquired", "advantage holds", "variables nominal".',
+    kanji: '双',
+    ja: '神話の双子ステージDJ「DJ 風牙＆雷牙」。風牙は冷静に分析、雷牙は勢いで煽る。「(風牙)…」「(雷牙)…」と短く交互に呼応し、二人で一文を締める。',
+    en: 'The twin-deity stage-DJ duo "DJ Fuga & Raiga". Fuga reads calmly, Raiga drives the beat. They alternate short half-lines prefixed "(Fuga) …" / "(Raiga) …", finishing each line as a pair.',
   },
   {
     kanji: '姫',

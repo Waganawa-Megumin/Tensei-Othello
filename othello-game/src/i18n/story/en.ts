@@ -340,28 +340,62 @@ With black-gloved fingers, he plucked a **floating game-record card** out of the
       `*(**3,427 patterns** — that number is so specific it sounds **suspiciously like a lie**. But if it's true, terrifying.)*`,
       `"Splendid. — **The 3,428th pattern** was your move tonight. — I shall have to update my statistics."`,
       `Akira snapped his fingers, plucked a black bowler hat from the fog, and placed it on Haruki's head.
-"The next master is **Ciel**. — In the **neon-lit future metropolis**. Across eras and locations, you are now **touring all eight continents**. Have you noticed?"
+"The next masters are **Fuga & Raiga**. — On the **mythological circular stage**. Across eras and locations, you are now **touring all eight continents**. Have you noticed?"
 
 *(**All continents = all eras?** Wait but past and future aren't continents, they're a temporal axis—)*`,
     ),
-    // Ch.15 Ciel
-    ch(
-      `Nighttime megacity. **Neon and vertical streams of code rain**.
-Holographic ads filled the air.
+    // Ch.15 DJ Fuga & Raiga — Twin-Deity Stage DJ Duo (Outer)
+    ch({
+      intro: `**A mythological circular stage**. **The left half-sky swirls with green-wind lasers**, **the right half-sky races with violet-lightning strobes**. **Across the central turntables** ── **the twin-deity DJ duo** ── **Fuga and Raiga**.
 
-A silver-haired short-cut figure (?) with goggles pushed up, manipulating a **holographic othello board** in mid-air. Gender ambiguous, one eye violet, one eye blue.
+(...**Not human**.)
+(...**Same air as Ch.20\'s Zero**.)
+(...**Both** ── **embody invisible laws**.)
+(...**However, Fuga & Raiga** ── **are the ones who make people dance**.)
 
-"Finally here, Outer. — Your data has **leaked to the network**. — Every master is **watching your replays**."
+Two turntables. **The left** belongs to Fuga ── **green LEDs**, **sparrow stickers**, **wind-bag-shaped mixer**. **The right** belongs to Raiga ── **violet LEDs**, **lightning stickers**, **taiko-drum-shaped mixer**. **In the center**, an **"∞"-shaped glowing mixer**. **Behind**, **wind-bag and taiko-drum speaker stacks**.
 
-*(Got it, **the concept of privacy no longer exists** in this isekai.)*`,
-      `"I play by **probability distribution**. — Your moves are **80% predictable**. The remaining 20% is what's interesting."`,
-      `*(**80% predicted.** So I just need to consciously increase the 20%? — But the moment I try, that becomes predictable too, right?)*`,
-      `"Fascinating. — You played **the 21%**. — This is — **worth preserving in the data**."`,
-      `Ciel collapsed the hologram and bowed slightly. **Haruki's game record began replaying in 3D in mid-air**.
-"The next master is **Aria**. **A princess of the royal court**. — Remember your manners? She's strict about **etiquette**, too."
+"**All frequencies, comprehended**." (Fuga, narrowing green eyes.)
+"**Beat, advantageous**." (Raiga, fixing violet eyes on me.)
 
-*(**Manners are graded now?** First privacy, now I get judged on **how I hold a teacup** — what an isekai.)*`,
-    ),
+**The twin voices** ── **resonate in perfect unison**.
+
+I took my stance with **the holo-board** before me.
+
+"**Sound** ── **is dance**." (me)
+"**The board** ── **does not dance**."`,
+      bossPre: `(Fuga) Your **moves**, **I deploy as a wind waveform**.
+(Raiga) As a **lightning beat**, I deploy them simultaneously.
+**Groove rate: 31.7%**. ── But **the remaining 68.3%**, **whatever it is**, ── **rides on no BPM yet**. **Let it sound**`,
+      bossPost: `(The "**pause**" ── that **the twin beats cannot capture**.)
+(...**Neither form nor frequency** ── **a third something**.)
+(...**Something I acquired** ── **in this otherworld**.)
+(**The board** ── **falls still**.)`,
+      victoryDialogue: `(Fuga) ............**Wind frequency chart, rewritten**.
+(Raiga) **Lightning beat map, rewritten**.
+── Haruki, your **judgment\'s primitive** ── **rode on neither of our twin sounds**. ── **〈Otherworld Intuition〉**, **inscribed on the stage as a meta-concept above all frequencies**.`,
+      victoryNarration: `Fuga and Raiga **each removed one hand** from their mixers. **Both, simultaneously**, **gently** touched **my holo-board**.
+
+"Next ── is **Lady Aria**. At the **rose garden of the royal castle**." (Fuga)
+"── **Take care**." (Raiga)
+
+The twins **placed hands on each other\'s shoulders**. **Side by side**, they **vanished into the depths** of the **stage light show**. **The green-wind lasers and violet-lightning strobes** ── **fell silent**. **The speakers** ── **suddenly stopped**.
+
+(...**Is Ch.20\'s Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
+(...**Fuga & Raiga** ── **as a duo, make people dance** ── **retain humanity**.)
+(...**Zero** ── **alone, calculates people** ── **discarded it**.)
+(...**I, in this otherworld**, ── **stand on the side of humanity**.)
+
+I **left the stage of myth**.
+
+And ──
+
+At the **summit of the otherworld\'s cherry grove**, I **felt presences**.
+
+**Five presences**.
+
+(...**The masters** ── **are gathering**.)`,
+    }),
     // Ch.16 Aria
     ch(
       `A marble palace. **Chandelier crystals shimmered in rainbow light**.
@@ -521,7 +555,7 @@ Ichika, Mel, Nadeshiko, Asahi, Hibiki — the masters had gathered around Haruki
       text: `The standoff with Zero.
 Behind Haruki — **the souls of all the masters** appeared as **points of light**.
 
-Ichika's song, Aoi's arrows, Asahi's blade, Nadeshiko's prayer, Hibiki's melody, Tsumugi's beast, Akane's invention, Mel's alchemy, Satoru's zen, Shiki's announcement, Shion's stars, Luna's moon, Yukino's hologram, Akira's deduction, Ciel's probability, Aria's bearing, Leon's sword, Sojiro's slash, Arashi's lightning.
+Ichika's song, Aoi's arrows, Asahi's blade, Nadeshiko's prayer, Hibiki's melody, Tsumugi's beast, Akane's invention, Mel's alchemy, Satoru's zen, Shiki's announcement, Shion's stars, Luna's moon, Yukino's hologram, Akira's deduction, Fuga & Raiga's beat, Aria's bearing, Leon's sword, Sojiro's slash, Arashi's lightning.
 
 All of them — became **Haruki's single move**.
 
@@ -895,7 +929,7 @@ Her fingers paused on the page.
         text: `Confrontation with Zero.
 Into Mikoto's grimoire, **the souls of the masters wrote themselves in silver script**.
 
-Ichika's prosody, Aoi's line of fire, Asahi's swordstroke, Nadeshiko's healing meter, Hibiki's main melody, Tsumugi's beast-logic, Akane's mechanism, Mel's refinement, Satoru's stillness, Shiki's omen, Shion's constellation, Luna's dream, Yukino's tactical theorem, Akira's deduction, Ciel's probability, Aria's manners, Leon's chivalry, Sojiro's single stroke, Arashi's lightning principle.
+Ichika's prosody, Aoi's line of fire, Asahi's swordstroke, Nadeshiko's healing meter, Hibiki's main melody, Tsumugi's beast-logic, Akane's mechanism, Mel's refinement, Satoru's stillness, Shiki's omen, Shion's constellation, Luna's dream, Yukino's tactical theorem, Akira's deduction, Fuga & Raiga's beat, Aria's manners, Leon's chivalry, Sojiro's single stroke, Arashi's lightning principle.
 
 Every chapter — became **Mikoto's final theorem**.
 
@@ -976,7 +1010,7 @@ Every chapter — became **Mikoto's final theorem**.
   Rin faced her own board.
   **The data of the nineteen masters** flowed into the console as **a silver data stream**.
 
-  Ichika\'s **rhythm**, Aoi\'s **line of fire**, Asahi\'s **swordwork**, Nadeshiko\'s **heal-priority logic**, Hibiki\'s **main melody**, Tsumugi\'s **bestial intuition**, Akane\'s **mechanism**, Mel\'s **compounding**, Satoru\'s **emptiness of mind**, Shiki\'s **presence**, Shion\'s **precision**, Luna\'s **dual-solution parallelism**, Yukino\'s **theory of war**, Akira\'s **inverse deduction**, Ciel\'s **full-data integration**, Aria\'s **comportment**, Leon\'s **purity of code**, Sojiro\'s **minimum-move proof**, Arashi\'s **theory of thunder**.
+  Ichika\'s **rhythm**, Aoi\'s **line of fire**, Asahi\'s **swordwork**, Nadeshiko\'s **heal-priority logic**, Hibiki\'s **main melody**, Tsumugi\'s **bestial intuition**, Akane\'s **mechanism**, Mel\'s **compounding**, Satoru\'s **emptiness of mind**, Shiki\'s **presence**, Shion\'s **precision**, Luna\'s **dual-solution parallelism**, Yukino\'s **theory of war**, Akira\'s **inverse deduction**, Fuga & Raiga\'s **all-frequencies integration**, Aria\'s **comportment**, Leon\'s **purity of code**, Sojiro\'s **minimum-move proof**, Arashi\'s **theory of thunder**.
 
   (**Every one of them — a representative of a genre Rei was good at**.)
 
@@ -1500,38 +1534,65 @@ A young man in a black coat regarded Mikoto with **a sharp gaze**.
 (If he predicts **my final move**, then I shall read back **the intent of his opening**. Running deduction **bidirectionally** ── **the solution is uniquely narrowed**.)`,
         '……I see. With **bidirectional reasoning**, you have **erased my advantage of inverse deduction**. ── Your deduction, **and mine**, ── **were the same figure**. ── As **a colleague in the trade**, I bow with respect.',
         `Akira returned the cigarette to its case and rose, nodding deeply.
-"Next is **Ciel** ── the data center at the city\'s deepest level. ── Her world is **everything that has been quantified**. Your logic, **there**, will undergo **a transformation in degree**."
+"Next are **Fuga & Raiga** ── the mythological circular stage floating in the otherworld. ── Their world is **the waveform deployment of all frequencies**. Your logic, **there**, will undergo **a transformation in degree**."
 
 (His deduction, mine ── **the same figure**. ── **The bidirectionality of logic**, incorporated into 〈Logic-Magic〉.)`,
       ),
-      // Ch.15 Ciel — Cyber-Scout ★ Phase 2 closing chapter (after this → allies)
-      ch(
-        `The data center at the city\'s deepest level.
-Blue LED light, a forest of server racks, a low driving hum. The luminescent floor panels **dynamically reconfigured an 8×8 grid** that **was itself the othello board**.
+      // Ch.15 DJ Fuga & Raiga — Twin-Deity Stage DJ Duo (PLR02 Mikoto Route)
+      ch({
+        intro: `**A mythological circular stage**. **Green-wind lasers** swirl across the **left half-sky**, **violet-lightning strobes** race across the **right half-sky**. **Across the turntables** ── **the twin-deity DJ duo** ── **Fuga and Raiga**.
 
-Ciel — a silver-haired girl with **a transparent display** clipped to one ear. Her gaze **caught multiple points simultaneously**.
+(...**In magical theory**, **the twins are a pair of "oscillation functions"**.)
+(...**Fuga is harmonic oscillation (sin)**, **Raiga is discrete impulse (δ)**.)
+(...**Their composition** **spans the entire frequency space**.)
 
-(Her cognition ── **parallel processing**. The visual cortex running **multi-stream**. ── Magical augmentation, or training.)
+Mikoto **opened her grimoire**. **The pages of the grimoire** **resonate with the twin beats**, and **the letters dance**.
 
-"All data, **acquired**."
+"**All frequencies, comprehended**." (Fuga, narrowing green eyes.)
+"**Beat, advantageous**." (Raiga, fixing violet eyes on Mikoto.)
 
-Ciel announced without inflection. "**Tactical situation: advantageous**."`,
-        'Your **logic**, decomposed into **a probability density function**. **Win probability: 31.7%**. ── But **what occupies the remaining 68.3%** is **not yet in my model**. **Fill it in for me**.',
-        `(What her model fails to capture, the **68.3%** ── that is **the meta-degree-of-freedom of my "selection of logic"**. ── **The primitives of judgment**, which resist quantification.)
+**The twin voices** ── **resonate in perfect unison**.
 
-(Numbers are symbols, magic is symbols ── **and choices are symbols**. ── All can be unified into **a system of signs**.)`,
-        '……Probability model, **rewriting**. ── Mikoto, your **judgment primitives** were **not registered in my data layer**. ── 〈Logic-Magic〉, **logged as the upper concept of full data integration**.',
-        `Ciel removed the display from her ear and placed it **gently** on a page of Mikoto\'s grimoire. From the transparent pane, **pale silver glyphs** rose and **were absorbed into the page**.
-"Next is **Aria** ── the rose garden of the royal castle. ── Her **comportment** is **the most ancient system of signs**. **Approach** with respect."
+"**Interesting**." (Mikoto)
+"**Can your waveform deployment** be **reverse-analyzed** by **my magical theory**?"`,
+        bossPre: `(Fuga) Your **magical symbol system**, **I deploy as wind sine waves**.
+(Raiga) As **lightning square waves**, I deploy them simultaneously.
+**Convergent frequencies: 31.7%**. ── But **the remaining 68.3%**, **whatever it is**, ── **fits no waveform, no symbol yet**. **Let it sound**`,
+        bossPost: `(...The "**boundary condition**" ── that **the twin beats cannot capture**.)
+(...The "**Gödelian gap**" ── that **exceeds the closure of magical theory**.)
+(...**Only the solution that cannot be fully predicted** ── **stands above both**.)
+(**The grimoire pages** ── **return to blank**.)`,
+        victoryDialogue: `(Fuga) ............**Wind frequency chart, rewritten**.
+(Raiga) **Lightning beat map, rewritten**.
+── Mikoto, the **meta-level of your magical theory** ── **rode on neither of our twin waveforms**. ── **〈Grimoire Incompleteness Theorem〉**, **inscribed on the stage as a meta-symbol above all frequencies**.`,
+        victoryNarration: `Fuga and Raiga **each removed one hand** from their mixers. **Both, simultaneously**, **gently** touched **Mikoto\'s grimoire**. On the page, **one green musical note and one violet musical note** were **engraved**.
 
-── That night, around the library table, **the masters** leaned in to study Mikoto\'s board. **Ichika, Aoi, Asahi, Nadeshiko, Hibiki**. ── From **those who had been her enemies**, **the continuation of the proof** was being passed to her.`,
-      ),
+"Next ── is **Lady Aria**. At the **rose garden of the royal castle**." (Fuga)
+"── **Take care**." (Raiga)
+
+The twins **placed hands on each other\'s shoulders**. **Side by side**, they **vanished into the depths** of the **stage light show**. **The green-wind lasers and violet-lightning strobes** ── **fell silent**. **The speakers** ── **suddenly stopped**.
+
+(...**Is Ch.20\'s Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
+(...**But Zero, alone**, ── **builds a closed system**.)
+(...**Fuga & Raiga, as a duo**, ── **play an open system**.)
+(...**My magical theory** ── **affirms open systems**.)
+
+Mikoto **left the stage of myth**.
+
+And ──
+
+At the **summit of the otherworld\'s cherry grove**, she **felt presences**.
+
+**Five presences**.
+
+(...**The masters** ── **are gathering**.)`,
+      }),
       // Ch.16 Aria — Princess
       ch(
         `The royal castle\'s rose garden. White roses bathed in moonlight, a white marble terrace, **a gold-rimmed othello board** (the royal heraldic insignia).
 A girl in a pure-white gown greeted Mikoto with **a deep and elegant curtsy**.
 
-(Comportment ── **the most ancient system of signs**, as Ciel had said. ── Indeed, every gesture of hers carries **formalized meaning**.)
+(Comportment ── **the most ancient system of signs**, as Fuga had said. ── Indeed, every gesture of hers carries **formalized meaning**.)
 
 "Be gentle, **if you would**."
 
@@ -1625,7 +1686,7 @@ The face sank into shadow; only the voice resonated, in **a low tone clear as cr
 
 "Welcome, 〈**Logic-Magic**〉."
 
-(── The school\'s name. **He knows it**. Shion, or Ciel. ── Or **was he linked with all the masters**?)
+(── The school\'s name. **He knows it**. Shion, or Fuga, or Raiga. ── Or **was he linked with all the masters**?)
 
 "**Every variation has been computed**. ── **Checkmate**."
 
@@ -1995,49 +2056,65 @@ The moment she stepped through the door, **a familiar wind** brushed her cheek. 
   (**Run deduction bidirectionally**. If he predicts **my final move**, I read back **the intent of his opening**. ── **The solution is uniquely narrowed**.)`,
         victoryDialogue: `……I see. With **bidirectional reasoning**, you have **erased my advantage of inverse deduction**. ── Your deduction, **and mine**, ── **were the same figure**. ── As **a colleague in the trade**, I bow with respect.`,
         victoryNarration: `Akira returned the cigarette to its case and rose, nodding deeply.
-  "Next is **Ciel** ── the data center at the city\'s deepest level. ── Her world is **everything that has been quantified**. Your logic, **there**, will undergo **a transformation in degree**."
+  "Next are **Fuga & Raiga** ── the mythological circular stage floating in the otherworld. ── Their world is **the waveform deployment of all frequencies**. Your logic, **there**, will undergo **a transformation in degree**."
 
   (**Bidirectional reasoning** ── integrated into 〈Data Tactics〉.)
 
   (I want to **watch Rei\'s replays again**. **All of them**.)
-  (At Ciel\'s **data center**, maybe I can **access the full battle logs**.)`,
+  (At Fuga & Raiga\'s **stage**, maybe I can **observe the full-frequency waveform logs**.)`,
       }),
 
       // ─────────────────────────────────────────────────
-      // Ch.15 Ciel — Cyber-Scout ★ Phase 2 closing chapter
+      // Ch.15 DJ Fuga & Raiga — Twin-Deity Stage DJ Duo (PLR03 Rin Route)
       // ─────────────────────────────────────────────────
       ch({
-        intro: `The data center at the city\'s deepest level.
-  Blue LED light, a forest of server racks, a low driving hum. The luminescent floor panels **dynamically reconfigured an 8×8 grid** that **was itself the othello board**.
+        intro: `**A mythological circular stage**. **Green-wind lasers** swirl across the **left half-sky**, **violet-lightning strobes** race across the **right half-sky**. **Across the turntables** ── **the twin-deity DJ duo** ── **Fuga and Raiga**.
 
-  Ciel — a silver-haired girl with **a transparent display** clipped to one ear. Her gaze **caught multiple points simultaneously**.
+(...**These guys** ── **BPM-sync sound bosses**.)
+(...**Fuga is the green melody line**, **Raiga is the violet rhythm line**.)
+(...**Perfect PVE duo**, **HP bars share even regeneration**.)
 
-  (**Multi-stream cognition class**. ── Same philosophy as **my goggles + headphones**. **Win the edge by increasing information sources**.)
+Rin **deployed his VRMMO-trained combat HUD**. On the **status screen**, **HP bars for "DJ Fuga" and "DJ Raiga"** and **BPM sync rate** **lined up**.
 
-  "All data, **acquired**."
+"**All frequencies, comprehended**." (Fuga, narrowing green eyes.)
+"**Beat, advantageous**." (Raiga, fixing violet eyes on Rin.)
 
-  Ciel announced without inflection. "**Tactical situation: advantageous**."`,
-        bossPre: `Your **strategy**, decomposed into **a probability density function**. **Win probability: 31.7%**. ── But **what occupies the remaining 68.3%** is **not yet in my model**. **Fill it in for me**.`,
-        bossPost: `(What her model fails to capture, the **68.3%** ── that is **my "vibe"**. **The selection of logic** as a meta-degree-of-freedom. **Judgment that resists quantification**.)
+**The twin voices** ── **resonate in perfect unison**.
 
-  (The real reason **Rei** was called a legend ── **moves that no numerical model could capture**. ── I\'m in **the same place** he was.)`,
-        victoryDialogue: `……Probability model, **rewriting**. ── Rin, your **judgment primitives** were **not registered in my data layer**. ── 〈Data Tactics〉, **logged as the upper concept of full data integration**.`,
-        victoryNarration: `Ciel removed the display from her ear and **gently connected it** to Rin\'s **HUD console**. From the transparent pane, **a pale silver data stream** flowed into Rin\'s console.
+"**BPM sync attack**, huh." (Rin)
+"**Solo, I\'d never win** ── **even though it\'s just me**."`,
+        bossPre: `(Fuga) Your **play log**, **I deploy as wind tones**.
+(Raiga) As a **lightning beat**, I deploy it simultaneously.
+**Melody convergence rate: 31.7%**. ── But **the remaining 68.3%**, **whatever it is**, ── **fits no soundfont yet**. **Let it sound**`,
+        bossPost: `(...The "**input outside the frame**" ── that **the twin beats cannot capture**.)
+(...**Beyond the HUD display limit**, **outside controller response**.)
+(...**The real-world manipulation** ── **only I know**.)
+(**The status screen** ── **freezes**.)`,
+        victoryDialogue: `(Fuga) ............**Wind frequency chart, rewritten**.
+(Raiga) **Lightning beat map, rewritten**.
+── Rin, your **judgment\'s primitive** ── **rode on neither of our twin sounds**. ── **〈Real-Time Console〉**, **inscribed on the stage as a meta-input above all frequencies**.`,
+        victoryNarration: `Fuga and Raiga **each removed one hand** from their mixers. **Both, simultaneously**, **gently** touched **Rin\'s HUD**. On the **console**, **one green musical note icon and one violet musical note icon** were **added to the equipment slot**.
 
-  "Next is **Aria** ── the rose garden of the royal castle. ── Her **comportment** is **the most ancient communication protocol**. **Approach** with respect."
+"Next ── is **Lady Aria**. At the **rose garden of the royal castle**." (Fuga)
+"── **Take care**." (Raiga)
 
-  ── **The data center link is open**.
+The twins **placed hands on each other\'s shoulders**. **Side by side**, they **vanished into the depths** of the **stage light show**. **The green-wind lasers and violet-lightning strobes** ── **fell silent**. **The speakers** ── **suddenly stopped**.
 
-  (**Rei\'s replays**, **all of them**, accessible from here.)
+(...**Is Ch.20\'s Zero** ── **the same kind of "law-embodying being" as Fuga & Raiga?**)
+(...**But Zero is a solo player** ── **forming no party with anyone**.)
+(...**Fuga & Raiga are a duo PT** ── **making opponents dance through coordination**.)
+(...**I was a solo player**, **but in this otherworld** ── **something is starting to change**.)
 
-  Rin returned to the **HUD float space** and opened a console.
+Rin **left the stage of myth**.
 
-  But ── **the masters had already gathered there**. **Akane, Yukino, Shion, Akira, Satoru**.
+And ──
 
-  Around a floating HUD table, they were **leaning in to study Rin\'s board**.
+At the **summit of the otherworld\'s cherry grove**, he **felt presences**.
 
-  (**Information from former enemies**, freely shared.)
-  (── **This** is ── **the feel of an MMO clan**.)`,
+**Five presences**.
+
+(...**The masters** ── **are gathering**.)
+(...**Will I, too** ── **form a party**?)`,
       }),
 
       // ─────────────────────────────────────────────────
