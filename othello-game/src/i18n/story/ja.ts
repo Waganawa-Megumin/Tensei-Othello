@@ -1883,6 +1883,10 @@ export const STORY_JA: StoryContent = {
         gatewayClosed: 'PLR04_ren/gateway-closed',
         gatewayOpen: 'PLR04_ren/gateway-open',
       },
+      // 蓮の prologue 本文は既に「異世界に着地」まで描き切っているので、
+      // 続く intro 流れは「到着 → 朽道場 → 戸爆散 → Ch.1 ステージ到達」
+      // の順を採用する。encount は最終ステップで Ch.1 円形ホールの絵を出す。
+      introStepOrder: 'arrival-first',
     },
 
   },
