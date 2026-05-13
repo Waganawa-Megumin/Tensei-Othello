@@ -201,7 +201,7 @@ const DEFAULT_AVATAR_DATA: AvatarEntry = {
 //   PLR17 ヨル:    archetype 半吸血鬼 → 吸血鬼 (純化)
 //   PLR20 悠:      archetype 神話の英雄 → 神話の姫
 // Quotes refreshed where the old line tied to the old archetype.
-// Old 512×512 PNGs preserved at `avatars-old/players/PLRxx_<oldslug>.png`.
+// Old 512×512 PNGs preserved at `archive/avatars-old/players/PLRxx_<oldslug>.png`.
 const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
   { kanji: '琴', name: '美琴',     name_en: 'Mikoto',    setting: '魔法学園の天才',        setting_en: 'Magic Academy Prodigy',      quote: '論理と魔法は同じ',       quote_en: 'Logic and magic are one.',           image: 'avatars/players/PLR02_mikoto/icon.png' },
   { kanji: '凛', name: 'リン',     name_en: 'Rin',       setting: 'VRMMOの最強プレイヤー', setting_en: 'VRMMO Top Player',           quote: '現実より、得意なんだ',   quote_en: "I'm better here than in reality.",   image: 'avatars/players/PLR03_rin/icon.png' },
@@ -227,7 +227,7 @@ const AVATARS_DATA: ReadonlyArray<AvatarEntry> = [
   // single PNG `PLR01_haruki.png` to the v3 folder
   // `PLR01_haruki_heroic/icon.png` (1024×1024 RGBA composite of
   // character + transition-space background). The legacy PNG is
-  // preserved at `avatars-old/players/PLR01_haruki.png`. The
+  // preserved at `archive/avatars-old/players/PLR01_haruki.png`. The
   // setting line is updated to reflect the heroic-spirit framing
   // (the future, ascended form of Haruki returning to guide
   // PLR00). This avatar's selection by the player is what gates
