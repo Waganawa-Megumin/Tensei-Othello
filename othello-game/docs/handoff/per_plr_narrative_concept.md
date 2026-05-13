@@ -368,4 +368,66 @@ PLR02 美琴で確立した**共通フォーマット** (4 シーン × 2 オリ
 
 ---
 
-最終更新: 2026-05-08 (v0.36.55 リリース時点)
+## 9. 各 PLR ハンドオフへの必須同梱: `INTRO_FLOW_PER_PLR.md`
+
+(v0.36.72 で運用ルール化。`docs/handoff/INTRO_FLOW_PER_PLR.md` が正本。)
+
+### なぜ必要か
+
+PLR04 蓮の lap で **`encount` の物語上の意味が PLR02/03 と逆転**する事案が発生しました:
+
+- PLR02/03: prologue 本文が「落下中」で終わる → `encount` = 次元の谷を落下する瞬間 (step 2)
+- PLR04: prologue 本文が「異界に着地」まで描き切る → `encount` = Ch.1 Ichika との初対面 (step 5)
+
+機械的に同じ flow 順序で実装すると、PLR04 では「Ch.1 円形ホールの絵がまだ異界に到着すらしていない時点で出る」という物語破綻が起きます。これを未然に防ぐため、**各 PLR の引き渡し時に必ず `INTRO_FLOW_PER_PLR.md` を同梱**し、その PLR が default 順か固有順かを明示してもらいます。
+
+### 同梱必須項目
+
+各 PLR の `PLR<NN>_HANDOFF.zip` (または同等の引き渡しパッケージ) に以下を含めること:
+
+1. **`INTRO_FLOW_PER_PLR.md`** (リポ内テンプレ: `docs/handoff/INTRO_FLOW_PER_PLR.md`)
+   - その PLR の 5 ステップが default 順 (`'legacy'`) なのか別順 (`'arrival-first'` 等) なのかを明示
+   - 各 step での画像 / テキストの意味を 1 行ずつ記述
+   - 物語的な理由 (なぜ default ではないのか) を明文化
+2. **挿絵 18 枚** (9 シーン × LS+PT、`PLR<NN>_<slug>/` 配下)
+3. **シナリオ 4 種 × 2 言語** (`scenarios/{ja,en}/{prologueByPlr, chapterStoriesByPlr, narrativeByPlr, chainStepEndingByPlr}.ts.txt`)
+4. **README.md / IMPLEMENTATION_GUIDE.md** (実装手順)
+
+### 実装ハンドル (Code 側)
+
+`src/i18n/story/types.ts` の `PrologueContent.introStepOrder` フィールドで制御:
+
+```typescript
+export interface PrologueContent {
+  // ...既存フィールド
+  /** Per-PLR intro step ordering (v0.36.72).
+   *  - 'legacy' (default): prologue → encount → arrival → gatewayClosed → gatewayOpen
+   *  - 'arrival-first':    prologue → arrival → gatewayClosed → gatewayOpen → encount
+   */
+  introStepOrder?: 'legacy' | 'arrival-first';
+}
+```
+
+`src/i18n/story/{ja,en}.ts` 内の `prologueByPlr[plrIdx]` に対応する値を設定:
+
+```typescript
+prologueByPlr: {
+  1: { /* PLR02 mikoto, default 順 → 省略 */ ... },
+  2: { /* PLR03 rin,    default 順 → 省略 */ ... },
+  3: {
+    // PLR04 ren — prologue 本文で既に異界着地まで描いている
+    introStepOrder: 'arrival-first',
+    // ...
+  },
+}
+```
+
+### 新しい順序が必要になった場合
+
+3 PLR 以上が同じ「default ではない」順序を要求するようになったら、専用 enum 値を追加 (例: `'gateway-first'`)。1 PLR だけの一回限りの特殊順序なら enum を 1 個追加するか、`ReadonlyArray<Step>` 型への切替を検討。判断は case-by-case でその時に PR で議論する。
+
+詳細は `docs/handoff/INTRO_FLOW_PER_PLR.md` 参照。
+
+---
+
+最終更新: 2026-05-13 (v0.36.72 — `INTRO_FLOW_PER_PLR.md` 同梱ルール化、`introStepOrder` 実装)
