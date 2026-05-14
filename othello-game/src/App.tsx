@@ -1510,6 +1510,19 @@ export default function App() {
   );
   const [activeSlotId, setActiveSlotIdState] = useState<number | null>(null);
   const [slotPickerOpen, setSlotPickerOpen] = useState(false);
+  // v0.36.74 — captures WHY the slot picker was opened so `selectSlot`
+  // can decide whether to auto-enter story (and replay the post-true-
+  // ending cinematic on a fully-cleared slot) or just switch the
+  // active slot in place. 'enterStory' is set only by the
+  // `startGame.story → no slot` branch; every other open site (title-
+  // screen "Switch Slot", GameOver "Switch Slot", Settings "Switch
+  // Slot") leaves it on the safe 'switchOnly' default so that picking
+  // a maxed slot mid-free-play doesn't drag the user into the
+  // 20-B/20-C/20-D/opp22.intro chain unbidden. Reset to 'switchOnly'
+  // every time `selectSlot` completes.
+  const [slotPickerIntent, setSlotPickerIntent] = useState<
+    'enterStory' | 'switchOnly'
+  >('switchOnly');
   /** Set once per gameOver to prevent double-recording stats. */
   // Set true when a saved kifu is loaded for review. Suppresses the
   // gameOver-driven result recording and the gameOver modal so the
@@ -2436,6 +2449,7 @@ export default function App() {
         setReviewOpen(false);
       } else if (slotPickerOpen) {
         setSlotPickerOpen(false);
+        setSlotPickerIntent('switchOnly');
       } else if (settingsOpen) {
         setSettingsOpen(false);
       } else if (kifuOpen) {
@@ -2724,6 +2738,7 @@ export default function App() {
       // Story mode requires an active slot; otherwise open the picker
       // and let the user pick before entering the game.
       if (activeSlotId === null) {
+        setSlotPickerIntent('enterStory');
         setSlotPickerOpen(true);
         return;
       }
@@ -2820,6 +2835,23 @@ export default function App() {
     if (picked && picked.lastPlayedAt === 0 && picked.totalGames === 0) {
       resetOverlaysSeen(String(id));
     }
+    // v0.36.74 — bug fix: previously `selectSlot` ALWAYS auto-entered
+    // story (firing the post-true-ending cinematic chain for a maxed
+    // slot) regardless of why the picker was opened. The "Switch Slot"
+    // buttons on the title screen / GameOver / Settings panel also
+    // funnel through here, so a free-mode player switching to their
+    // maxed slot got dragged through 20-B → 20-C → 20-D → opp22.intro
+    // → forced OPP22 battle. User report:
+    //   「フリーモードでカンスト状態でキャラを変えて選ぶと、ゼロが戻る
+    //    ところとヴォイドφがでてきます」
+    // Fix: gate the auto-story-entry path on `slotPickerIntent`.
+    // 'switchOnly' (default) → return after the slot switch; the user
+    // stays on whatever screen called the picker. 'enterStory' is set
+    // only by `startGame.story → no slot`, where auto-entry is the
+    // intended behavior.
+    const intent = slotPickerIntent;
+    setSlotPickerIntent('switchOnly');
+    if (intent !== 'enterStory') return;
     // Resume the post-PLR01-victory cinematic if the chain was
     // interrupted (player tapped Home before reaching/finishing
     // the OPP22 battle). The flag is set in the gameOver effect
@@ -4155,7 +4187,10 @@ export default function App() {
             image: a.image,
           }))}
           opponents={COMPUTERS.map((c) => ({ level: c.level, name: c.name }))}
-          onSwitchSlot={() => setSlotPickerOpen(true)}
+          onSwitchSlot={() => {
+            setSlotPickerIntent('switchOnly');
+            setSlotPickerOpen(true);
+          }}
           archiveAvailable={
             activeSlotId !== null &&
             getArchiveScenes(
@@ -5278,6 +5313,7 @@ export default function App() {
                       </button>
                       <button
                         onClick={() => {
+                          setSlotPickerIntent('switchOnly');
                           setSlotPickerOpen(true);
                         }}
                         className="btn"
@@ -6430,6 +6466,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         setSettingsOpen(false);
+                        setSlotPickerIntent('switchOnly');
                         setSlotPickerOpen(true);
                       }}
                       className="btn text-xs px-3 py-1.5"
@@ -6441,6 +6478,7 @@ export default function App() {
                   <button
                     onClick={() => {
                       setSettingsOpen(false);
+                      setSlotPickerIntent('switchOnly');
                       setSlotPickerOpen(true);
                     }}
                     className="btn w-full"
@@ -7288,7 +7326,10 @@ export default function App() {
         slots={slots}
         activeSlotId={activeSlotId}
         onSelect={selectSlot}
-        onClose={() => setSlotPickerOpen(false)}
+        onClose={() => {
+          setSlotPickerOpen(false);
+          setSlotPickerIntent('switchOnly');
+        }}
         onSlotsChanged={setSlots}
         onCastSpell={(slotId) => {
           // Per-row 🪄 → make that row active first so the spell
