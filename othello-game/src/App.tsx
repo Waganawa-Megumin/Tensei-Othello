@@ -4203,6 +4203,7 @@ export default function App() {
           opponent={
             COMPUTERS.find((c) => c.level === introChapter) ?? COMPUTERS[0]
           }
+          plrIdx={p1Avatar}
           prologue={resolvePrologueContent(t.story, p1Avatar)}
           onPrologueSeen={() => {
             if (activeSlotId !== null) {
@@ -5413,7 +5414,7 @@ export default function App() {
                       chain-step ch.20 win, which auto-advances to the
                       next PLR — there is no "next chapter" for it). */}
                   {justAdvanced && !justCompletedStory && !chainStepFinish && (() => {
-                    const story = t.story.chapterStories[playedChapter - 1];
+                    const story = resolveChapterStory(t.story, p1Avatar, playedChapter);
                     if (!story) return null;
                     return (
                       <div className="space-y-3 mb-5 text-left">
@@ -6771,7 +6772,8 @@ export default function App() {
                             </div>
                           ) : (
                             (() => {
-                              const story = t.story.chapterStories[cursor - 1];
+                              const story = resolveChapterStory(t.story, p1Avatar, cursor);
+                              if (!story) return null;
                               const cleared = cursor <= storyProgress;
                               return (
                                 <div className="space-y-3">

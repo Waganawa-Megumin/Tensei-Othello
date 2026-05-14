@@ -207,6 +207,38 @@ describe('resolveChapterStory — PLR02 chapter override (v0.36.57)', () => {
     }
   });
 
+  // v0.36.73 — guard against the regression where the rendering
+  // layer (ChapterIntroScreen / GameOver modal / chapter browser)
+  // bypassed the resolver and read default `chapterStories` directly,
+  // making every non-PLR00 player hear "ハルキくん" lines from every
+  // boss. Confirms the per-PLR override actually replaces every
+  // user-visible dialogue field, not just `intro`.
+  it('PLR00 (default) Ch.1 dialogue addresses ハルキ', () => {
+    const ch = resolveChapterStory(story, 0, 1);
+    expect(ch?.bossPre).toContain('ハルキ');
+  });
+
+  it('PLR02 (Mikoto) Ch.1 dialogue addresses 美琴, NOT ハルキ', () => {
+    const ch = resolveChapterStory(story, 1, 1);
+    expect(ch?.bossPre).toContain('美琴');
+    expect(ch?.bossPre).not.toContain('ハルキ');
+    expect(ch?.victoryDialogue).not.toContain('ハルキ');
+  });
+
+  it('PLR03 (Rin) Ch.1 dialogue addresses リン, NOT ハルキ', () => {
+    const ch = resolveChapterStory(story, 2, 1);
+    expect(ch?.bossPre).toContain('リン');
+    expect(ch?.bossPre).not.toContain('ハルキ');
+    expect(ch?.victoryDialogue).not.toContain('ハルキ');
+  });
+
+  it('PLR04 (Ren) Ch.1 dialogue addresses 蓮, NOT ハルキ', () => {
+    const ch = resolveChapterStory(story, 3, 1);
+    expect(ch?.bossPre).toContain('蓮');
+    expect(ch?.bossPre).not.toContain('ハルキ');
+    expect(ch?.victoryDialogue).not.toContain('ハルキ');
+  });
+
   it('PLR05 (idx 4, unauthored) chapter 1 falls back to shared default', () => {
     const ch = resolveChapterStory(story, 4, 1);
     expect(ch).toBe(story.chapterStories[0]);
