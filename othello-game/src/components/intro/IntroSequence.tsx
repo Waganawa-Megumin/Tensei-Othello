@@ -71,6 +71,12 @@ const ARRIVAL_FIRST_STEPS: ReadonlyArray<Step> = [
   'chapter',
 ];
 
+// v0.36.75 — prologue compresses the whole intro arc (fall + landing
+// + gate) inline, so every subsequent intro:* step would replay an
+// already-described beat. PLR02 美琴 / PLR03 リン use this so the
+// intro flow is just prologue → chapter card.
+const PROLOGUE_ONLY_STEPS: ReadonlyArray<Step> = ['prologue', 'chapter'];
+
 interface Props {
   t: Messages;
   locale: Locale;
@@ -111,7 +117,9 @@ export function IntroSequence({
   const steps =
     prologue?.introStepOrder === 'arrival-first'
       ? ARRIVAL_FIRST_STEPS
-      : LEGACY_STEPS;
+      : prologue?.introStepOrder === 'prologue-only'
+        ? PROLOGUE_ONLY_STEPS
+        : LEGACY_STEPS;
 
   const [idx, setIdx] = useState<number>(
     firstTime ? 0 : steps.length - 1,
