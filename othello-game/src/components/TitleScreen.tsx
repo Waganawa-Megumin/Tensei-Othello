@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.72 · PLR04 intro step reorder + replay-until-ch1-win';
+const BUILD_TAG = 'v0.36.73 · fix per-PLR chapter dialogue (3 bypass sites → resolver)';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

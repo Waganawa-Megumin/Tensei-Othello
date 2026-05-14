@@ -80,6 +80,11 @@ interface Props {
   /** 1-indexed chapter (= opponent level). */
   chapter: number;
   opponent: Opponent;
+  /** AVATARS index of the active PLR. Threaded through to
+   *  `ChapterIntroScreen` so the chapter card resolves the correct
+   *  per-PLR boss line (e.g., PLR02 美琴 hears Mikoto-specific
+   *  bossPre, not the PLR00 ハルキ default). (v0.36.73) */
+  plrIdx: number;
   /** Fired when the prologue step (= the first beat) is dismissed.
    *  The caller uses this to bookkeep `markOverlaySeen` so the scene
    *  archive picks it up. */
@@ -98,6 +103,7 @@ export function IntroSequence({
   firstTime,
   chapter,
   opponent,
+  plrIdx,
   onPrologueSeen,
   onStart,
   prologue,
@@ -141,6 +147,7 @@ export function IntroSequence({
           locale={locale}
           chapter={chapter}
           opponent={opponent}
+          plrIdx={plrIdx}
           onStart={onStart}
         />
       );

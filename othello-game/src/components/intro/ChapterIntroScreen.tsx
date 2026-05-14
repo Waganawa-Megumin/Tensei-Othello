@@ -16,6 +16,7 @@ import type { Messages, Locale } from '../../i18n/messages';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useTapToReveal } from '../../hooks/useTapToReveal';
 import { renderEmphasized } from '../../i18n/story/render';
+import { resolveChapterStory } from '../../i18n/story/resolve';
 import { TapHint } from './TapHint';
 
 interface Opponent {
@@ -31,6 +32,10 @@ interface Props {
   /** 1-indexed chapter (= opponent level). */
   chapter: number;
   opponent: Opponent;
+  /** AVATARS index of the active PLR. Used to pick the right
+   *  chapter override (e.g. PLR02 美琴's bossPre instead of the
+   *  default PLR00 ハルキ line). 0 = PLR00 default. (v0.36.73) */
+  plrIdx: number;
   onStart: () => void;
 }
 
@@ -39,11 +44,12 @@ export function ChapterIntroScreen({
   locale,
   chapter,
   opponent,
+  plrIdx,
   onStart,
 }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const [imgOk, setImgOk] = useState(true);
-  const story = t.story.chapterStories[chapter - 1];
+  const story = resolveChapterStory(t.story, plrIdx, chapter);
   const oppName = locale === 'ja' ? opponent.name : opponent.name_en;
   const chapterArtSrc = opponent.chapterArtBase
     ? `${import.meta.env.BASE_URL}${opponent.chapterArtBase}-${
