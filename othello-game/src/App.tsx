@@ -7505,6 +7505,8 @@ export default function App() {
               effectiveProgress,
               trueEndingAchieved,
               voidphiAwakened,
+              introStepOrder:
+                resolvePrologueContent(t.story, activePlrIdx).introStepOrder,
             })
           : [];
         // Per-PLR aware scene label. Static labels (PLR00 wording for

@@ -89,14 +89,21 @@ export interface PrologueContent {
   /** Per-PLR intro step ordering (v0.36.72).
    *  - `'legacy'` (default): prologue → encount → arrival →
    *    gatewayClosed → gatewayOpen → chapter. Encount sits at step 2
-   *    as a falling/transition beat, matching PLR00 / PLR02 / PLR03
-   *    whose prologue text ends WITH the fall still in progress.
+   *    as a falling/transition beat, matching PLR00 whose prologue
+   *    text ends WITH the fall still in progress.
    *  - `'arrival-first'`: prologue → arrival → gatewayClosed →
    *    gatewayOpen → encount → chapter. Encount becomes the last
    *    intro beat, matching PLR04 whose prologue text already shows
    *    the player landing in Bansho Sekai and whose `encount-*.png`
-   *    depicts the first-opponent encounter rather than mid-air. */
-  introStepOrder?: 'legacy' | 'arrival-first';
+   *    depicts the first-opponent encounter rather than mid-air.
+   *  - `'prologue-only'` (v0.36.75): prologue → chapter (skip every
+   *    intro:* step). For PLRs whose prologue text compresses the
+   *    entire world-traversal — fall + landing + gate, into one piece
+   *    — so any subsequent encount/arrival/gateway* visual would
+   *    rewind the narrative. PLR02 美琴 and PLR03 リン (whose
+   *    prologues end with the character already landed at Bansho
+   *    Sekai awaiting the masters) use this variant. */
+  introStepOrder?: 'legacy' | 'arrival-first' | 'prologue-only';
 }
 
 /** Full story bundle, one per locale. */

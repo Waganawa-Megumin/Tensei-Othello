@@ -256,23 +256,46 @@ export function getOrderedArchiveScenesForPlr(input: {
   effectiveProgress: number;
   trueEndingAchieved: boolean;
   voidphiAwakened: boolean;
+  /** Per-PLR intro step ordering (mirrors
+   *  `PrologueContent.introStepOrder` from `src/i18n/story/types.ts`).
+   *  Determines the intro chain order in the replay list. Default
+   *  `'legacy'` emits prologue → falling → arrival → gC → gO.
+   *  `'arrival-first'` (PLR04) reorders so falling lands at the end.
+   *  `'prologue-only'` (PLR02 美琴 / PLR03 リン, v0.36.75) emits ONLY
+   *  prologue and skips every intro:* step — their prologue text
+   *  already covers the fall + landing + gate inline, so the legacy
+   *  chain rewinds the narrative. */
+  introStepOrder?: 'legacy' | 'arrival-first' | 'prologue-only';
 }): ArchiveScene[] {
-  const { slotId, plrIdx, effectiveProgress, trueEndingAchieved, voidphiAwakened } =
-    input;
+  const {
+    slotId,
+    plrIdx,
+    effectiveProgress,
+    trueEndingAchieved,
+    voidphiAwakened,
+    introStepOrder = 'legacy',
+  } = input;
   const isPlr01 = plrIdx === 20;
   const result: ArchiveScene[] = [];
 
-  // Intro chain — the world-opening cinematic. Currently shared
-  // across every PLR's tab; per-PLR override is plumbed via
-  // `prologueByPlr` on StoryContent so a future "美琴 sees a
-  // different summoning portal" variant slots in without touching
-  // this list.
+  // Intro chain — emitted per the active PLR's `introStepOrder`.
+  // 'legacy' keeps the canonical 5-step PLR00 Haruki order;
+  // 'arrival-first' (PLR04) puts falling/encount at the end;
+  // 'prologue-only' (PLR02/PLR03) emits ONLY prologue.
   if (hasSeenOverlay(slotId, 'prologue')) {
     result.push({ kind: 'overlay', key: 'prologue', plrIdx });
-    result.push({ kind: 'overlay', key: 'intro:falling', plrIdx });
-    result.push({ kind: 'overlay', key: 'intro:arrival', plrIdx });
-    result.push({ kind: 'overlay', key: 'intro:gatewayClosed', plrIdx });
-    result.push({ kind: 'overlay', key: 'intro:gatewayOpen', plrIdx });
+    if (introStepOrder === 'legacy') {
+      result.push({ kind: 'overlay', key: 'intro:falling', plrIdx });
+      result.push({ kind: 'overlay', key: 'intro:arrival', plrIdx });
+      result.push({ kind: 'overlay', key: 'intro:gatewayClosed', plrIdx });
+      result.push({ kind: 'overlay', key: 'intro:gatewayOpen', plrIdx });
+    } else if (introStepOrder === 'arrival-first') {
+      result.push({ kind: 'overlay', key: 'intro:arrival', plrIdx });
+      result.push({ kind: 'overlay', key: 'intro:gatewayClosed', plrIdx });
+      result.push({ kind: 'overlay', key: 'intro:gatewayOpen', plrIdx });
+      result.push({ kind: 'overlay', key: 'intro:falling', plrIdx });
+    }
+    // 'prologue-only': no intro:* steps.
   }
 
   // Chapters with mid-route inserts slotted before the relevant
