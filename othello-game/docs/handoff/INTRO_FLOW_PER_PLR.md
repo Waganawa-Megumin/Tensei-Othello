@@ -208,3 +208,23 @@ PLR04 のシナリオは **Ch.1 Ichika の intro テキスト (`chapterStoriesBy
 | v0.36.64 | `falling` → `encount` rename (シーン名のみ。順序は不変) |
 | v0.36.71 | PLR04 lap 完成 — 18 挿絵 + 4 シナリオ (ja+en) を統合 |
 | v0.36.72 | `PrologueContent.introStepOrder` 追加 / PLR04 を `'arrival-first'` に / firstTime gate を `'intro:gatewayOpen'` に変更 (Ch.1 勝利まで intro 再生) |
+| v0.36.75 | (誤った修正) PLR02/PLR03 に `introStepOrder: 'prologue-only'` を設定 → intro chain が完全 skip され、ユーザー体験「呼び出されたら即戦闘」状態に。`'prologue-only'` enum 値は型に残置 |
+| v0.36.76 | **revert**: PLR02/PLR03 の `'prologue-only'` 設定を削除 → 省略 (= `'legacy'`) に戻す。default 5-step chain が正規挙動であることを resolve.test.ts に regression guard として追加 (`introStepOrder === undefined` を assert)。教訓: ユーザー報告「序章から突然落下はおかしい」を narrative の rewind 問題と誤読し、intro chain 全 skip と過剰対応した。ChatGPT シナリオ監修側の意図は default 5-step を維持して個別シーンの内訳を整えることだった |
+
+## 8.1 教訓 — ユーザー報告の解釈は ChatGPT 監修と一緒に確認
+
+「序章から突然落下はおかしい」というユーザー報告 (2026-05-14) は narrative
+不整合ではなく、**intro chain そのものが PLR02/PLR03 で発火していなかった
+過去状態を踏まえた、別の何か** (推測: 当時の archive scene が prologue
+だけ表示してから「next」で intro:falling に飛ぶ繋ぎの違和感) を指して
+いた可能性が高い。本来は ChatGPT シナリオ監修と意図を擦り合わせてから
+コードを変更すべきだった。
+
+今後は:
+- 「intro flow / シーン回想」関連のユーザー報告は、修正を着手する前に
+  `docs/handoff/INTRO_FLOW_PER_PLR.md` の Done Criteria (節 5) と
+  突き合わせる
+- 該当 PLR の `introStepOrder` を変更する PR は必ず Done Criteria の
+  intro chain 並び (`prologue → encount → arrival → gC → gO` for
+  PLR00/02/03, `prologue → arrival → gC → gO → encount` for PLR04) を
+  満たすかチェックリスト形式で確認

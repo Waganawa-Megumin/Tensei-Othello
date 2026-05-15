@@ -261,10 +261,9 @@ export function getOrderedArchiveScenesForPlr(input: {
    *  Determines the intro chain order in the replay list. Default
    *  `'legacy'` emits prologue → falling → arrival → gC → gO.
    *  `'arrival-first'` (PLR04) reorders so falling lands at the end.
-   *  `'prologue-only'` (PLR02 美琴 / PLR03 リン, v0.36.75) emits ONLY
-   *  prologue and skips every intro:* step — their prologue text
-   *  already covers the fall + landing + gate inline, so the legacy
-   *  chain rewinds the narrative. */
+   *  `'prologue-only'` emits ONLY prologue and skips every intro:*
+   *  step. Reserved for future PLRs whose prologue text already
+   *  covers the fall + landing + gate inline (no current user). */
   introStepOrder?: 'legacy' | 'arrival-first' | 'prologue-only';
 }): ArchiveScene[] {
   const {
@@ -279,9 +278,10 @@ export function getOrderedArchiveScenesForPlr(input: {
   const result: ArchiveScene[] = [];
 
   // Intro chain — emitted per the active PLR's `introStepOrder`.
-  // 'legacy' keeps the canonical 5-step PLR00 Haruki order;
+  // 'legacy' keeps the canonical 5-step PLR00 Haruki order
+  // (also used by PLR02 美琴 / PLR03 リン);
   // 'arrival-first' (PLR04) puts falling/encount at the end;
-  // 'prologue-only' (PLR02/PLR03) emits ONLY prologue.
+  // 'prologue-only' emits ONLY prologue (no current user).
   if (hasSeenOverlay(slotId, 'prologue')) {
     result.push({ kind: 'overlay', key: 'prologue', plrIdx });
     if (introStepOrder === 'legacy') {

@@ -1517,11 +1517,6 @@ export const STORY_JA: StoryContent = {
         gatewayClosed: 'PLR02_mikoto/gateway-closed',
         gatewayOpen: 'PLR02_mikoto/gateway-open',
       },
-      // 美琴の prologue 本文は「学園での召喚 → 落下 → Bansho Sekai 着地」
-      // までを 1 シーンに圧縮しているため、後続の intro:falling /
-      // arrival / gateway* を再生すると物語が時間軸を巻き戻す。
-      // v0.36.75 で intro chain を skip → prologue 直後に Ch.1 へ。
-      introStepOrder: 'prologue-only',
     },
     2: {
       tagline: '**現実より、得意なんだ**。 ── ゲームの世界で、**頂点を取る**。',
@@ -1597,10 +1592,6 @@ export const STORY_JA: StoryContent = {
   (**全クリアまで、ログアウトしない**)
 
   (**レイ・ホワイトの影**が、リンの記憶の隅で、**かすかに揺れた**。)`,
-      // リンの prologue 本文も「自室での召喚 → 落下 → Bansho Sekai 着地」
-      // を 1 シーンで描き切る構成 — PLR02 と同じ理由で intro chain を skip。
-      // (v0.36.75)
-      introStepOrder: 'prologue-only',
       imageBasePaths: {
         prologue: 'PLR03_rin/prologue',
         encount: 'PLR03_rin/encount',

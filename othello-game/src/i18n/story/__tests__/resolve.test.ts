@@ -298,4 +298,41 @@ describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56-57)', 
     const p = resolvePrologueContent(story, 4);
     expect(p).toBe(story.prologue);
   });
+
+  // v0.36.76 — regression guard for the intro chain. ChatGPT-side
+  // scenario authority report (INTRO_CHAIN_FIX_REQUEST.md, 2026-05-15)
+  // reminded us that PLR00 default / PLR02 / PLR03 all expect the
+  // standard 5-step intro chain (`prologue → encount → arrival →
+  // gatewayClosed → gatewayOpen → chapter`); only PLR04 carries a
+  // bespoke ordering. Make this contract explicit at the resolver
+  // boundary so a future "skip intro chain" override added by mistake
+  // gets caught by tests rather than by user reports.
+  it('PLR00 (default) prologue leaves introStepOrder undefined (= legacy 5-step)', () => {
+    const p = resolvePrologueContent(story, 0);
+    expect(p.introStepOrder).toBeUndefined();
+  });
+
+  it('PLR02 (Mikoto) prologue leaves introStepOrder undefined (= legacy 5-step)', () => {
+    const p = resolvePrologueContent(story, 1);
+    expect(p.introStepOrder).toBeUndefined();
+  });
+
+  it('PLR03 (Rin) prologue leaves introStepOrder undefined (= legacy 5-step)', () => {
+    const p = resolvePrologueContent(story, 2);
+    expect(p.introStepOrder).toBeUndefined();
+  });
+
+  it('PLR04 (Ren) prologue declares introStepOrder = "arrival-first"', () => {
+    const p = resolvePrologueContent(story, 3);
+    expect(p.introStepOrder).toBe('arrival-first');
+  });
+
+  it('PLR03 carries imageBasePaths for all 5 intro scenes', () => {
+    const p = resolvePrologueContent(story, 2);
+    expect(p.imageBasePaths?.prologue).toBe('PLR03_rin/prologue');
+    expect(p.imageBasePaths?.encount).toBe('PLR03_rin/encount');
+    expect(p.imageBasePaths?.arrival).toBe('PLR03_rin/arrival');
+    expect(p.imageBasePaths?.gatewayClosed).toBe('PLR03_rin/gateway-closed');
+    expect(p.imageBasePaths?.gatewayOpen).toBe('PLR03_rin/gateway-open');
+  });
 });
