@@ -96,13 +96,12 @@ export interface PrologueContent {
    *    intro beat, matching PLR04 whose prologue text already shows
    *    the player landing in Bansho Sekai and whose `encount-*.png`
    *    depicts the first-opponent encounter rather than mid-air.
-   *  - `'prologue-only'` (v0.36.75): prologue → chapter (skip every
-   *    intro:* step). For PLRs whose prologue text compresses the
-   *    entire world-traversal — fall + landing + gate, into one piece
-   *    — so any subsequent encount/arrival/gateway* visual would
-   *    rewind the narrative. PLR02 美琴 and PLR03 リン (whose
-   *    prologues end with the character already landed at Bansho
-   *    Sekai awaiting the masters) use this variant. */
+   *  - `'prologue-only'`: prologue → chapter (skip every intro:*
+   *    step). Reserved for future PLRs whose prologue text compresses
+   *    the entire world-traversal — fall + landing + gate — into one
+   *    piece. Not currently used by any PLR (v0.36.75 set PLR02/03
+   *    here by mistake; v0.36.76 reverted them to the default legacy
+   *    5-step chain per ChatGPT scenario authority's request). */
   introStepOrder?: 'legacy' | 'arrival-first' | 'prologue-only';
 }
 

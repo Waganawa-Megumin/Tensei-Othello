@@ -1512,11 +1512,6 @@ Twenty masters waited for her.
         gatewayClosed: 'PLR02_mikoto/gateway-closed',
         gatewayOpen: 'PLR02_mikoto/gateway-open',
       },
-      // Mikoto's prologue text compresses summoning + fall + landing
-      // into a single beat, so the legacy intro chain (falling →
-      // arrival → gateway*) rewinds the narrative. Skip every
-      // intro:* step. (v0.36.75)
-      introStepOrder: 'prologue-only',
     },
     2: {
       tagline: '**I\'m better here than in reality**. ── In the game world, I\'ll **take the top**.',
@@ -1592,10 +1587,6 @@ Twenty masters waited for her.
   (**I\'m not logging out until I\'ve cleared everything.**)
 
   (In the corner of her memory, the **shadow of Rei White** quietly stirred.)`,
-      // Rin's prologue also covers summoning + fall + landing in one
-      // shot — same rationale as PLR02 for skipping the intro chain.
-      // (v0.36.75)
-      introStepOrder: 'prologue-only',
       imageBasePaths: {
         prologue: 'PLR03_rin/prologue',
         encount: 'PLR03_rin/encount',
