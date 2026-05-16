@@ -1594,6 +1594,11 @@ Twenty masters waited for her.
         gatewayClosed: 'PLR03_rin/gateway-closed',
         gatewayOpen: 'PLR03_rin/gateway-open',
       },
+      // Rin's intro chain visually matches PLR04 Ren — encount art
+      // depicts the first-opponent meeting, so flow is prologue →
+      // arrival → gatewayClosed → gatewayOpen → encount → chapter.
+      // (v0.36.77)
+      introStepOrder: 'arrival-first',
     },
     3: {
       tagline: '**Fair and square — I am ready**. ── The way of the sword is the way of the sword, **anywhere**.',

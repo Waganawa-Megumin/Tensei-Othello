@@ -210,6 +210,7 @@ PLR04 のシナリオは **Ch.1 Ichika の intro テキスト (`chapterStoriesBy
 | v0.36.72 | `PrologueContent.introStepOrder` 追加 / PLR04 を `'arrival-first'` に / firstTime gate を `'intro:gatewayOpen'` に変更 (Ch.1 勝利まで intro 再生) |
 | v0.36.75 | (誤った修正) PLR02/PLR03 に `introStepOrder: 'prologue-only'` を設定 → intro chain が完全 skip され、ユーザー体験「呼び出されたら即戦闘」状態に。`'prologue-only'` enum 値は型に残置 |
 | v0.36.76 | **revert**: PLR02/PLR03 の `'prologue-only'` 設定を削除 → 省略 (= `'legacy'`) に戻す。default 5-step chain が正規挙動であることを resolve.test.ts に regression guard として追加 (`introStepOrder === undefined` を assert)。教訓: ユーザー報告「序章から突然落下はおかしい」を narrative の rewind 問題と誤読し、intro chain 全 skip と過剰対応した。ChatGPT シナリオ監修側の意図は default 5-step を維持して個別シーンの内訳を整えることだった |
+| v0.36.77 | **PLR03 リン を `'arrival-first'` に切替** (ユーザー指示)。PLR03 の encount 画像は「最初のボス (Ichika) との邂逅」を描いており、PLR04 蓮と同じ `prologue → arrival → gC → gO → encount → chapter` の流れが画像構図に合う。PLR02 美琴 は引き続き default `'legacy'`。テスト assert を `'arrival-first'` に更新 |
 
 ## 8.1 教訓 — ユーザー報告の解釈は ChatGPT 監修と一緒に確認
 

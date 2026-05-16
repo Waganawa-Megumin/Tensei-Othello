@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.76 · revert PLR02/03 prologue-only → default legacy 5-step';
+const BUILD_TAG = 'v0.36.77 · PLR03 リン → arrival-first (PLR04 と同順、画像構図に合わせる)';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }
