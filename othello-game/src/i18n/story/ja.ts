@@ -1599,6 +1599,11 @@ export const STORY_JA: StoryContent = {
         gatewayClosed: 'PLR03_rin/gateway-closed',
         gatewayOpen: 'PLR03_rin/gateway-open',
       },
+      // リンの intro chain は画像構図上 PLR04 蓮 と同じ「prologue →
+      // arrival → gatewayClosed → gatewayOpen → encount → chapter」が
+      // 自然 (encount 画像 = 最初のボスとの邂瑚の瞬間)。
+      // (v0.36.77)
+      introStepOrder: 'arrival-first',
     },
     3: {
       tagline: '**正々堂々、参る**。 ── 剣の道は、**どこでも、剣の道だ**。',

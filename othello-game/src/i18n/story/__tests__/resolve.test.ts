@@ -317,9 +317,12 @@ describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56-57)', 
     expect(p.introStepOrder).toBeUndefined();
   });
 
-  it('PLR03 (Rin) prologue leaves introStepOrder undefined (= legacy 5-step)', () => {
+  it('PLR03 (Rin) prologue declares introStepOrder = "arrival-first"', () => {
+    // v0.36.77 — Rin's encount art depicts the first-opponent meeting
+    // (not a falling beat), so the chain matches PLR04 Ren's order:
+    // prologue → arrival → gatewayClosed → gatewayOpen → encount → chapter.
     const p = resolvePrologueContent(story, 2);
-    expect(p.introStepOrder).toBeUndefined();
+    expect(p.introStepOrder).toBe('arrival-first');
   });
 
   it('PLR04 (Ren) prologue declares introStepOrder = "arrival-first"', () => {
