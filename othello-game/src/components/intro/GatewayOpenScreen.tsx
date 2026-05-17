@@ -32,6 +32,8 @@ export function GatewayOpenScreen({ t, onNext, nextLabel, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const orientation = isLandscape ? 'landscape' : 'portrait';
   const resolvedPrologue = prologue ?? t.story.prologue;
+  const gatewayOpenText =
+    resolvedPrologue.introTexts?.gatewayOpenText ?? t.intro.gatewayOpenText;
   const stem = useResolvedIllustrationStem(
     resolvedPrologue.imageBasePaths?.gatewayOpen ?? '_shared/gateway-open',
     '_shared/gateway-open',
@@ -70,7 +72,7 @@ export function GatewayOpenScreen({ t, onNext, nextLabel, prologue }: Props) {
             — {t.intro.gatewayOpenLabel} —
           </div>
           <div className="jp-display text-amber-100/90 text-sm md:text-base leading-loose whitespace-pre-line mb-7 max-h-[55vh] overflow-y-auto pr-1">
-            {renderEmphasized(t.intro.gatewayOpenText)}
+            {renderEmphasized(gatewayOpenText)}
           </div>
           <button
             onClick={(e) => {

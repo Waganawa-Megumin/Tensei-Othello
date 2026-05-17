@@ -96,6 +96,37 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **per-PLR co-located フォルダ構成 + `introTexts` スロット (v0.36.78)** —
+      completed: 2026-05-17 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (this push) — ユーザー報告「PLR02・PLR03 で序章以外が
+      ハルキのスクリプトになっている」「再発防止でプレイヤーごとの
+      挿絵 / スクリプト / 挿絵順を 1 箇所で管理できるフォルダ構成に
+      見直して」「本文は chat 側で順次検討する」を受けた **構成
+      リファクタ + mechanism 追加** (本文は別ターンで author 予定)。
+      (A) 各 chain-step PLR を `src/i18n/story/plr/PLR0M_<slug>/{ja,en,index}.ts`
+      の `PlrPackage` に co-locate (挿絵フォルダ
+      `public/illustrations/PLR0M_<slug>/` と 1:1 名前対応)。新規 6
+      ファイル + index 3 ファイル。`utils.ts` に `ch()` ヘルパーを切り出し。
+      root `ja.ts` / `en.ts` (各 3783 行) は薄いオーケストレータ (913 /
+      917 行) に縮小し、PLR_PACKAGES_JA/EN 配列をループして
+      `prologueByPlr` / `chapterStoriesByPlr` / `narrativeByPlr` /
+      `chainStepEndingByPlr` を `plrIdx` でキーマップ化。
+      (B) `PrologueContent.introTexts` (fallingVoice / arrivalText /
+      gatewayClosedText / gatewayOpenText) フィールドを追加し、4 つの
+      intro screen (`FallingScreen` / `ArrivalScreen` /
+      `GatewayClosedScreen` / `GatewayOpenScreen`) を
+      `prologue.introTexts?.X ?? t.intro.X` の per-PLR override → shared
+      fallback wiring に変更。Phase A 単体では全 PLR の `introTexts` は
+      未設定 (= UI 不変、ハルキ漏れは未修正)。後続 chat ターンで
+      PLR02 美琴・PLR03 リン (任意で PLR04 蓮) の本文を author し、各
+      PLR の `prologue.introTexts` に埋める運用に切替。
+      (C) `resolve.test.ts` に regression guard 4 件追加 (全 PLR の
+      introTexts が undefined であることを assert)。前提: ユーザーの
+      訂正「世界が緑色かどうかは各挿絵によって違う」を受け、Claude が
+      事前 draft した「緑の盤面世界」前提の本文案は plan 段階で破棄。
+      typecheck pass、149 → 153 tests pass、build OK (precache 件数
+      不変、bundle size 不変)、`PrologueScreen` の挙動も従来通り
+      (`prologueByPlr[plrIdx] ?? prologue` の resolution は無変更)。
 - [x] **intro chain シーン名 `falling` → `encount` リネーム (v0.36.64)** —
       completed: 2026-05-11 — by: `claude/othello-ui-autosave-bPnmY` —
       ユーザー受領指示書 `claude_code_rename_falling_to_encount.md` に従い、

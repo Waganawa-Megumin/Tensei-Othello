@@ -211,6 +211,7 @@ PLR04 のシナリオは **Ch.1 Ichika の intro テキスト (`chapterStoriesBy
 | v0.36.75 | (誤った修正) PLR02/PLR03 に `introStepOrder: 'prologue-only'` を設定 → intro chain が完全 skip され、ユーザー体験「呼び出されたら即戦闘」状態に。`'prologue-only'` enum 値は型に残置 |
 | v0.36.76 | **revert**: PLR02/PLR03 の `'prologue-only'` 設定を削除 → 省略 (= `'legacy'`) に戻す。default 5-step chain が正規挙動であることを resolve.test.ts に regression guard として追加 (`introStepOrder === undefined` を assert)。教訓: ユーザー報告「序章から突然落下はおかしい」を narrative の rewind 問題と誤読し、intro chain 全 skip と過剰対応した。ChatGPT シナリオ監修側の意図は default 5-step を維持して個別シーンの内訳を整えることだった |
 | v0.36.77 | **PLR03 リン を `'arrival-first'` に切替** (ユーザー指示)。PLR03 の encount 画像は「最初のボス (Ichika) との邂逅」を描いており、PLR04 蓮と同じ `prologue → arrival → gC → gO → encount → chapter` の流れが画像構図に合う。PLR02 美琴 は引き続き default `'legacy'`。テスト assert を `'arrival-first'` に更新 |
+| v0.36.78 | **per-PLR co-located フォルダ構成へ refactor + `introTexts` スロット追加** (ユーザー指示「再発防止」)。 (A) 各 chain-step PLR を `src/i18n/story/plr/PLR0M_<slug>/{ja,en,index}.ts` の `PlrPackage` に co-locate (挿絵フォルダ `public/illustrations/PLR0M_<slug>/` と 1:1 名前対応)。root `ja.ts` / `en.ts` は薄いオーケストレータ (3781 行 → 913/917 行)。 (B) `PrologueContent.introTexts` (fallingVoice / arrivalText / gatewayClosedText / gatewayOpenText) を追加。4 つの intro screen は `prologue.introTexts?.X ?? t.intro.X` で per-PLR override → shared fallback。Phase A 単体では全 PLR の introTexts は未設定 (= ハルキ漏れは未修正、UI 不変)。後続の chat ターンで PLR02/PLR03 (任意で PLR04) の本文を author し、各 PLR の `prologue.introTexts` に埋める運用 |
 
 ## 8.1 教訓 — ユーザー報告の解釈は ChatGPT 監修と一緒に確認
 

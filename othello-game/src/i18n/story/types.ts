@@ -86,6 +86,24 @@ export interface PrologueContent {
     /** Opened-gateway threshold. */
     gatewayOpen?: string;
   };
+  /** Per-PLR intro chain overrides for steps 2-5 (FallingScreen,
+   *  ArrivalScreen, GatewayClosedScreen, GatewayOpenScreen). Each field
+   *  is optional; missing fields fall back to the shared
+   *  `Messages.intro.*` defaults (which are authored in ハルキ voice).
+   *  When you add a new chain-step PLR with its own world framing,
+   *  author all 4 strings here so the intro chain stays in-voice.
+   *  Authored alongside `prologueByPlr[plrIdx]` in the per-PLR folder
+   *  `src/i18n/story/plr/PLRxx_<slug>/{ja,en}.ts`. (v0.36.78) */
+  introTexts?: {
+    /** FallingScreen — disembodied voice of the Bansho Sekai god. */
+    fallingVoice?: string;
+    /** ArrivalScreen — first-sight narration when the player lands. */
+    arrivalText?: string;
+    /** GatewayClosedScreen — narration when the gateway appears sealed. */
+    gatewayClosedText?: string;
+    /** GatewayOpenScreen — narration when the gateway bursts open. */
+    gatewayOpenText?: string;
+  };
   /** Per-PLR intro step ordering (v0.36.72).
    *  - `'legacy'` (default): prologue → encount → arrival →
    *    gatewayClosed → gatewayOpen → chapter. Encount sits at step 2
@@ -103,6 +121,51 @@ export interface PrologueContent {
    *    here by mistake; v0.36.76 reverted them to the default legacy
    *    5-step chain per ChatGPT scenario authority's request). */
   introStepOrder?: 'legacy' | 'arrival-first' | 'prologue-only';
+}
+
+/** Drop-in unit bundling every piece of per-PLR data for one chain-step
+ *  bonus avatar. One file per language per PLR, all four files for a
+ *  given PLR co-located under `src/i18n/story/plr/PLRxx_<slug>/`:
+ *
+ *  - `ja.ts` — Japanese PlrPackage (this type)
+ *  - `en.ts` — English PlrPackage
+ *  - `index.ts` — re-exports
+ *
+ *  The root `ja.ts` / `en.ts` story bundles import each PlrPackage and
+ *  flatten its fields into `StoryContent.prologueByPlr` /
+ *  `chapterStoriesByPlr` / `narrativeByPlr` / `chainStepEndingByPlr`
+ *  keyed on `plrIdx` (AVATARS index, 1=PLR02, 2=PLR03, 3=PLR04).
+ *  (v0.36.78) */
+export interface PlrPackage {
+  /** AVATARS index this package targets (1=PLR02, 2=PLR03, 3=PLR04, …,
+   *  19=PLR20). PLR00 (idx 0) is the shared default and does NOT have a
+   *  PlrPackage. PLR01 (idx 20) is the true-ending hero and does NOT
+   *  have a per-lap PlrPackage either — its scenes live at top level on
+   *  `StoryContent.narrative` / `StoryContent.opp22`. */
+  readonly plrIdx: number;
+  /** Asset folder name under `public/illustrations/`, matching the
+   *  source folder name under `src/i18n/story/plr/` for 1:1
+   *  traceability (e.g., `'PLR02_mikoto'`). Not consumed by the
+   *  runtime — kept here so a developer auditing one folder can
+   *  immediately point at the other. */
+  readonly assetFolder: string;
+  /** Opening cinematic + intro chain overrides. Replaces
+   *  `StoryContent.prologue` for this PLR's lap. */
+  readonly prologue: PrologueContent;
+  /** Full 20-chapter lap. Replaces `StoryContent.chapterStories` for
+   *  this PLR. Length must equal 20. */
+  readonly chapters: ReadonlyArray<ChapterStory>;
+  /** Per-PLR mid-route narrative overrides (Ch.10 solitude / Ch.15
+   *  allies / Ch.19 final). Each key is optional; missing keys fall
+   *  back to the shared `StoryContent.narrative`. */
+  readonly narrative?: Partial<{
+    solitude: NarrativeScene;
+    allies: NarrativeScene;
+    final: NarrativeScene;
+  }>;
+  /** Per-PLR lap-finale narrative scene. Replaces the shared
+   *  `StoryContent.chainStepEnding` for this PLR. */
+  readonly chainStepEnding?: NarrativeScene;
 }
 
 /** Full story bundle, one per locale. */

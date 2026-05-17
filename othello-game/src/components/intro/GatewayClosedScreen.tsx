@@ -30,6 +30,8 @@ export function GatewayClosedScreen({ t, onNext, nextLabel, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const orientation = isLandscape ? 'landscape' : 'portrait';
   const resolvedPrologue = prologue ?? t.story.prologue;
+  const gatewayClosedText =
+    resolvedPrologue.introTexts?.gatewayClosedText ?? t.intro.gatewayClosedText;
   const stem = useResolvedIllustrationStem(
     resolvedPrologue.imageBasePaths?.gatewayClosed ?? '_shared/gateway-closed',
     '_shared/gateway-closed',
@@ -64,7 +66,7 @@ export function GatewayClosedScreen({ t, onNext, nextLabel, prologue }: Props) {
             — {t.intro.gatewayClosedLabel} —
           </div>
           <div className="jp-display text-amber-100/90 text-sm md:text-base leading-loose whitespace-pre-line mb-7 max-h-[55vh] overflow-y-auto pr-1">
-            {renderEmphasized(t.intro.gatewayClosedText)}
+            {renderEmphasized(gatewayClosedText)}
           </div>
           <button
             onClick={(e) => {

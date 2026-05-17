@@ -34,6 +34,7 @@ export function FallingScreen({ t, onNext, prologue }: Props) {
   const [usedFallback, setUsedFallback] = useState(false);
   const orientation = isLandscape ? 'landscape' : 'portrait';
   const resolvedPrologue = prologue ?? t.story.prologue;
+  const fallingVoice = resolvedPrologue.introTexts?.fallingVoice ?? t.intro.fallingVoice;
   // Per-PLR `encount` override → shared `_shared/prologue` fallback
   // (the shared default reuses the prologue art for this beat; per-PLR
   // PLRs author a dedicated `encount-*.png` — the "story starts moving
@@ -115,7 +116,7 @@ export function FallingScreen({ t, onNext, prologue }: Props) {
               animation: 'voiceReveal 1.4s ease-in-out both',
             }}
           >
-            『{t.intro.fallingVoice}』
+            『{fallingVoice}』
           </p>
         </div>
       )}

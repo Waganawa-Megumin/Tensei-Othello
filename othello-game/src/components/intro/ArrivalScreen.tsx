@@ -25,6 +25,7 @@ export function ArrivalScreen({ t, onNext, nextLabel, prologue }: Props) {
   const isLandscape = useMediaQuery('(orientation: landscape)');
   const orientation = isLandscape ? 'landscape' : 'portrait';
   const resolvedPrologue = prologue ?? t.story.prologue;
+  const arrivalText = resolvedPrologue.introTexts?.arrivalText ?? t.intro.arrivalText;
   const stem = useResolvedIllustrationStem(
     resolvedPrologue.imageBasePaths?.arrival ?? '_shared/arrival-bg',
     '_shared/arrival-bg',
@@ -59,7 +60,7 @@ export function ArrivalScreen({ t, onNext, nextLabel, prologue }: Props) {
             — {t.intro.arrivalLabel} —
           </div>
           <div className="jp-display text-amber-100/90 text-sm md:text-base leading-loose whitespace-pre-line mb-7 max-h-[55vh] overflow-y-auto pr-1">
-            {renderEmphasized(t.intro.arrivalText)}
+            {renderEmphasized(arrivalText)}
           </div>
           <button
             onClick={(e) => {

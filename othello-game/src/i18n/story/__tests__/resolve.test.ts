@@ -339,3 +339,31 @@ describe('resolvePrologueContent — PLR02 intro chain override (v0.36.56-57)', 
     expect(p.imageBasePaths?.gatewayOpen).toBe('PLR03_rin/gateway-open');
   });
 });
+
+describe('introTexts override slot (v0.36.78)', () => {
+  // The new `introTexts` field on PrologueContent lets each PLR override
+  // the 4 intro chain screen narrations (Falling, Arrival, GatewayClosed,
+  // GatewayOpen) to stay in-voice. Until the per-PLR text content is
+  // authored in chat (Phase B), every PLR leaves the field undefined and
+  // the screens fall back to the shared `Messages.intro.*` defaults.
+
+  it('PLR00 default prologue leaves introTexts undefined (shared fallback)', () => {
+    const p = resolvePrologueContent(story, 0);
+    expect(p.introTexts).toBeUndefined();
+  });
+
+  it('PLR02 (Mikoto) prologue starts with introTexts undefined (awaiting author)', () => {
+    const p = resolvePrologueContent(story, 1);
+    expect(p.introTexts).toBeUndefined();
+  });
+
+  it('PLR03 (Rin) prologue starts with introTexts undefined (awaiting author)', () => {
+    const p = resolvePrologueContent(story, 2);
+    expect(p.introTexts).toBeUndefined();
+  });
+
+  it('PLR04 (Ren) prologue starts with introTexts undefined (awaiting author)', () => {
+    const p = resolvePrologueContent(story, 3);
+    expect(p.introTexts).toBeUndefined();
+  });
+});
