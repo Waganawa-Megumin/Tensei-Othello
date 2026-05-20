@@ -275,6 +275,9 @@ export interface Messages {
   reviewMovesHeading: string;
   reviewMoveLabel: (n: number, notation: string, side: 'B' | 'W') => string;
   reviewNoAnnotations: string;
+  /** Inline label rendered before the suggested alternative move on
+   *  inaccuracy / mistake / blunder annotations (v0.36.79). */
+  reviewBetterMoveLabel: (notation: string) => string;
   qualityBrilliant: string;
   qualityGood: string;
   qualityNeutral: string;
@@ -802,6 +805,7 @@ export const ja: Messages = {
   reviewMoveLabel: (n, notation, side) =>
     `第${n}手 ${side === 'B' ? '黒' : '白'} ${notation}`,
   reviewNoAnnotations: '注釈付きの手はありません。',
+  reviewBetterMoveLabel: (notation) => `候補手: ${notation}`,
   qualityBrilliant: '妙手',
   qualityGood: '好手',
   qualityNeutral: '普通',
@@ -1259,6 +1263,7 @@ your journey on the board reaches its close.`,
   reviewMoveLabel: (n, notation, side) =>
     `Move ${n} · ${side === 'B' ? 'Black' : 'White'} ${notation}`,
   reviewNoAnnotations: 'No annotated moves.',
+  reviewBetterMoveLabel: (notation) => `Better: ${notation}`,
   qualityBrilliant: 'Brilliant',
   qualityGood: 'Good',
   qualityNeutral: 'Neutral',

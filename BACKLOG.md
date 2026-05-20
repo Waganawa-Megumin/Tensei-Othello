@@ -96,6 +96,35 @@ Last updated: 2026-05-07 by `claude/game-overview-docs-DjBxK` (v0.36.41 save-poi
 
 ## ✅ Done (newest 20 only — 古いものは git log で追える)
 
+- [x] **棋譜レビュー — プレイヤー色対応 + 候補手 (betterMove) 追加 (v0.36.79)** —
+      completed: 2026-05-17 — by: `claude/othello-ui-autosave-bPnmY` —
+      commit: (this push) — ユーザー報告 2 件への対応。
+      (A) **プレイヤー色バグ修正**: 旧 `review.ts` は system / user prompt
+      で「プレイヤー = 黒番」をハードコードし、`App.tsx` の呼び出し側も
+      `blackName: AVATARS[p1Avatar].name` (= プレイヤー名を常に黒側にマップ)
+      で playerColor を一切渡していなかった。結果、プレイヤーが白でも
+      Claude には黒視点で advice 生成を依頼しており、「白を打ったプレイヤー
+      なのに黒のミスをアドバイスされる」状態。修正: `ReviewArgs` に
+      `playerColor: Color | null` を必須追加、user prompt に
+      「★ プレイヤー = 黒番 / 白番 / 二人対戦」明示行を挿入、system prompt
+      から黒番固定文言を削除し「ユーザーメッセージで宣言された側で」に
+      書換。`App.tsx` 側は `playerColor === WHITE` のとき `blackName` / 
+      `whiteName` を実際の色対応に swap し、`playerColor` を ReviewArgs に
+      渡す (二人対戦時は null で balanced advice)。
+      (B) **候補手 (betterMove) 追加**: ユーザー要望「悪手に対しては
+      ここに打てばよかったという候補も」。`MoveAnnotation` に optional
+      `betterMove?: string` (a1〜h8 記法) を追加、tool schema で
+      pattern `^[a-h][1-8]$` を強制、system prompt で「inaccuracy / mistake
+      / blunder のときは必ず betterMove に同じ側の合法的代替手を入れる」と
+      指示。`coerceReviewAnnotations` で不正な値 (例 'x9') は drop して
+      annotation 自体は keep する防御コーディング。`App.tsx` レビュー
+      アノテーション一覧の各 item でコメント直下に琥珀色の「候補手: E3」
+      / "Better: E3" ラベルを表示。
+      (C) **テスト追加**: `src/prompts/__tests__/review.test.ts` を新設し、
+      (1) playerColor BLACK/WHITE/null での prompt 切替、(2) tool schema の
+      betterMove pattern 存在、(3) coerceReviewAnnotations の betterMove
+      正常値 pass-through + 不正値 drop + 未指定時の omit を assert。
+      153 → 161 tests pass、typecheck pass、build OK (precache 300 件不変)。
 - [x] **per-PLR co-located フォルダ構成 + `introTexts` スロット (v0.36.78)** —
       completed: 2026-05-17 — by: `claude/othello-ui-autosave-bPnmY` —
       commit: (this push) — ユーザー報告「PLR02・PLR03 で序章以外が

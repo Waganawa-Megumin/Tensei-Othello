@@ -105,7 +105,12 @@ import {
   fetchStructuredReview,
   type StructuredReviewHandle,
 } from './services/claude';
-import type { MoveAnnotation, MoveQuality, ReviewAnnotations } from './prompts/review';
+import type {
+  MoveAnnotation,
+  MoveQuality,
+  ReviewAnnotations,
+  ReviewArgs,
+} from './prompts/review';
 import {
   defaultSlot,
   getNextOpponent,
@@ -3426,12 +3431,24 @@ export default function App() {
       gameMode === 'ai'
         ? (opponentSnapshot?.name ?? COMPUTERS[computerChar].name)
         : AVATARS[p2Avatar].name;
-    const args = {
+    // In AI mode the human (= AVATARS[p1Avatar]) may take either color
+    // (controlled by `playerColor`). Map the kifu side names accordingly
+    // so Claude sees who actually held black vs white in this game.
+    // In two-player mode p1 = Black, p2 = White by convention.
+    const playerName = AVATARS[p1Avatar].name;
+    const blackName =
+      gameMode === 'ai' && playerColor === WHITE ? oppName : playerName;
+    const whiteName =
+      gameMode === 'ai' && playerColor === WHITE ? playerName : oppName;
+    const args: ReviewArgs = {
       kifu,
       blackCount: counts.black,
       whiteCount: counts.white,
-      blackName: AVATARS[p1Avatar].name,
-      whiteName: oppName,
+      blackName,
+      whiteName,
+      // Two-player mode → no specific player perspective; both are
+      // humans, review stays balanced.
+      playerColor: gameMode === 'ai' ? playerColor : null,
       level: oppLevel,
       levelLabel: oppLevel !== undefined ? getLevelLabel(oppLevel, t) : undefined,
       chapter:
@@ -6215,6 +6232,11 @@ export default function App() {
                                       <p className="jp-display text-amber-100/90 text-xs leading-relaxed">
                                         {a.comment}
                                       </p>
+                                      {a.betterMove && (
+                                        <p className="latin-display text-amber-300/85 text-[11px] tabular-nums tracking-wider mt-1">
+                                          {t.reviewBetterMoveLabel(a.betterMove.toUpperCase())}
+                                        </p>
+                                      )}
                                     </div>
                                   </li>
                                 );
