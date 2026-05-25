@@ -305,6 +305,38 @@ export const PLR04_REN_EN: PlrPackage = {
       // → gate bursts → Ch.1 stage. `encount-*.png` becomes the
       // final intro beat, depicting the Ichika circular-hall meet.
       introStepOrder: 'arrival-first',
+      // Ren's full prologue already narrates the whole crossing, so the
+      // four following steps briefly re-stage each illustration's
+      // "moment" in Ren's voice (replacing the shared PLR00 Haruki
+      // copy). Only `fallingVoice` (the final encount step, overlaid on
+      // the Ch.1 circular-stage art) skips markdown `**`, since
+      // FallingScreen interpolates it as plain text.
+      introTexts: {
+        arrivalText: `Landing on one knee. The impact scattered **cherry petals** bursting outward.
+  Lifting his gaze ── to the horizon, **the green board**.
+  And in the sky ── a familiar **laurel-wreath crest**, glowing gold.
+
+  (The Shirai crest ── why, in an otherworld\'s sky?)
+  (Not a world of the sword. A world where **stones are placed**.)
+
+  So this is ── **Bansho Sekai**. The other dojo that summoned Ren.`,
+        gatewayClosedText: `Down the path stood a **ruined dojo**. The roof collapsed, the pillars leaning ── yet **a single shoji door** remained standing, as if by miracle.
+  Beyond it, in the white backlight ── **a silhouette**. Raising no blade, simply watching him.
+
+  (The shihandai...? No. The presence is different.)
+
+  Ren took **chudan stance**.
+  "...I come."`,
+        gatewayOpenText: `A step in, closing the distance in a single stride.
+  "**Men ─ ─ ─ !**"
+  The tip of his shinai **caught** the center of the shoji door.
+
+  **A white concentric ring**. The washi shatters, the frame splits down the middle, cherry petals spiral and are drawn upward.
+  Beyond the torn door ── **the board world** lay fully revealed. The silhouette ── **gone**.
+
+  Ren, **still in zanshin**, leaned his body toward that light.`,
+        fallingVoice: `Fight-oh~♪ ...Oh? That stance ── you\'re serious. Then I\'ll get serious too ── and really put on a show for you ♡`,
+      },
   },
   chapters: [
       // ─────────────────────────────────────────────────
