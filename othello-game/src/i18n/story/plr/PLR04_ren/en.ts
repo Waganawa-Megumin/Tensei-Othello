@@ -332,7 +332,7 @@ export const PLR04_REN_EN: PlrPackage = {
   The tip of his shinai **caught** the center of the shoji door.
 
   **A white concentric ring**. The washi shatters, the frame splits down the middle, cherry petals spiral and are drawn upward.
-  Beyond the torn door ── **the board world** lay fully revealed. The silhouette ── **gone**.
+  At the heart of the vortex, **another board** shows through. The silhouette ── **gone**.
 
   Ren, **still in zanshin**, leaned his body toward that light.`,
         fallingVoice: `Fight-oh~♪ ...Oh? That stance ── you\'re serious. Then I\'ll get serious too ── and really put on a show for you ♡`,

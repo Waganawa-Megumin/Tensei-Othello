@@ -77,6 +77,37 @@ export const PLR02_MIKOTO_JA: PlrPackage = {
         gatewayClosed: 'PLR02_mikoto/gateway-closed',
         gatewayOpen: 'PLR02_mikoto/gateway-open',
       },
+      // 美琴の実画像系列は「禁書区画 (arrival) → 魔法陣の門 (gateway-closed)
+      // → 封印が解け盤面世界露呈 (gateway-open) → 銀の数式の虚空をダイブ
+      // (encount)」の順で、prologue 本文もこの順。よって PLR03/04 と同じ
+      // arrival-first を採用 (旧 legacy 設定だと encount→arrival が逆再生に
+      // なる)。fallingVoice (= 最終 encount step) のみ FallingScreen が素
+      // テキスト補間なので markdown `**` を使わない。
+      introStepOrder: 'arrival-first',
+      introTexts: {
+        arrivalText: `聖図書院学園、夜の禁書区画。
+  指が記号をなぞった瞬間、**開いた頁の金の魔法陣**が、**蒼く**発光した。
+  書架が**ステンドグラスの光**に溶け、制服が**金縁の意匠**へ書き換わっていく。
+
+  (待って ── これは、**召喚**?)
+
+  腕の中の魔導書だけが、変わらず**重い**。
+  (なら、現実だ。 ── 観測対象として、扱う。)`,
+        gatewayClosedText: `気づけば、巨大な**ステンドグラスの門**の前。8×8 の格子に、未解読の記号が**びっしりと**刻まれている。門は、閉じている。
+
+  「**証明せよ**」 ── どこからか、声。
+
+  (試問、か。 ── 嫌いじゃない。)
+
+  美琴は、魔導書を開いた。`,
+        gatewayOpenText: `記号をなぞる。問いは深く、解は無数 ── だが、**一筋、整合する分岐**が見えた。
+
+  指を置くと、魔法陣の格子が**金色に解け**、門がひらいた。
+  奥に透けるのは ── **緑の盤面世界**。盤の上に、白と黒の石。
+
+  (証明完了。 ── では、次の定理へ。)`,
+        fallingVoice: `落下も、ひとつの定理に過ぎない。 ── ならば、解いて、動かしてみせる。`,
+      },
   },
   chapters: [
       // Ch.1 いちか — アイドル

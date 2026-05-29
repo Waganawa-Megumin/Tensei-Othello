@@ -104,6 +104,36 @@ export const PLR03_RIN_EN: PlrPackage = {
       // arrival → gatewayClosed → gatewayOpen → encount → chapter.
       // (v0.36.77)
       introStepOrder: 'arrival-first',
+      // Rin's full prologue compresses the whole crossing, so the four
+      // following steps briefly re-stage each illustration's "moment" in
+      // Rin's voice (cool gamer analysis). Only `fallingVoice` (final
+      // encount step, the dive into the green matrix) skips markdown `**`,
+      // since FallingScreen interpolates it as plain text.
+      introTexts: {
+        arrivalText: `Inside her goggles, "LOST FRONTIER" was **painted over** by green code-rain.
+  From the hands gripping her controllers, **cyan pixels** began to **peel away**.
+
+  (Server crash? ...No. This is happening **on the real-world side**.)
+  (The walls are decomposing into voxels.)
+
+  (...**Nice.** Let's go.)`,
+        gatewayClosedText: `When she looked up, a massive **HOLOGRAPHIC GATE** stood before her. Cyan and violet neon circuits, an 8×8 grid. The text at its center ──
+
+  > \`ACCESS DENIED\`
+
+  (Login rejected. ── Bring it on.)
+
+  Rin **pushed her goggles up onto her forehead** and opened a console with both hands.
+  "Then ── **let me unlock it.**"`,
+        gatewayOpenText: `Her fingers raced. The auth logic **peeled away without a sound**.
+
+  > \`ACCESS GRANTED ── WELCOME, RIN\`
+
+  The gate **disengaged** into cyan particles. Beyond it, glimmering ── the **green board world**. White stones, floating in the sky.
+
+  (No tutorial needed. ── Where's the first boss?)`,
+        fallingVoice: `Load complete. Gravity's just another rule. ── So I'll read all of it.`,
+      },
   },
   chapters: [
       // ─────────────────────────────────────────────────

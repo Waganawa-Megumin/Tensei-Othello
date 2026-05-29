@@ -12,7 +12,7 @@ import {
 // Bump on every meaningful release. Surfaced in the title-screen
 // footer so the user can confirm at a glance which build is live
 // (handy when diagnosing PWA cache vs stale GitHub Pages deploy).
-const BUILD_TAG = 'v0.36.79 · 棋譜レビュー — プレイヤー色対応 + 候補手 (betterMove) 追加';
+const BUILD_TAG = 'v0.36.81 · chain-step PLR 全 intro chain テキスト (02/03/04) + PLR02 arrival-first';
 
 export type TitleStartMode =
   | { mode: 'ai'; sub: 'story' }

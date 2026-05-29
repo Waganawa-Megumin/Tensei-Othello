@@ -69,6 +69,39 @@ Twenty masters waited for her.
         gatewayClosed: 'PLR02_mikoto/gateway-closed',
         gatewayOpen: 'PLR02_mikoto/gateway-open',
       },
+      // Mikoto's illustrations run "restricted archive (arrival) → sigil
+      // gate (gateway-closed) → seal breaks, board world revealed
+      // (gateway-open) → dive through the silver-equation void (encount),"
+      // and her prologue follows that order. So she uses the same
+      // arrival-first flow as PLR03/04 (the old legacy default would
+      // play encount→arrival in reverse). Only `fallingVoice` (final
+      // encount step) skips markdown `**`, since FallingScreen
+      // interpolates it as plain text.
+      introStepOrder: 'arrival-first',
+      introTexts: {
+        arrivalText: `Seitoshoin Academy. The restricted-archive section, late at night.
+  The instant her finger traced a symbol, **the gold sigil on the open page** pulsed **blue**.
+  The shelves dissolved into **stained-glass light**; her uniform **rewrote itself** into a gold-trimmed coat.
+
+  (Wait ── is this a **summoning**?)
+
+  Only the grimoire in her arms stayed **heavy**, unchanged.
+  (Then it's real. ── I'll treat it as an object of observation.)`,
+        gatewayClosedText: `When she came to, a colossal **stained-glass gate** stood before her. An 8×8 grid, **densely** carved with undeciphered symbols. The gate was closed.
+
+  "**Prove it**," ── a voice, from somewhere.
+
+  (An examination. ── I don't mind.)
+
+  Mikoto opened her grimoire.`,
+        gatewayOpenText: `She traced the symbols. The questions ran deep, the solutions branched without count ── but **one consistent path** emerged.
+
+  As she set her finger down, the gate's lattice **dissolved into gold**, and it opened.
+  Through it, shimmering ── the **green board world**. White and black stones upon the board.
+
+  (Proof complete. ── On to the next theorem.)`,
+        fallingVoice: `A fall, too, is just a theorem. ── So I'll solve it, and move the world.`,
+      },
   },
   chapters: [
       // Ch.1 Ichika — Idol
